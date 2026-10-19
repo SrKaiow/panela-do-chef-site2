@@ -1,0 +1,27 @@
+{
+  "nome": "Panela do Chef",
+  "slogan": "O sabor autêntico do Brasil, feito com amor pelo Chef Kaio e entregue quentinho na sua porta.",
+  "falaDoChef": "Aqui o pastel é gigante: o Misto Chango leva 700g só de recheio. Um por pessoa já mata uma fome normal!",
+  "clientesSatisfeitos": "+1.000",
+  "aberto": true,
+  "mensagemFechado": "Estamos fechados agora. Volte mais tarde ou chame a gente no Instagram.",
+
+  "entrega": {
+    "taxa": 0,
+    "pedidoMinimo": 0,
+    "regiao": "Epsom, Sutton, Leatherhead, Streatham e região",
+    "avisoChegandoMetros": 450,
+    "velocidadeMediaKmh": 25
+  },
+
+  "pagamentos": {
+    "dinheiro": true,
+    "cartao": true
+  },
+
+  "contato": {
+    "instagram": "ochefkaio",
+    "whatsapp": "",
+    "grupoVip": "https://chat.whatsapp.com/GN0UimKfYCKJUmDWE1c8lC"
+  }
+}

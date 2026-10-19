@@ -1,0 +1,63 @@
+{
+  "_comoUsar": "Depoimentos fixos que aparecem no site. As avaliações novas dos clientes entram pelo site e você aprova no painel.",
+  "fixas": [
+    {
+      "nome": "Thales Viau",
+      "local": "Epsom",
+      "nota": 5,
+      "texto": "Estava com muita saudade daquele açaí de verdade que só nós brasileiros sabemos fazer, e finalmente encontrei. Muito bem montado e com adicionais de ótima qualidade. Agora virou tradição: todo domingo eu peço o meu. Recomendo muito!",
+      "foto": "/fotos/cliente-thales.jpg"
+    },
+    {
+      "nome": "Luiz",
+      "local": "Streatham",
+      "nota": 5,
+      "texto": "Aqui em SW16, eu e meus amigos adoramos pedir na Panela do Chef. Os pastéis sempre chegam quentinhos, super crocantes e muito bem recheados. Sinceramente, é o melhor pastel que já comi no Reino Unido. Atendimento excelente e entrega sempre rápida!",
+      "foto": "/fotos/cliente-luiz.jpg"
+    },
+    {
+      "nome": "Ana Torres",
+      "local": "Epsom",
+      "nota": 5,
+      "texto": "Eu super recomendo! Já comi várias marmitas, mas essa da Panela do Chef é muito, muito boa, tanto no sabor como no capricho da apresentação. Qualidade, preço e atendimento 5 estrelas!"
+    },
+    {
+      "nome": "Mariana S.",
+      "local": "Sutton",
+      "nota": 5,
+      "texto": "O melhor açaí que já tomei na vida. Dá para ver a qualidade e o cuidado no preparo.",
+      "foto": "/fotos/cliente-mariana.jpg"
+    },
+    {
+      "nome": "Rafael",
+      "local": "London",
+      "nota": 5,
+      "texto": "Finalmente encontrei comida brasileira de qualidade aqui na região. O prato veio completo e delicioso.",
+      "foto": "/fotos/cliente-rafael.jpg"
+    },
+    {
+      "nome": "Amanda T.",
+      "local": "Epsom",
+      "nota": 5,
+      "texto": "O melhor açaí que já provei. Simplesmente incrível."
+    },
+    {
+      "nome": "Gabriella",
+      "local": "Epsom",
+      "nota": 5,
+      "texto": "Chegou rápido e muito bem embalado. Experiência excelente."
+    },
+    {
+      "nome": "Fernanda",
+      "local": "Epsom",
+      "nota": 5,
+      "texto": "Simplesmente o melhor açaí que já provei fora do Brasil."
+    },
+    {
+      "nome": "Gaby",
+      "local": "Leatherhead",
+      "nota": 5,
+      "texto": "O açaí é maravilhoso! Muito bem servido, recheado e com ingredientes de qualidade. Dá pra ver que é feito com capricho. Com certeza vou pedir de novo."
+    }
+  ]
+}

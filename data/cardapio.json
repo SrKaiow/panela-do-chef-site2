@@ -1,0 +1,441 @@
+{
+  "categorias": [
+    { "id": "acai", "nome": "Açaí & Frutas" },
+    { "id": "batatas", "nome": "Batatas Recheadas" },
+    { "id": "pasteis", "nome": "Pastéis Salgados" },
+    { "id": "pasteis-doces", "nome": "Pastéis Doces" },
+    { "id": "bebidas", "nome": "Bebidas" }
+  ],
+
+  "adicionais": {
+    "toppings-acai": {
+      "nome": "Escolha os toppings",
+      "opcoes": [
+        { "nome": "Granola" },
+        { "nome": "Mel" },
+        { "nome": "Leite Condensado" },
+        { "nome": "Pasta de Amendoim" },
+        { "nome": "Leite em Pó" },
+        { "nome": "Ovomaltine" },
+        { "nome": "Nutella" },
+        { "nome": "Uva-passas" },
+        { "nome": "Fini" },
+        { "nome": "KitKat" },
+        { "nome": "Banana" },
+        { "nome": "Morango" },
+        { "nome": "Kiwi" },
+        { "nome": "Uva" },
+        { "nome": "Manga" },
+        { "nome": "Pistache" },
+        { "nome": "Creme de Ninho" },
+        { "nome": "Creme de Oreo" },
+        { "nome": "Mousse de Maracujá" }
+      ]
+    },
+    "fruta-batidinha": {
+      "nome": "Fruta para bater com o açaí",
+      "opcoes": [
+        { "nome": "Morango" },
+        { "nome": "Banana" },
+        { "nome": "Kiwi" },
+        { "nome": "Uva" },
+        { "nome": "Manga" }
+      ]
+    },
+    "cremes-batidinha": {
+      "nome": "Cremes e caldas",
+      "opcoes": [
+        { "nome": "Gotas de Chocolate ao Leite" },
+        { "nome": "Gotas de Chocolate Branco" },
+        { "nome": "Leite Condensado" },
+        { "nome": "Leite Ninho" },
+        { "nome": "Doce de Leite" },
+        { "nome": "Nutella" },
+        { "nome": "Pasta de Amendoim" },
+        { "nome": "Calda de Morango" },
+        { "nome": "Mousse de Maracujá" },
+        { "nome": "Creme de Oreo" },
+        { "nome": "Pistache" },
+        { "nome": "Mel" },
+        { "nome": "Paçoca" },
+        { "nome": "Ovomaltine" },
+        { "nome": "Calda de Abacaxi" }
+      ]
+    },
+    "toppings-batidinha": {
+      "nome": "Finalize com toppings",
+      "opcoes": [
+        { "nome": "Leite Condensado" },
+        { "nome": "Granola" },
+        { "nome": "Leite Ninho" },
+        { "nome": "M&M's" },
+        { "nome": "Bis" },
+        { "nome": "Fini" },
+        { "nome": "Paçoca" },
+        { "nome": "Ovomaltine" },
+        { "nome": "Nutella" },
+        { "nome": "Doce de Leite" },
+        { "nome": "Mel" }
+      ]
+    },
+    "mousse-fruit-cup": {
+      "nome": "Escolha o mousse",
+      "opcoes": [
+        { "nome": "Mousse de Maracujá" },
+        { "nome": "Mousse de Morango", "esgotado": true }
+      ]
+    },
+    "proteina-strogonoff": {
+      "nome": "Escolha o strogonoff",
+      "opcoes": [
+        { "nome": "Frango" },
+        { "nome": "Camarão", "esgotado": true }
+      ]
+    },
+    "mousse-sabor": {
+      "nome": "Sabor",
+      "opcoes": [{ "nome": "Maracujá" }]
+    }
+  },
+
+  "itens": [
+    {
+      "id": "acai-350",
+      "nome": "Açaí no Copo 350ml",
+      "categoria": "acai",
+      "descricao": "Açaí cremoso e bem encorpado, com 4 adicionais à sua escolha.",
+      "preco": 8.0,
+      "precoAntigo": 10.0,
+      "disponivel": false,
+      "escolhas": [{ "grupo": "toppings-acai", "min": 0, "max": 4 }]
+    },
+    {
+      "id": "acai-500",
+      "nome": "Açaí no Copo 500ml",
+      "categoria": "acai",
+      "descricao": "Açaí cremoso e bem encorpado, com 5 adicionais à sua escolha.",
+      "preco": 10.0,
+      "precoAntigo": 12.0,
+      "disponivel": false,
+      "escolhas": [{ "grupo": "toppings-acai", "min": 0, "max": 5 }]
+    },
+    {
+      "id": "batidinha-acai",
+      "nome": "Batidinha de Açaí do Seu Jeito",
+      "categoria": "acai",
+      "descricao": "Garrafinha de 500ml batida na hora: escolha a fruta, os cremes e finalize com seus toppings.",
+      "preco": 11.0,
+      "precoAntigo": 12.0,
+      "disponivel": true,
+      "escolhas": [
+        { "grupo": "fruta-batidinha", "min": 1, "max": 1 },
+        { "grupo": "cremes-batidinha", "min": 0, "max": 2 },
+        { "grupo": "toppings-batidinha", "min": 0, "max": 3 }
+      ]
+    },
+    {
+      "id": "fruit-cup",
+      "nome": "Brazilian Fruit Cup",
+      "categoria": "acai",
+      "descricao": "Copo de 500ml com kiwi, morango, banana, uvas, mirtilo, framboesa, manga e melão, finalizado com mousse cremoso.",
+      "preco": 8.0,
+      "disponivel": false,
+      "escolhas": [{ "grupo": "mousse-fruit-cup", "min": 1, "max": 1 }]
+    },
+    {
+      "id": "mousse-maracuja",
+      "nome": "Mousse de Maracujá",
+      "categoria": "acai",
+      "descricao": "Mousse leve e azedinho, feito na casa.",
+      "preco": 3.5,
+      "precoAntigo": 5.0,
+      "disponivel": false
+    },
+
+    {
+      "id": "batata-calabacon",
+      "nome": "Batata Top Calabacon",
+      "categoria": "batatas",
+      "descricao": "Calabresa acebolada, bacon crocante, requeijão e queijo gratinado.",
+      "preco": 9.0,
+      "disponivel": true
+    },
+    {
+      "id": "batata-doritos",
+      "nome": "Batata Top Doritos",
+      "categoria": "batatas",
+      "descricao": "Requeijão, Doritos e cheddar.",
+      "preco": 7.0,
+      "disponivel": true
+    },
+    {
+      "id": "batata-casadinho",
+      "nome": "Batata Top Casadinho",
+      "categoria": "batatas",
+      "descricao": "Molho à bolonhesa com queijo gratinado.",
+      "preco": 9.0,
+      "disponivel": true
+    },
+    {
+      "id": "batata-strogonoff",
+      "nome": "Batata Top Strogonoff",
+      "categoria": "batatas",
+      "descricao": "Batata recheada com strogonoff de frango ou camarão.",
+      "preco": 9.0,
+      "disponivel": true,
+      "escolhas": [{ "grupo": "proteina-strogonoff", "min": 1, "max": 1 }]
+    },
+    {
+      "id": "batata-4-queijos",
+      "nome": "Batata Top 4 Queijos",
+      "categoria": "batatas",
+      "descricao": "Cheddar, requeijão, muçarela e Catupiry original.",
+      "preco": 8.0,
+      "disponivel": true
+    },
+    {
+      "id": "batata-vegana",
+      "nome": "Batata Tradicional Vegana",
+      "categoria": "batatas",
+      "descricao": "Brócolis, palmito, bechamel e milho.",
+      "preco": 8.0,
+      "disponivel": true
+    },
+
+    {
+      "id": "pastel-x-tudo",
+      "nome": "Pastel X-Tudo Completo",
+      "categoria": "pasteis",
+      "descricao": "Carne, frango desfiado, presunto, queijo, catupiry, milho e azeitonas. Com molho da casa e vinagrete.",
+      "preco": 12.0,
+      "disponivel": true
+    },
+    {
+      "id": "pastel-frango-pequi",
+      "nome": "Pastel Frango, Pequi e Gueroba",
+      "categoria": "pasteis",
+      "descricao": "O ouro de Goiás em forma de pastel. Sabor raiz goiano.",
+      "preco": 9.0,
+      "precoAntigo": 10.0,
+      "disponivel": false
+    },
+    {
+      "id": "pastel-carne-gueroba",
+      "nome": "Pastel Carne com Gueroba",
+      "categoria": "pasteis",
+      "descricao": "Clássico goiano: carne macia com o toque único da gueroba, no tempero da casa.",
+      "preco": 9.0,
+      "disponivel": true
+    },
+    {
+      "id": "pastel-costela-banana",
+      "nome": "Pastel Costela com Banana e Queijo",
+      "categoria": "pasteis",
+      "descricao": "Costela desfiada com banana e queijo.",
+      "preco": 10.0,
+      "precoAntigo": 12.0,
+      "disponivel": false
+    },
+    {
+      "id": "pastel-costela-gourmet",
+      "nome": "Pastel Costela Gourmet",
+      "categoria": "pasteis",
+      "descricao": "Costela desfiada bem temperada.",
+      "preco": 10.0,
+      "disponivel": false
+    },
+    {
+      "id": "pastel-frango-catupiry",
+      "nome": "Pastel Frango com Catupiry",
+      "categoria": "pasteis",
+      "descricao": "Frango temperado e catupiry cremoso. Com molho da casa e vinagrete.",
+      "preco": 9.0,
+      "precoAntigo": 10.0,
+      "disponivel": false
+    },
+    {
+      "id": "pastel-frango",
+      "nome": "Pastel Frango",
+      "categoria": "pasteis",
+      "descricao": "Frango desfiado bem temperado. Com molho da casa e vinagrete.",
+      "preco": 8.0,
+      "precoAntigo": 10.0,
+      "disponivel": false
+    },
+    {
+      "id": "pastel-carne",
+      "nome": "Pastel Carne",
+      "categoria": "pasteis",
+      "descricao": "Carne moída bem temperada. Com molho da casa e vinagrete.",
+      "preco": 9.0,
+      "precoAntigo": 10.0,
+      "disponivel": true
+    },
+    {
+      "id": "pastel-carne-queijo",
+      "nome": "Pastel Carne e Queijo",
+      "categoria": "pasteis",
+      "descricao": "Carne moída temperada e muito queijo derretido. Com molho da casa e vinagrete.",
+      "preco": 8.0,
+      "precoAntigo": 10.0,
+      "disponivel": true
+    },
+    {
+      "id": "pastel-4-queijos",
+      "nome": "Pastel 4 Queijos",
+      "categoria": "pasteis",
+      "descricao": "Muçarela, cheddar, parmesão e catupiry. Com molho da casa e vinagrete.",
+      "preco": 7.0,
+      "precoAntigo": 10.0,
+      "disponivel": true
+    },
+    {
+      "id": "pastel-calabresa-queijo",
+      "nome": "Pastel Calabresa e Queijo",
+      "categoria": "pasteis",
+      "descricao": "Calabresa fatiada, cebola refogada e queijo derretido. Com molho da casa e vinagrete.",
+      "preco": 7.0,
+      "precoAntigo": 10.0,
+      "disponivel": true
+    },
+    {
+      "id": "pastel-pizza",
+      "nome": "Pastel Pizza",
+      "categoria": "pasteis",
+      "descricao": "Queijo, presunto, tomate e orégano. Com molho da casa e vinagrete.",
+      "preco": 6.5,
+      "precoAntigo": 10.0,
+      "disponivel": true
+    },
+    {
+      "id": "pastel-presunto-queijo",
+      "nome": "Pastel Presunto e Queijo",
+      "categoria": "pasteis",
+      "descricao": "O clássico: presunto e queijo derretido, crocante e bem recheado.",
+      "preco": 6.5,
+      "precoAntigo": 10.0,
+      "disponivel": true
+    },
+    {
+      "id": "pastel-queijo",
+      "nome": "Pastel Queijo",
+      "categoria": "pasteis",
+      "descricao": "Muito queijo derretido. Com molho da casa e vinagrete.",
+      "preco": 6.0,
+      "precoAntigo": 10.0,
+      "disponivel": true
+    },
+
+    {
+      "id": "pastel-ninho-morango",
+      "nome": "Pastel Ninho com Morango",
+      "categoria": "pasteis-doces",
+      "descricao": "Creme de Leite Ninho e morangos frescos.",
+      "preco": 7.0,
+      "disponivel": true
+    },
+    {
+      "id": "pastel-doce-de-leite",
+      "nome": "Pastel Doce de Leite com Canela",
+      "categoria": "pasteis-doces",
+      "descricao": "Doce de leite cremoso, finalizado com açúcar e canela.",
+      "preco": 7.0,
+      "disponivel": true
+    },
+    {
+      "id": "pastel-brigadeiro",
+      "nome": "Pastel Brigadeiro Caseiro",
+      "categoria": "pasteis-doces",
+      "descricao": "Recheio generoso de brigadeiro feito na casa.",
+      "preco": 8.0,
+      "disponivel": false
+    },
+    {
+      "id": "pastel-nutella-morango",
+      "nome": "Pastel Nutella com Morango",
+      "categoria": "pasteis-doces",
+      "descricao": "Muita Nutella e morangos frescos, servido quentinho.",
+      "preco": 7.0,
+      "precoAntigo": 10.0,
+      "disponivel": true
+    },
+    {
+      "id": "pastel-coco",
+      "nome": "Pastel Coco com Leite Condensado",
+      "categoria": "pasteis-doces",
+      "descricao": "Coco ralado cremoso e leite condensado, com calda por cima.",
+      "preco": 7.0,
+      "precoAntigo": 10.0,
+      "disponivel": true
+    },
+    {
+      "id": "pastel-banana-queijo",
+      "nome": "Pastel Banana, Queijo e Canela",
+      "categoria": "pasteis-doces",
+      "descricao": "Banana caramelizada, queijo e canela, com açúcar e canela por cima.",
+      "preco": 7.0,
+      "precoAntigo": 10.0,
+      "disponivel": true
+    },
+
+    {
+      "id": "caldo-de-cana",
+      "nome": "Caldo de Cana 350ml",
+      "categoria": "bebidas",
+      "descricao": "100% caldo de cana, sem água, açúcar ou conservantes. Bem gelado.",
+      "preco": 3.0,
+      "disponivel": true
+    },
+    {
+      "id": "guarana",
+      "nome": "Guaraná Antarctica (lata 330ml)",
+      "categoria": "bebidas",
+      "descricao": "",
+      "preco": 1.5,
+      "precoAntigo": 2.0,
+      "disponivel": true
+    },
+    {
+      "id": "coca-zero",
+      "nome": "Coca-Cola Zero (lata 330ml)",
+      "categoria": "bebidas",
+      "descricao": "",
+      "preco": 1.0,
+      "precoAntigo": 2.0,
+      "disponivel": false
+    },
+    {
+      "id": "fanta-laranja",
+      "nome": "Fanta Laranja (lata 330ml)",
+      "categoria": "bebidas",
+      "descricao": "",
+      "preco": 1.0,
+      "precoAntigo": 2.0,
+      "disponivel": false
+    },
+    {
+      "id": "j2o-orange-passion",
+      "nome": "J2O Orange & Passion Fruit",
+      "categoria": "bebidas",
+      "descricao": "",
+      "preco": 1.5,
+      "disponivel": true
+    },
+    {
+      "id": "j2o-apple-raspberry",
+      "nome": "J2O Apple & Raspberry",
+      "categoria": "bebidas",
+      "descricao": "",
+      "preco": 1.5,
+      "disponivel": true
+    },
+    {
+      "id": "j2o-apple-mango",
+      "nome": "J2O Apple & Mango",
+      "categoria": "bebidas",
+      "descricao": "",
+      "preco": 1.5,
+      "disponivel": false
+    }
+  ]
+}
