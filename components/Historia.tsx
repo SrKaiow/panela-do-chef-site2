@@ -1,3 +1,5 @@
+import VideoCinema from "./VideoCinema";
+
 /** Seções com fotos e vídeos reais: a cozinha e a história do Chef Kaio. Arquivos em public/fotos e public/videos. */
 
 export function NaCozinha() {
@@ -17,7 +19,8 @@ export function NaCozinha() {
             <li><strong>Entrega quentinha</strong><span>da nossa cozinha direto pra sua porta</span></li>
           </ul>
         </div>
-        <div className="cozinha-midia so-foto">
+        <div className="cozinha-midia com-cinema">
+          <VideoCinema />
           <figure className="midia">
             <img src="/fotos/chef-kaio-cozinha.jpg" alt="Chef Kaio na cozinha fazendo sinal de positivo" loading="lazy" />
           </figure>
