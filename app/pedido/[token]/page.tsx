@@ -8,6 +8,7 @@ import { getAjustes } from "@/lib/dados";
 import { rotuloAgendado } from "@/lib/horario";
 import { telefoneBonito, whatsappInternacional } from "@/lib/ajustes";
 import { stripe } from "@/lib/stripe";
+import { avisarLojaNovoPedido } from "@/lib/avisoLoja";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Seu pedido | Panela do Chef", robots: { index: false } };
@@ -23,6 +24,7 @@ export default async function PaginaPedido({ params, searchParams }: { params: {
       const s = await stripe().checkout.sessions.retrieve(searchParams.sessao);
       if (s.payment_status === "paid") {
         await confirmarPagamentoCartao(pedido.numero);
+        await avisarLojaNovoPedido(pedido.numero);
         pedido = (await buscarPorToken(params.token))!;
       }
     } catch (e) { console.error("[pedido] stripe", e); }
@@ -46,10 +48,10 @@ export default async function PaginaPedido({ params, searchParams }: { params: {
             {cancelado
               ? "Este pedido foi cancelado. Se tiver dúvida, fale com a gente no WhatsApp."
               : aguardando
-                ? "O pagamento no cartão não foi finalizado, então o pedido ainda não foi para a cozinha."
+                ? "O pagamento não foi finalizado, então o pedido ainda não foi para a cozinha."
                 : pedido.pagamento === "dinheiro"
                   ? `Tenha ${formatar(pedido.trocoPara ?? pedido.total)} em dinheiro para pagar o entregador${pedido.trocoPara ? ` (troco de ${formatar(pedido.trocoPara - pedido.total)})` : ""}.`
-                  : "Pagamento no cartão confirmado. Obrigado!"}
+                  : "Pagamento confirmado. Obrigado!"}
           </p>
         </div>
       </header>
@@ -79,7 +81,7 @@ export default async function PaginaPedido({ params, searchParams }: { params: {
             <div><span>Subtotal</span><span>{formatar(pedido.subtotal)}</span></div>
             <div><span>Entrega</span><span>{pedido.taxa ? formatar(pedido.taxa) : "Grátis"}</span></div>
             <div className="total"><span>Total</span><span>{formatar(pedido.total)}</span></div>
-            <div style={{ color: "var(--texto-2)" }}><span>Pagamento</span><span>{pedido.pagamento === "dinheiro" ? "Dinheiro na entrega" : pedido.pago ? "Cartão (pago)" : "Cartão (pendente)"}</span></div>
+            <div style={{ color: "var(--texto-2)" }}><span>Pagamento</span><span>{pedido.pagamento === "dinheiro" ? "Dinheiro na entrega" : pedido.pago ? "Pago no site" : "Pagamento pendente"}</span></div>
           </div>
         </section>
 

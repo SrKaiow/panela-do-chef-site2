@@ -7,4 +7,14 @@ export function stripe() {
   return s;
 }
 
-export const siteUrl = () => (process.env.SITE_URL || "http://localhost:3000").replace(/\/$/, "");
+/** Endereço do site. Usa SITE_URL; se vazio, o endereço de onde veio o pedido (ex.: o link da Vercel). */
+export const siteUrl = (req?: Request) => {
+  if (process.env.SITE_URL) return process.env.SITE_URL.replace(/\/$/, "");
+  if (req) {
+    const h = req.headers;
+    const host = h.get("x-forwarded-host") || h.get("host");
+    if (host) return `${h.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https")}://${host}`;
+  }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  return "http://localhost:3000";
+};

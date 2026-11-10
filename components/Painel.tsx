@@ -215,8 +215,8 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
                   </>
                 ) : (
                   <>
-                    <strong>CARTÃO · {gbp(p.total)}</strong>
-                    <span>{p.pago ? "Pago online" : "Ainda não pago"}</span>
+                    <strong>PAGO NO SITE · {gbp(p.total)}</strong>
+                    <span>{p.pago ? "Pago pela Stripe (cartão ou banco)" : "Ainda não pago"}</span>
                   </>
                 )}
               </div>

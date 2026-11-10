@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { stripe, siteUrl } from "@/lib/stripe";
 import { confirmarPagamentoCartao } from "@/lib/db";
+import { avisarLojaNovoPedido } from "@/lib/avisoLoja";
 
 export const dynamic = "force-dynamic";
 
@@ -19,10 +20,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ erro: "Assinatura inválida" }, { status: 400 });
   }
 
-  if (evento.type === "checkout.session.completed") {
+  // Pagamento na hora (cartão) ou que confirma depois (transferência pelo banco).
+  if (evento.type === "checkout.session.completed" || evento.type === "checkout.session.async_payment_succeeded") {
     const s = evento.data.object;
     const numero = Number(s.metadata?.numero);
-    if (numero && s.payment_status === "paid") await confirmarPagamentoCartao(numero);
+    if (numero && s.payment_status === "paid") {
+      await confirmarPagamentoCartao(numero);
+      await avisarLojaNovoPedido(numero, siteUrl(req));
+    }
   }
   return NextResponse.json({ ok: true });
 }

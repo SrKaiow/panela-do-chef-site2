@@ -2,6 +2,26 @@
 
 Loja online da Panela do Chef: o cliente monta o pedido, escolhe **dinheiro na entrega** ou **cartão** (Stripe, com Apple Pay e Google Pay) e o pedido cai no **painel** (`/painel`).
 
+## Pagamento online (Stripe): cartão e transferência
+
+1. Crie a conta em stripe.com (conta UK, em libras) e ative os pagamentos.
+2. Em **Settings → Payment methods**, deixe ligados: Cards, Apple Pay, Google Pay e **Pay by Bank** (é a transferência: o cliente escolhe o banco e aprova no app dele). O site mostra o que estiver ligado lá.
+3. Em **Developers → API keys**, copie a **Secret key** (`sk_live_...`) e coloque na Vercel como `STRIPE_SECRET_KEY`.
+4. Em **Developers → Webhooks → Add endpoint**: URL `https://SEU-SITE/api/stripe/webhook`, eventos `checkout.session.completed` e `checkout.session.async_payment_succeeded`. Copie o **Signing secret** (`whsec_...`) para `STRIPE_WEBHOOK_SECRET`.
+5. Faça Redeploy. A opção "Pagar agora no site" aparece no checkout.
+
+Depois de pagar, o cliente volta direto para a página de acompanhamento do pedido. O pedido só vai para a cozinha depois de pago.
+
+## Aviso de pedido no WhatsApp da empresa
+
+Cada pedido que entra na cozinha manda uma mensagem para o seu WhatsApp: "PAGO NO SITE" ou "DINHEIRO NA ENTREGA" com o troco já calculado (ex.: troco para £90 → levar £1.50), os itens, o endereço e o telefone do cliente.
+
+1. Siga as instruções em callmebot.com (seção WhatsApp): salve o número deles nos contatos e mande a mensagem de autorização que eles pedem.
+2. Eles respondem com a sua **apikey**. Coloque na Vercel como `CALLMEBOT_APIKEY` e faça Redeploy.
+3. Por padrão a mensagem vai para o telefone do painel. Para mandar para outro número, preencha `WHATSAPP_LOJA`.
+
+O painel continua tocando o som de pedido novo, mesmo sem isso.
+
 ## Painel da loja (/painel)
 
 Entre em `/painel` com a senha `ADMIN_PASSWORD`. O layout segue o da Square, com as cores da Panela:

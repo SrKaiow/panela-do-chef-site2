@@ -30,6 +30,7 @@ async function preparar(c: Client) {
     "lat REAL", "lng REAL", "status_em TEXT",
     "avisado_saiu INTEGER NOT NULL DEFAULT 0", "avisado_chegando INTEGER NOT NULL DEFAULT 0",
     "agendado_para TEXT", "distancia_m INTEGER", "aceito_em TEXT", "preparo_em TEXT", "saiu_em TEXT", "entregue_em TEXT",
+    "avisado_loja INTEGER NOT NULL DEFAULT 0",
   ]) {
     try { await c.execute(`ALTER TABLE pedidos ADD COLUMN ${col}`); } catch {}
   }
@@ -269,6 +270,12 @@ export async function salvarSessaoStripe(numero: number, sessao: string) {
 }
 
 /** Chamado quando o Stripe confirma: marca pago e libera o pedido para a cozinha. */
+/** Marca que a loja já foi avisada deste pedido. Devolve true só na primeira vez (evita aviso duplicado). */
+export async function marcarAvisoLoja(numero: number) {
+  const r = await exec("UPDATE pedidos SET avisado_loja = 1 WHERE numero = ? AND avisado_loja = 0", [numero]);
+  return r.rowsAffected > 0;
+}
+
 export async function confirmarPagamentoCartao(numero: number) {
   await exec(
     "UPDATE pedidos SET pago = 1, status = CASE WHEN status = 'aguardando_pagamento' THEN 'novo' ELSE status END, status_em = CASE WHEN status = 'aguardando_pagamento' THEN ? ELSE status_em END WHERE numero = ?",

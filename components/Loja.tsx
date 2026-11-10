@@ -325,6 +325,8 @@ function FolhaCarrinho({
   const [etapa, setEtapa] = useState<"carrinho" | "dados">("carrinho");
   const [form, setForm] = useState({ nome: "", telefone: "", endereco: "", postcode: "", observacao: "", troco: "" });
   const [pagamento, setPagamento] = useState<"dinheiro" | "cartao">(pagamentos.dinheiro ? "dinheiro" : "cartao");
+  /** Dinheiro: o cliente sempre diz se vai pagar exato ou se precisa de troco. */
+  const [troco, setTroco] = useState<"exato" | "sim" | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
   const [quando, setQuando] = useState<string>(estado.aberto ? "" : horarios[0]?.valor ?? "");
@@ -379,9 +381,12 @@ function FolhaCarrinho({
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     setErro("");
-    if (pagamento === "dinheiro" && form.troco) {
-      const t = parseFloat(form.troco.replace(",", "."));
-      if (!(t > 0) || emPence(t) < total) { setErro(`O troco precisa ser para um valor maior que ${formatar(total)}.`); return; }
+    if (pagamento === "dinheiro") {
+      if (!troco) { setErro("Diga se vai pagar o valor exato ou se precisa de troco."); return; }
+      if (troco === "sim") {
+        const t = parseFloat(form.troco.replace(",", "."));
+        if (!(t > 0) || emPence(t) <= total) { setErro(`Diga com quanto vai pagar: um valor maior que ${formatar(total)}.`); return; }
+      }
     }
     setEnviando(true);
     try {
@@ -391,7 +396,7 @@ function FolhaCarrinho({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          trocoPara: pagamento === "dinheiro" && form.troco ? parseFloat(form.troco.replace(",", ".")) : null,
+          trocoPara: pagamento === "dinheiro" && troco === "sim" && form.troco ? parseFloat(form.troco.replace(",", ".")) : null,
           pagamento,
           agendadoPara: quando || null,
           itens: carrinho.map(({ itemId, qtd, selecoes, obs }) => ({ itemId, qtd, selecoes, obs })),
@@ -510,22 +515,56 @@ function FolhaCarrinho({
               {pagamentos.cartao && (
                 <label className="pagamento">
                   <input type="radio" name="pagamento" checked={pagamento === "cartao"} onChange={() => setPagamento("cartao")} />
-                  <strong>Cartão agora</strong>
-                  <span>Débito, crédito, Apple Pay ou Google Pay, em página segura.</span>
+                  <strong>Pagar agora no site</strong>
+                  <span>Cartão, Apple Pay, Google Pay ou transferência pelo app do seu banco. Página segura da Stripe.</span>
                 </label>
               )}
             </div>
           </div>
 
           {pagamento === "dinheiro" && pagamentos.dinheiro && (
-            <label className="campo" htmlFor="f-troco">Precisa de troco? <span className="dica">Deixe vazio se for pagar o valor exato.</span>
-              <input id="f-troco" inputMode="decimal" placeholder={`Troco para quanto? Ex.: ${Math.ceil(total / 1000) * 10}`} value={form.troco} onChange={mudar("troco")} />
-            </label>
+            <div className="grupo">
+              <div className="grupo-titulo"><h3>Precisa de troco?</h3></div>
+              <div className="pagamentos troco-opcoes" role="radiogroup" aria-label="Precisa de troco?">
+                <label className="pagamento">
+                  <input type="radio" name="troco" checked={troco === "exato"} onChange={() => { setTroco("exato"); setForm((f) => ({ ...f, troco: "" })); }} />
+                  <strong>Não, vou pagar o valor exato</strong>
+                  <span>{taxa == null ? "O total aparece depois do postcode." : `Tenho ${formatar(total)} certinho.`}</span>
+                </label>
+                <label className="pagamento">
+                  <input type="radio" name="troco" checked={troco === "sim"} onChange={() => setTroco("sim")} />
+                  <strong>Sim, preciso de troco</strong>
+                  <span>O entregador já leva o troco certo.</span>
+                </label>
+              </div>
+              {troco === "sim" && (
+                <div className="troco-valor">
+                  <span className="dica">Com quanto você vai pagar?</span>
+                  <div className="troco-notas">
+                    {notasSugeridas(total).map((n) => (
+                      <button type="button" key={n} className={"nota" + (form.troco === String(n) ? " ativa" : "")} onClick={() => setForm((f) => ({ ...f, troco: String(n) }))}>£{n}</button>
+                    ))}
+                  </div>
+                  <label className="campo" htmlFor="f-troco">
+                    <span className="sr-only">Outro valor</span>
+                    <input id="f-troco" inputMode="decimal" placeholder="Outro valor, ex.: 90" value={form.troco} onChange={mudar("troco")} />
+                  </label>
+                  {(() => {
+                    const t = parseFloat(form.troco.replace(",", "."));
+                    if (!(t > 0) || taxa == null) return null;
+                    const v = emPence(t);
+                    return v > total
+                      ? <p className="troco-calc">Você paga {formatar(v)} e recebe <strong>{formatar(v - total)}</strong> de troco.</p>
+                      : <p className="troco-calc erro-texto">Precisa ser mais que {formatar(total)}.</p>;
+                  })()}
+                </div>
+              )}
+            </div>
           )}
 
           <Totais subtotal={subtotal} taxa={taxa} total={total} />
           {erro && <p className="erro" role="alert">{erro}</p>}
-          <button className="principal" type="submit" disabled={enviando || nenhumPagamento || foraDaArea || (!estado.aberto && !quando)}>
+          <button className="principal" type="submit" disabled={enviando || nenhumPagamento || foraDaArea || (!estado.aberto && !quando) || (pagamento === "dinheiro" && !troco)}>
             <span>{enviando ? "Enviando..." : pagamento === "cartao" ? "Ir para o pagamento" : quando ? "Reservar pedido" : "Fazer pedido"}</span>
             <span className="preco">{formatar(total)}</span>
           </button>
@@ -534,6 +573,17 @@ function FolhaCarrinho({
       )}
     </Fundo>
   );
+}
+
+/** Notas prováveis acima do total: £88.50 -> £90, £100. */
+function notasSugeridas(totalPence: number) {
+  const t = totalPence / 100;
+  const v = new Set<number>();
+  for (const passo of [5, 10, 20, 50]) {
+    const n = Math.ceil(t / passo) * passo;
+    v.add(n === t ? n + passo : n);
+  }
+  return [...v].filter((n) => n > t).sort((a, b) => a - b).slice(0, 4);
 }
 
 function Totais({ subtotal, taxa, total }: { subtotal: number; taxa: number | null; total: number }) {

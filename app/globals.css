@@ -503,7 +503,7 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .prova-hero span { color: var(--ouro); letter-spacing: 2px; }
 
 /* ---------- Loja fechada / pré-pedido ---------- */
-.fechado-faixa { position: sticky; top: 0; z-index: 40; background: linear-gradient(90deg, #2a0f0a, #3d1a0c); border-bottom: 2px solid var(--brasa); color: var(--texto); }
+.fechado-faixa { position: relative; z-index: 4; background: linear-gradient(90deg, #2a0f0a, #3d1a0c); border-bottom: 2px solid var(--brasa); color: var(--texto); }
 .fechado-miolo { display: flex; align-items: center; gap: 14px; padding-block: 12px; flex-wrap: wrap; }
 .fechado-miolo > div { display: grid; gap: 2px; flex: 1 1 220px; }
 .fechado-miolo strong { font-family: var(--fonte-titulo); font-size: 1.25rem; letter-spacing: 0.02em; text-transform: uppercase; color: var(--ouro); }
@@ -536,3 +536,11 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .moto-giro { width: 40px; height: 40px; transition: transform 0.8s ease; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45)); }
 .pino.cozinha { background: var(--brasa); color: #fff; }
 @media (prefers-reduced-motion: reduce) { .moto-giro { transition: none; } }
+
+/* Troco no dinheiro */
+.troco-valor { display: grid; gap: 10px; margin-top: 10px; }
+.troco-notas { display: flex; gap: 8px; flex-wrap: wrap; }
+.nota { min-height: 44px; min-width: 70px; padding: 8px 16px; border-radius: 12px; border: 1.5px solid var(--linha); background: var(--superficie-2); color: var(--texto); font: 800 1rem var(--fonte-texto); cursor: pointer; }
+.nota.ativa, .nota:hover { border-color: var(--ouro); background: rgba(255, 204, 26, 0.14); color: var(--ouro); }
+.troco-calc { margin: 0; font-size: 0.95rem; }
+.troco-calc strong { color: var(--ouro); }

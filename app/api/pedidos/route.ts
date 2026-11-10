@@ -4,6 +4,7 @@ import { getAjustes, getCardapio, cartaoConfigurado } from "@/lib/dados";
 import { estadoLoja, horariosParaAgendar } from "@/lib/horario";
 import { criarPedido, salvarSessaoStripe } from "@/lib/db";
 import { stripe, siteUrl } from "@/lib/stripe";
+import { avisarLojaNovoPedido } from "@/lib/avisoLoja";
 import { coordenadasDoPostcode, cotarEntrega, distanciaMetros } from "@/lib/entrega";
 
 export const dynamic = "force-dynamic";
@@ -65,7 +66,9 @@ export async function POST(req: Request) {
       status: pagamento === "dinheiro" ? "novo" : "aguardando_pagamento",
     });
 
+    const origem = siteUrl(req);
     if (pagamento === "dinheiro") {
+      await avisarLojaNovoPedido(numero, origem);
       return NextResponse.json({ numero, redirecionar: `/pedido/${token}` });
     }
 
@@ -84,8 +87,10 @@ export async function POST(req: Request) {
       line_items: lineItems,
       metadata: { numero: String(numero) },
       client_reference_id: String(numero),
-      success_url: `${siteUrl()}/pedido/${token}?sessao={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${siteUrl()}/pedido/${token}?cancelado=1`,
+      // Sem lista fixa: a Stripe mostra o que estiver ligado no painel dela (cartão, Apple Pay, Google Pay, Pay by Bank...).
+      payment_intent_data: { description: `Panela do Chef · pedido #${numero}`, metadata: { numero: String(numero) } },
+      success_url: `${origem}/pedido/${token}?sessao={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origem}/pedido/${token}?cancelado=1`,
     });
     await salvarSessaoStripe(numero, sessao.id);
     return NextResponse.json({ numero, redirecionar: sessao.url });
