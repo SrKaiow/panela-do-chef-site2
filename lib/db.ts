@@ -66,8 +66,8 @@ async function preparar(c: Client) {
 function db() {
   if (!client) {
     client = createClient({
-      url: process.env.DATABASE_URL || "file:pedidos.db",
-      authToken: process.env.DATABASE_AUTH_TOKEN || undefined,
+      url: process.env.DATABASE_URL || process.env.TURSO_DATABASE_URL || "file:pedidos.db",
+      authToken: process.env.DATABASE_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN || undefined,
     });
   }
   if (!pronto) pronto = preparar(client);
