@@ -43,7 +43,7 @@ async function enviarCallMeBot(tel: string, texto: string) {
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 6000);
-    const url = `https://api.callmebot.com/whatsapp.php?phone=${telefoneInternacional(tel)}&text=${encodeURIComponent(texto)}&apikey=${encodeURIComponent(chave)}`;
+    const url = `${process.env.CALLMEBOT_API_URL || "https://api.callmebot.com"}/whatsapp.php?phone=${telefoneInternacional(tel)}&text=${encodeURIComponent(texto)}&apikey=${encodeURIComponent(chave)}`;
     const r = await fetch(url, { signal: ctrl.signal, cache: "no-store" });
     clearTimeout(t);
     if (!r.ok) console.error("[aviso loja] callmebot", r.status, (await r.text()).slice(0, 200));

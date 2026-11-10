@@ -49,7 +49,7 @@ export async function coordenadasDoPostcode(postcode: string): Promise<{ lat: nu
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 3500);
-    const r = await fetch(`https://api.postcodes.io/postcodes/${pc}`, { signal: ctrl.signal, cache: "no-store" });
+    const r = await fetch(`${process.env.POSTCODES_API_URL || "https://api.postcodes.io"}/postcodes/${pc}`, { signal: ctrl.signal, cache: "no-store" });
     clearTimeout(t);
     if (!r.ok) return null;
     const d = await r.json();

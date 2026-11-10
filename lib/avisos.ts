@@ -7,11 +7,11 @@ import { siteUrl } from "./stripe";
 const primeiroNome = (n: string) => n.trim().split(/\s+/)[0] || n;
 
 /** Quando o pedido sai para entrega, manda o link do rastreio no WhatsApp (uma vez). */
-export async function aoMudarStatus(numero: number, status: Status) {
+export async function aoMudarStatus(numero: number, status: Status, origem?: string) {
   if (status !== "saiu") return;
   const p = await buscarPorNumero(numero);
   if (!p || p.avisadoSaiu) return;
-  const ok = await enviarModelo(p.telefone, process.env.WHATSAPP_MODELO_SAIU || "", [primeiroNome(p.nome), `${siteUrl()}/pedido/${p.token}`]);
+  const ok = await enviarModelo(p.telefone, process.env.WHATSAPP_MODELO_SAIU || "", [primeiroNome(p.nome), `${origem || siteUrl()}/pedido/${p.token}`]);
   if (ok) await marcarAviso(numero, "saiu");
 }
 

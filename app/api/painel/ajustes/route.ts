@@ -7,14 +7,14 @@ import { coordenadasDoPostcode } from "@/lib/entrega";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  if (!logado("painel")) return NextResponse.json({ erro: "Entre no painel de novo." }, { status: 401 });
+  if (!(await logado("painel"))) return NextResponse.json({ erro: "Entre no painel de novo." }, { status: 401 });
   return NextResponse.json(await getAjustes());
 }
 
 const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export async function PUT(req: Request) {
-  if (!logado("painel")) return NextResponse.json({ erro: "Entre no painel de novo." }, { status: 401 });
+  if (!(await logado("painel"))) return NextResponse.json({ erro: "Entre no painel de novo." }, { status: 401 });
   const novo = (await req.json()) as Ajustes;
   const atual = await getAjustes();
 

@@ -6,9 +6,9 @@ Loja online da Panela do Chef: o cliente monta o pedido, escolhe **dinheiro na e
 
 1. Crie a conta em stripe.com (conta UK, em libras) e ative os pagamentos.
 2. Em **Settings → Payment methods**, deixe ligados: Cards, Apple Pay, Google Pay e **Pay by Bank** (é a transferência: o cliente escolhe o banco e aprova no app dele). O site mostra o que estiver ligado lá.
-3. Em **Developers → API keys**, copie a **Secret key** (`sk_live_...`) e coloque na Vercel como `STRIPE_SECRET_KEY`.
+3. Em **Developers → API keys**, copie a **Secret key** (`sk_live_...`) e coloque na Cloudflare (Variables and Secrets) como `STRIPE_SECRET_KEY`.
 4. Em **Developers → Webhooks → Add endpoint**: URL `https://SEU-SITE/api/stripe/webhook`, eventos `checkout.session.completed` e `checkout.session.async_payment_succeeded`. Copie o **Signing secret** (`whsec_...`) para `STRIPE_WEBHOOK_SECRET`.
-5. Faça Redeploy. A opção "Pagar agora no site" aparece no checkout.
+5. Faça o deploy de novo. A opção "Pagar agora no site" aparece no checkout.
 
 Depois de pagar, o cliente volta direto para a página de acompanhamento do pedido. O pedido só vai para a cozinha depois de pago.
 
@@ -17,7 +17,7 @@ Depois de pagar, o cliente volta direto para a página de acompanhamento do pedi
 Cada pedido que entra na cozinha manda uma mensagem para o seu WhatsApp: "PAGO NO SITE" ou "DINHEIRO NA ENTREGA" com o troco já calculado (ex.: troco para £90 → levar £1.50), os itens, o endereço e o telefone do cliente.
 
 1. Siga as instruções em callmebot.com (seção WhatsApp): salve o número deles nos contatos e mande a mensagem de autorização que eles pedem.
-2. Eles respondem com a sua **apikey**. Coloque na Vercel como `CALLMEBOT_APIKEY` e faça Redeploy.
+2. Eles respondem com a sua **apikey**. Coloque na Cloudflare como `CALLMEBOT_APIKEY` e faça o deploy de novo.
 3. Por padrão a mensagem vai para o telefone do painel. Para mandar para outro número, preencha `WHATSAPP_LOJA`.
 
 O painel continua tocando o som de pedido novo, mesmo sem isso.
@@ -81,21 +81,29 @@ Para o envio sair sozinho, use a **WhatsApp Business Platform (Cloud API)** da M
    - `pedido_saiu`: `Oi {{1}}! Seu pedido da Panela do Chef saiu para entrega. Acompanhe ao vivo: {{2}}`
    - `pedido_chegando`: `Oi {{1}}! Seu pedido da Panela do Chef está chegando, falta mais ou menos 1 minuto. Já pode ir até a porta!`
 3. Gere um token permanente (System User) e copie o **Phone number ID**.
-4. Na Vercel, preencha `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID`, `WHATSAPP_MODELO_SAIU`, `WHATSAPP_MODELO_CHEGANDO`.
+4. Na Cloudflare (Variables and Secrets), preencha `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID`, `WHATSAPP_MODELO_SAIU`, `WHATSAPP_MODELO_CHEGANDO`.
 
 A Meta cobra por conversa iniciada pela empresa (valores na página de preços dela).
 
-## Colocar no ar (uma vez)
+## Colocar no ar na Cloudflare (grátis, uso comercial permitido)
 
-1. **Repositório**: crie um repositório novo no GitHub (ex.: `SrKaiow/panela-do-chef-site`) e suba esta pasta.
-2. **Banco de dados (grátis)**: crie uma conta no [Turso](https://turso.tech), crie um banco e copie a URL (`libsql://...`) e o token.
-3. **Stripe**: em [dashboard.stripe.com](https://dashboard.stripe.com) > Developers > API keys, copie a *Secret key* (`sk_live_...`). Para testar antes, use a `sk_test_...` e o cartão 4242 4242 4242 4242.
-4. **Vercel**: importe o repositório em [vercel.com](https://vercel.com) e preencha as variáveis de `.env.example`:
-   `SITE_URL`, `ADMIN_PASSWORD`, `DRIVER_PASSWORD`, `DATABASE_URL`, `DATABASE_AUTH_TOKEN`, `STRIPE_SECRET_KEY`.
-5. **Webhook do Stripe (recomendado)**: Developers > Webhooks > Add endpoint → `https://SEU-SITE/api/stripe/webhook`, evento `checkout.session.completed`. Cole o *Signing secret* em `STRIPE_WEBHOOK_SECRET`.
-6. **Domínio**: na Vercel, Settings > Domains, adicione `paneladochef.co.uk` e aponte o DNS conforme ela indicar. Só faça isso quando quiser desligar o site do Square.
+O site roda na **Cloudflare Workers** (plano Free) pelo adaptador OpenNext. O banco continua no **Turso**.
 
-Sem `STRIPE_SECRET_KEY`, o site funciona só com dinheiro na entrega.
+1. **Turso**: em [turso.tech](https://turso.tech), abra o banco (ou crie um) e copie a URL (`libsql://...`) e um token.
+2. **Cloudflare**: dash.cloudflare.com → **Workers & Pages → Create → Workers → Import a repository** (não é "Pages") → escolha `SrKaiow/panela-do-chef-site2`.
+   - Nome do projeto: **panela-do-chef** (precisa ser igual ao `name` do `wrangler.jsonc`).
+   - Build command: `npx opennextjs-cloudflare build`
+   - Deploy command: `npx opennextjs-cloudflare deploy`
+   - Branch: `main`.
+3. Depois do primeiro deploy, no Worker: **Settings → Variables and Secrets**, adicione (tipo *Secret*):
+   `ADMIN_PASSWORD`, `DRIVER_PASSWORD`, `DATABASE_URL`, `DATABASE_AUTH_TOKEN`, e quando tiver: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `CALLMEBOT_APIKEY`.
+   Adicione também `SITE_URL` com o endereço do site (ex.: `https://panela-do-chef.SEU-USUARIO.workers.dev`, ou o domínio).
+4. Em **Deployments**, rode o deploy de novo para pegar as variáveis.
+5. **Domínio** (quando quiser desligar o Square): **Settings → Domains & Routes → Add → Custom domain** → `paneladochef.co.uk`. O domínio precisa estar na Cloudflare (ela mostra como mudar os nameservers).
+
+Cada envio para a `main` publica sozinho. Sem `STRIPE_SECRET_KEY`, o site funciona só com dinheiro na entrega.
+
+Para testar no motor da Cloudflare no computador: copie `.dev.vars.example` para `.dev.vars`, preencha e rode `npm run preview`.
 
 ## Rodar no computador
 

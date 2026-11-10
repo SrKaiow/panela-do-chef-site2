@@ -1,24 +1,29 @@
 {
-  "name": "panela-do-chef-site",
+  "name": "panela-do-chef",
   "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "verificar-cardapio": "node scripts/verificar-cardapio.mjs"
+    "verificar-cardapio": "node scripts/verificar-cardapio.mjs",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload"
   },
   "dependencies": {
-    "@libsql/client": "^0.14.0",
-    "next": "^14.2.25",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "stripe": "^16.12.0"
+    "@libsql/client": "^0.18.0",
+    "@opennextjs/cloudflare": "^1.20.16",
+    "next": "^15.5.29",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "stripe": "^23.1.0"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
-    "typescript": "^5.5.4"
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^5.5.4",
+    "wrangler": "^4.160.0"
   }
 }

@@ -3,7 +3,8 @@ import Stripe from "stripe";
 let s: Stripe | null = null;
 export function stripe() {
   if (!process.env.STRIPE_SECRET_KEY) throw new Error("Pagamento com cartão não está configurado.");
-  if (!s) s = new Stripe(process.env.STRIPE_SECRET_KEY);
+  // fetch e Web Crypto: funciona igual no Node e na Cloudflare.
+  if (!s) s = new Stripe(process.env.STRIPE_SECRET_KEY, { httpClient: Stripe.createFetchHttpClient() });
   return s;
 }
 

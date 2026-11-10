@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 /** O celular do entregador manda a posição aqui a cada poucos segundos. */
 export async function POST(req: Request) {
-  if (!logado("entregador")) return NextResponse.json({ erro: "Entre de novo na tela do entregador." }, { status: 401 });
+  if (!(await logado("entregador"))) return NextResponse.json({ erro: "Entre de novo na tela do entregador." }, { status: 401 });
   const b = await req.json();
   const lat = Number(b.lat);
   const lng = Number(b.lng);

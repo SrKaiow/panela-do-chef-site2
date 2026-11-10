@@ -28,8 +28,8 @@ export function valorSessao(area: Area) {
   return createHmac("sha256", CONFIG[area].senha() || "sem-senha").update(`panela-do-chef-${area}`).digest("hex");
 }
 
-export function logado(area: Area = "painel") {
+export async function logado(area: Area = "painel") {
   if (!senhaDefinida(area)) return false;
-  const v = cookies().get(CONFIG[area].cookie)?.value;
+  const v = (await cookies()).get(CONFIG[area].cookie)?.value;
   return !!v && igual(v, valorSessao(area));
 }

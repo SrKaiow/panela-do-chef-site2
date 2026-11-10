@@ -6,13 +6,13 @@ import type { Cardapio } from "@/lib/cardapio";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  if (!logado("painel")) return NextResponse.json({ erro: "Entre no painel de novo." }, { status: 401 });
+  if (!(await logado("painel"))) return NextResponse.json({ erro: "Entre no painel de novo." }, { status: 401 });
   return NextResponse.json(await getCardapio());
 }
 
 /** Salva o cardápio inteiro (itens, categorias e adicionais), conferindo o formato. */
 export async function PUT(req: Request) {
-  if (!logado("painel")) return NextResponse.json({ erro: "Entre no painel de novo." }, { status: 401 });
+  if (!(await logado("painel"))) return NextResponse.json({ erro: "Entre no painel de novo." }, { status: 401 });
   const c = (await req.json()) as Cardapio;
   const erro = validar(c);
   if (erro) return NextResponse.json({ erro }, { status: 400 });

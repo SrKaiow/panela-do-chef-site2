@@ -6,7 +6,7 @@ import "../painel/painel.css";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Entregas | Panela do Chef", robots: { index: false } };
 
-export default function PaginaEntregador() {
-  if (!logado("entregador")) redirect("/entregador/entrar");
+export default async function PaginaEntregador() {
+  if (!(await logado("entregador"))) redirect("/entregador/entrar");
   return <Entregador />;
 }

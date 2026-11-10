@@ -8,8 +8,8 @@ import { siteUrl } from "@/lib/stripe";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  if (!logado("entregador")) return NextResponse.json({ erro: "Entre de novo." }, { status: 401 });
+export async function GET(req: Request) {
+  if (!(await logado("entregador"))) return NextResponse.json({ erro: "Entre de novo." }, { status: 401 });
   const local = await lerLocal();
   const ajustes = await getAjustes();
   const pedidos = await listarPorStatus(["confirmado", "preparando", "saiu"]);
@@ -37,7 +37,7 @@ export async function GET() {
         avisadoSaiu: p.avisadoSaiu,
         avisadoChegando: p.avisadoChegando,
         temCoordenadas: p.lat != null,
-        waSaiu: linkWhatsapp(p.telefone, mensagens.saiu(nome(p.nome), `${siteUrl()}/pedido/${p.token}`)),
+        waSaiu: linkWhatsapp(p.telefone, mensagens.saiu(nome(p.nome), `${siteUrl(req)}/pedido/${p.token}`)),
         waChegando: linkWhatsapp(p.telefone, mensagens.chegando(nome(p.nome))),
         mapa: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(p.endereco + ", " + p.postcode)}&travelmode=driving`,
       };

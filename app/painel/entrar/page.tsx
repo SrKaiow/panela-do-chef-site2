@@ -4,8 +4,9 @@ import { logado, senhaDefinida } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Entrar | Painel Panela do Chef", robots: { index: false } };
 
-export default function Entrar({ searchParams }: { searchParams: { erro?: string } }) {
-  if (logado("painel")) redirect("/painel");
+export default async function Entrar(props: { searchParams: Promise<{ erro?: string }> }) {
+  const searchParams = await props.searchParams;
+  if ((await logado("painel"))) redirect("/painel");
   const semSenha = !senhaDefinida("painel");
   return (
     <main className="miolo" style={{ maxWidth: 420, paddingBlock: "12vh 40px", display: "grid", gap: 18 }}>

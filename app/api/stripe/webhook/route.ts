@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import Stripe from "stripe";
 import { stripe, siteUrl } from "@/lib/stripe";
 import { confirmarPagamentoCartao } from "@/lib/db";
 import { avisarLojaNovoPedido } from "@/lib/avisoLoja";
@@ -15,7 +16,7 @@ export async function POST(req: Request) {
   const assinatura = req.headers.get("stripe-signature") || "";
   let evento;
   try {
-    evento = stripe().webhooks.constructEvent(corpo, assinatura, segredo);
+    evento = await stripe().webhooks.constructEventAsync(corpo, assinatura, segredo, undefined, Stripe.createSubtleCryptoProvider());
   } catch {
     return NextResponse.json({ erro: "Assinatura inválida" }, { status: 400 });
   }

@@ -14,7 +14,9 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Seu pedido | Panela do Chef", robots: { index: false } };
 
 
-export default async function PaginaPedido({ params, searchParams }: { params: { token: string }; searchParams: { sessao?: string; cancelado?: string } }) {
+export default async function PaginaPedido(props: { params: Promise<{ token: string }>; searchParams: Promise<{ sessao?: string; cancelado?: string }> }) {
+  const params = await props.params;
+  const searchParams = await props.searchParams;
   let pedido = await buscarPorToken(params.token);
   if (!pedido) notFound();
 

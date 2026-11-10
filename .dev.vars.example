@@ -1,0 +1,2 @@
+NEXTJS_ENV=development
+# Para testar com `npm run preview`, coloque aqui as mesmas variáveis do .env.example
