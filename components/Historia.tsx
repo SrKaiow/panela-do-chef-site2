@@ -17,13 +17,7 @@ export function NaCozinha() {
             <li><strong>Entrega quentinha</strong><span>da nossa cozinha direto pra sua porta</span></li>
           </ul>
         </div>
-        <div className="cozinha-midia">
-          <figure className="midia alta">
-            <video src="/videos/cozinha-flambado.mp4" poster="/fotos/cozinha-flambado-capa.jpg" autoPlay muted loop playsInline preload="metadata" aria-label="Legumes flambando na frigideira" />
-          </figure>
-          <figure className="midia">
-            <video src="/videos/cozinha-chef.mp4" poster="/fotos/cozinha-chef-capa.jpg" autoPlay muted loop playsInline preload="metadata" aria-label="Chef Kaio cozinhando no fogão" />
-          </figure>
+        <div className="cozinha-midia so-foto">
           <figure className="midia">
             <img src="/fotos/chef-kaio-cozinha.jpg" alt="Chef Kaio na cozinha fazendo sinal de positivo" loading="lazy" />
           </figure>
