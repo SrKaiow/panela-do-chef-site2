@@ -3,25 +3,35 @@
   "slogan": "O sabor autêntico do Brasil, feito com amor pelo Chef Kaio e entregue quentinho na sua porta.",
   "falaDoChef": "Aqui o pastel é gigante: o Misto Chango leva 700g só de recheio. Um por pessoa já mata uma fome normal!",
   "clientesSatisfeitos": "+1.000",
-  "aberto": true,
-  "mensagemFechado": "Estamos fechados agora. Volte mais tarde ou chame a gente no Instagram.",
-
+  "telefone": "07511505131",
+  "email": "paneladochef.co.uk@gmail.com",
+  "instagram": "ochefkaio",
+  "grupoVip": "https://chat.whatsapp.com/GN0UimKfYCKJUmDWE1c8lC",
+  "pausado": false,
+  "horarios": [
+    ["18:00", "23:00"],
+    ["12:00", "18:00"],
+    ["12:00", "22:00"],
+    ["12:00", "22:00"],
+    ["12:00", "22:00"],
+    ["12:00", "22:00"],
+    ["12:00", "23:00"]
+  ],
+  "preparoMin": 20,
+  "pagamentos": { "dinheiro": true, "cartao": true },
   "entrega": {
-    "taxa": 0,
-    "pedidoMinimo": 0,
     "regiao": "Epsom, Sutton, Leatherhead, Streatham e região",
+    "cozinha": { "postcode": "KT17 1JW", "lat": 51.341517, "lng": -0.253911 },
+    "raioMilhas": 6,
+    "faixas": [
+      { "ateMilhas": 1, "taxa": 3.5, "gratisAcima": 40 },
+      { "ateMilhas": 2, "taxa": 4.5, "gratisAcima": 45 },
+      { "ateMilhas": 4, "taxa": 5, "gratisAcima": 60 },
+      { "ateMilhas": 5, "taxa": 7, "gratisAcima": 70 },
+      { "ateMilhas": 6, "taxa": 10, "gratisAcima": 90 }
+    ],
+    "pedidoMinimo": 0,
     "avisoChegandoMetros": 450,
     "velocidadeMediaKmh": 25
-  },
-
-  "pagamentos": {
-    "dinheiro": true,
-    "cartao": true
-  },
-
-  "contato": {
-    "instagram": "ochefkaio",
-    "whatsapp": "",
-    "grupoVip": "https://chat.whatsapp.com/GN0UimKfYCKJUmDWE1c8lC"
   }
 }

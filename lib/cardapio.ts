@@ -1,5 +1,7 @@
-import cardapioJson from "@/data/cardapio.json";
-import lojaJson from "@/data/loja.json";
+/**
+ * Tipos e cálculos do cardápio. Não lê dados: o cardápio vem do banco (lib/dados.ts)
+ * e é passado como parâmetro, para funcionar igual no servidor e no navegador.
+ */
 
 export type Opcao = { nome: string; preco?: number; esgotado?: boolean };
 export type GrupoAdicional = { nome: string; opcoes: Opcao[] };
@@ -21,9 +23,6 @@ export type Cardapio = {
   adicionais: Record<string, GrupoAdicional>;
   itens: Item[];
 };
-
-export const cardapio = cardapioJson as Cardapio;
-export const loja = lojaJson;
 
 /** Libras (8.5) para pence (850). Todo cálculo é feito em pence para não errar centavos. */
 export const emPence = (libras: number) => Math.round(libras * 100);
@@ -47,7 +46,7 @@ export type LinhaPedido = {
   obs?: string;
 };
 
-export function precoUnitario(item: Item, selecoes: Record<string, string[]>) {
+export function precoUnitario(cardapio: Cardapio, item: Item, selecoes: Record<string, string[]>) {
   let total = emPence(item.preco);
   for (const e of item.escolhas ?? []) {
     const grupo = cardapio.adicionais[e.grupo];
@@ -60,9 +59,9 @@ export function precoUnitario(item: Item, selecoes: Record<string, string[]>) {
 }
 
 /** Confere o carrinho contra o cardápio e calcula os valores no servidor. */
-export function validarCarrinho(linhas: LinhaCarrinho[]): { linhas: LinhaPedido[]; subtotal: number } {
+export function validarCarrinho(cardapio: Cardapio, linhas: LinhaCarrinho[]): { linhas: LinhaPedido[]; subtotal: number } {
   if (!Array.isArray(linhas) || linhas.length === 0) throw new Error("Seu carrinho está vazio.");
-  if (linhas.length > 50) throw new Error("Pedido grande demais. Fale com a gente pelo Instagram.");
+  if (linhas.length > 50) throw new Error("Pedido grande demais. Fale com a gente pelo WhatsApp.");
 
   const resultado: LinhaPedido[] = [];
   for (const l of linhas) {
@@ -76,6 +75,7 @@ export function validarCarrinho(linhas: LinhaCarrinho[]): { linhas: LinhaPedido[
     const detalhes: string[] = [];
     for (const e of item.escolhas ?? []) {
       const grupo = cardapio.adicionais[e.grupo];
+      if (!grupo) continue;
       const escolhidos = Array.from(new Set((l.selecoes?.[e.grupo] ?? []).map(String)));
       if (escolhidos.length < e.min) throw new Error(`Escolha pelo menos ${e.min} em "${grupo.nome}" (${item.nome}).`);
       if (escolhidos.length > e.max) throw new Error(`No máximo ${e.max} em "${grupo.nome}" (${item.nome}).`);
@@ -88,12 +88,20 @@ export function validarCarrinho(linhas: LinhaCarrinho[]): { linhas: LinhaPedido[
       if (escolhidos.length) detalhes.push(`${grupo.nome}: ${escolhidos.join(", ")}`);
     }
 
-    const unitario = precoUnitario(item, selecoes);
+    const unitario = precoUnitario(cardapio, item, selecoes);
     const obs = typeof l.obs === "string" ? l.obs.trim().slice(0, 150) : "";
     resultado.push({ itemId: item.id, nome: item.nome, qtd, unitario, total: unitario * qtd, detalhes, obs: obs || undefined });
   }
   return { linhas: resultado, subtotal: resultado.reduce((s, l) => s + l.total, 0) };
 }
 
-export const cartaoAtivo = () => loja.pagamentos.cartao && !!process.env.STRIPE_SECRET_KEY;
-export const dinheiroAtivo = () => loja.pagamentos.dinheiro;
+/** Cria um id simples a partir do nome: "Pastel de Carne" -> "pastel-de-carne". */
+export function gerarId(nome: string) {
+  return nome
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48) || "item";
+}

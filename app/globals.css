@@ -501,3 +501,38 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .prova-hero { margin: 16px 0 0; display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 700; color: #fff3d6; text-shadow: 0 1px 10px rgba(0, 0, 0, 0.8); }
 .prova-hero strong { font-family: var(--fonte-titulo); font-weight: 400; font-size: 1.7rem; color: var(--ouro); line-height: 1; }
 .prova-hero span { color: var(--ouro); letter-spacing: 2px; }
+
+/* ---------- Loja fechada / pré-pedido ---------- */
+.fechado-faixa { position: sticky; top: 0; z-index: 40; background: linear-gradient(90deg, #2a0f0a, #3d1a0c); border-bottom: 2px solid var(--brasa); color: var(--texto); }
+.fechado-miolo { display: flex; align-items: center; gap: 14px; padding-block: 12px; flex-wrap: wrap; }
+.fechado-miolo > div { display: grid; gap: 2px; flex: 1 1 220px; }
+.fechado-miolo strong { font-family: var(--fonte-titulo); font-size: 1.25rem; letter-spacing: 0.02em; text-transform: uppercase; color: var(--ouro); }
+.fechado-miolo span { font-size: 0.92rem; color: var(--texto-2); }
+.fechado-icone { font-family: var(--fonte-titulo); font-size: 1.6rem; width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: var(--brasa); color: #fff; transform: rotate(90deg); flex: none; }
+.fechado-miolo .botao { flex: none; }
+.aviso-agendar { background: rgba(255, 204, 26, 0.1); border: 1px solid rgba(255, 204, 26, 0.35); color: var(--texto); padding: 12px 16px; border-radius: 12px; margin: 24px 0 0; font-size: 0.95rem; }
+.aviso-agendar strong { color: var(--ouro); }
+.dica-entrega { font-size: 0.85rem; color: var(--texto-2); margin: 0; }
+.erro-texto { color: var(--pimenta); font-weight: 700; }
+.select { width: 100%; min-height: 48px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--linha); background: var(--superficie-2); color: var(--texto); font: inherit; font-size: 1rem; }
+.folha-foto { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 14px; display: block; margin-bottom: 12px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ---------- Rastreio: manchete, fila, moto ---------- */
+.manchete { display: flex; gap: 16px; justify-content: space-between; align-items: center; flex-wrap: wrap; padding: 18px 20px; border-radius: var(--raio); background: var(--superficie); border: 1px solid var(--linha); border-left: 6px solid var(--ouro); }
+.manchete h2 { margin: 0; font-family: var(--fonte-titulo); font-weight: 400; font-size: clamp(1.4rem, 4.5vw, 2rem); text-transform: uppercase; letter-spacing: 0.01em; line-height: 1.05; }
+.manchete p { margin: 6px 0 0; color: var(--texto-2); }
+.manchete.etapa-confirmado { border-left-color: var(--mata-viva); }
+.manchete.etapa-preparando { border-left-color: var(--sol); }
+.manchete.etapa-saiu { border-left-color: var(--ouro); }
+.manchete.etapa-entregue { border-left-color: var(--mata-viva); }
+.previsao { display: grid; text-align: right; gap: 0; }
+.previsao span { font-size: 0.8rem; color: var(--texto-2); }
+.previsao strong { font-family: var(--fonte-titulo); font-weight: 400; font-size: 2.2rem; color: var(--ouro); line-height: 1; }
+.fila { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 14px; background: var(--superficie-2); font-weight: 700; }
+.fila-num { min-width: 46px; height: 46px; padding: 0 8px; border-radius: 12px; display: grid; place-items: center; background: var(--ouro); color: var(--noite); font-family: var(--fonte-titulo); font-size: 1.6rem; font-weight: 400; }
+.etapas li span { display: block; color: var(--texto-2); font-size: 0.86rem; }
+.moto-icone { background: none; border: 0; }
+.moto-giro { width: 40px; height: 40px; transition: transform 0.8s ease; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45)); }
+.pino.cozinha { background: var(--brasa); color: #fff; }
+@media (prefers-reduced-motion: reduce) { .moto-giro { transition: none; } }

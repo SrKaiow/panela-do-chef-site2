@@ -29,6 +29,7 @@ async function preparar(c: Client) {
   for (const col of [
     "lat REAL", "lng REAL", "status_em TEXT",
     "avisado_saiu INTEGER NOT NULL DEFAULT 0", "avisado_chegando INTEGER NOT NULL DEFAULT 0",
+    "agendado_para TEXT", "distancia_m INTEGER", "aceito_em TEXT", "preparo_em TEXT", "saiu_em TEXT", "entregue_em TEXT",
   ]) {
     try { await c.execute(`ALTER TABLE pedidos ADD COLUMN ${col}`); } catch {}
   }
@@ -41,6 +42,17 @@ async function preparar(c: Client) {
     texto TEXT NOT NULL,
     pedido_numero INTEGER,
     status TEXT NOT NULL DEFAULT 'pendente'
+  )`);
+  await c.execute(`CREATE TABLE IF NOT EXISTS config (
+    chave TEXT PRIMARY KEY,
+    valor TEXT NOT NULL,
+    atualizado_em TEXT NOT NULL
+  )`);
+  await c.execute(`CREATE TABLE IF NOT EXISTS fotos (
+    id TEXT PRIMARY KEY,
+    tipo TEXT NOT NULL,
+    dados BLOB NOT NULL,
+    criado_em TEXT NOT NULL
   )`);
   await c.execute(`CREATE TABLE IF NOT EXISTS entregador_local (
     id INTEGER PRIMARY KEY,
@@ -96,6 +108,12 @@ export type Pedido = {
   lng: number | null;
   avisadoSaiu: boolean;
   avisadoChegando: boolean;
+  agendadoPara: string | null;
+  distanciaM: number | null;
+  aceitoEm: string | null;
+  preparoEm: string | null;
+  saiuEm: string | null;
+  entregueEm: string | null;
 };
 
 const numOuNull = (v: unknown) => (v == null ? null : Number(v));
@@ -124,19 +142,25 @@ function linhaParaPedido(r: Record<string, unknown>): Pedido {
     lng: numOuNull(r.lng),
     avisadoSaiu: Number(r.avisado_saiu) === 1,
     avisadoChegando: Number(r.avisado_chegando) === 1,
+    agendadoPara: (r.agendado_para as string) ?? null,
+    distanciaM: numOuNull(r.distancia_m),
+    aceitoEm: (r.aceito_em as string) ?? null,
+    preparoEm: (r.preparo_em as string) ?? null,
+    saiuEm: (r.saiu_em as string) ?? null,
+    entregueEm: (r.entregue_em as string) ?? null,
   };
 }
 
-type NovoPedido = Omit<Pedido, "numero" | "token" | "criadoEm" | "stripeSessao" | "statusEm" | "avisadoSaiu" | "avisadoChegando">;
+type NovoPedido = Omit<Pedido, "numero" | "token" | "criadoEm" | "stripeSessao" | "statusEm" | "avisadoSaiu" | "avisadoChegando" | "aceitoEm" | "preparoEm" | "saiuEm" | "entregueEm">;
 
 export async function criarPedido(p: NovoPedido) {
   const token = randomBytes(12).toString("base64url");
   const agora = new Date().toISOString();
   const r = await exec(
-    `INSERT INTO pedidos (token, criado_em, nome, telefone, endereco, postcode, observacao, itens, subtotal, taxa, total, pagamento, troco_para, pago, status, status_em, lat, lng)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING numero`,
+    `INSERT INTO pedidos (token, criado_em, nome, telefone, endereco, postcode, observacao, itens, subtotal, taxa, total, pagamento, troco_para, pago, status, status_em, lat, lng, agendado_para, distancia_m)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING numero`,
     [token, agora, p.nome, p.telefone, p.endereco, p.postcode, p.observacao, JSON.stringify(p.itens),
-      p.subtotal, p.taxa, p.total, p.pagamento, p.trocoPara, p.pago ? 1 : 0, p.status, agora, p.lat, p.lng],
+      p.subtotal, p.taxa, p.total, p.pagamento, p.trocoPara, p.pago ? 1 : 0, p.status, agora, p.lat, p.lng, p.agendadoPara, p.distanciaM],
   );
   return { numero: Number(r.rows[0].numero), token };
 }
@@ -161,8 +185,75 @@ export async function listarPorStatus(status: Status[]) {
   return r.rows.map((x) => linhaParaPedido(x as Record<string, unknown>));
 }
 
+const COLUNA_DO_STATUS: Partial<Record<Status, string>> = {
+  confirmado: "aceito_em",
+  preparando: "preparo_em",
+  saiu: "saiu_em",
+  entregue: "entregue_em",
+};
+
 export async function mudarStatus(numero: number, status: Status) {
-  await exec("UPDATE pedidos SET status = ?, status_em = ? WHERE numero = ?", [status, new Date().toISOString(), numero]);
+  const agora = new Date().toISOString();
+  const col = COLUNA_DO_STATUS[status];
+  await exec(
+    `UPDATE pedidos SET status = ?, status_em = ?${col ? `, ${col} = COALESCE(${col}, ?)` : ""} WHERE numero = ?`,
+    col ? [status, agora, agora, numero] : [status, agora, numero],
+  );
+}
+
+/**
+ * Quantos pedidos estão na frente deste na cozinha: os que chegaram antes e ainda não saíram.
+ * Pedidos agendados para mais tarde só entram na fila quando chega a hora deles.
+ */
+export async function pedidosNaFrente(p: Pedido) {
+  const agora = new Date().toISOString();
+  const r = await exec(
+    `SELECT COUNT(*) AS n FROM pedidos
+     WHERE status IN ('novo','confirmado','preparando')
+       AND numero <> ?
+       AND COALESCE(agendado_para, criado_em) < ?
+       AND COALESCE(agendado_para, criado_em) <= ?`,
+    [p.numero, p.agendadoPara ?? p.criadoEm, agora],
+  );
+  return Number(r.rows[0]?.n ?? 0);
+}
+
+/* ------------------------------ Configurações ------------------------------ */
+
+export async function lerConfig<T>(chave: string): Promise<T | null> {
+  const r = await exec("SELECT valor FROM config WHERE chave = ?", [chave]);
+  return r.rows[0] ? (JSON.parse(String(r.rows[0].valor)) as T) : null;
+}
+
+export async function salvarConfig(chave: string, valor: unknown) {
+  await exec(
+    `INSERT INTO config (chave, valor, atualizado_em) VALUES (?, ?, ?)
+     ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor, atualizado_em = excluded.atualizado_em`,
+    [chave, JSON.stringify(valor), new Date().toISOString()],
+  );
+}
+
+/* ---------------------------------- Fotos ---------------------------------- */
+
+export async function salvarFoto(tipo: string, dados: Uint8Array) {
+  const id = randomBytes(9).toString("base64url");
+  const { c, pronto } = db();
+  await pronto;
+  await c.execute({ sql: "INSERT INTO fotos (id, tipo, dados, criado_em) VALUES (?, ?, ?, ?)", args: [id, tipo, dados, new Date().toISOString()] });
+  return id;
+}
+
+export async function lerFoto(id: string) {
+  const r = await exec("SELECT tipo, dados FROM fotos WHERE id = ?", [id]);
+  const x = r.rows[0];
+  if (!x) return null;
+  const d = x.dados as unknown;
+  const bytes = d instanceof ArrayBuffer ? new Uint8Array(d) : (d as Uint8Array);
+  return { tipo: String(x.tipo), dados: bytes };
+}
+
+export async function apagarFoto(id: string) {
+  await exec("DELETE FROM fotos WHERE id = ?", [id]);
 }
 
 export async function marcarPago(numero: number, pago: boolean) {

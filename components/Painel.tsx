@@ -2,19 +2,20 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Avaliacao, Pedido, Status } from "@/lib/db";
+import { rotuloAgendado } from "@/lib/horario";
 
 const NOMES: Record<Status, string> = {
   aguardando_pagamento: "Aguardando pagamento",
   novo: "Novo",
-  confirmado: "Confirmado",
-  preparando: "Preparando",
+  confirmado: "Pedido aceito",
+  preparando: "Na cozinha",
   saiu: "Saiu para entrega",
   entregue: "Entregue",
   cancelado: "Cancelado",
 };
 const PROXIMO: Partial<Record<Status, { status: Status; rotulo: string }>> = {
-  novo: { status: "confirmado", rotulo: "Confirmar pedido" },
-  confirmado: { status: "preparando", rotulo: "Começar a preparar" },
+  novo: { status: "confirmado", rotulo: "Aceitar pedido" },
+  confirmado: { status: "preparando", rotulo: "Começar na cozinha" },
   preparando: { status: "saiu", rotulo: "Saiu para entrega" },
   saiu: { status: "entregue", rotulo: "Marcar entregue" },
 };
@@ -51,9 +52,10 @@ function bip() {
   } catch {}
 }
 
-export default function Painel() {
+export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliacoes"; onNovos?: (n: number, avaliacoes: number) => void }) {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
-  const [aba, setAba] = useState("ativos");
+  const [abaPedidos, setAba] = useState("ativos");
+  const aba = secao === "avaliacoes" ? "avaliacoes" : abaPedidos;
   const [erro, setErro] = useState("");
   const [som, setSom] = useState(false);
   const [carregado, setCarregado] = useState(false);
@@ -95,12 +97,13 @@ export default function Painel() {
 
   useEffect(() => {
     carregar();
-    const t = setInterval(carregar, 15000);
+    const t = setInterval(carregar, 8000);
     return () => clearInterval(t);
   }, [carregar]);
 
   const qtdNovos = pedidos.filter((p) => p.status === "novo").length;
-  useEffect(() => { document.title = qtdNovos ? `(${qtdNovos}) Pedidos novos` : "Pedidos | Painel"; }, [qtdNovos]);
+  useEffect(() => { document.title = qtdNovos ? `(${qtdNovos}) Pedidos novos` : "Painel | Panela do Chef"; }, [qtdNovos]);
+  useEffect(() => { onNovos?.(qtdNovos, pendentes); }, [qtdNovos, pendentes, onNovos]);
 
   async function atualizar(numero: number, dados: { status?: Status; pago?: boolean; avisoManual?: "saiu" | "chegando" }) {
     setPedidos((ps) => ps.map((p) => (p.numero === numero ? { ...p, ...dados } : p)));
@@ -110,7 +113,11 @@ export default function Painel() {
   }
 
   const abaAtual = ABAS.find((a) => a.id === aba);
-  const visiveis = abaAtual ? pedidos.filter((p) => abaAtual.status.includes(p.status)) : [];
+  // Ativos: os agendados entram na ordem do horário marcado.
+  const chave = (p: Pedido) => new Date(p.agendadoPara ?? p.criadoEm).getTime();
+  const visiveis = abaAtual
+    ? pedidos.filter((p) => abaAtual.status.includes(p.status)).sort((a, b) => (aba === "ativos" ? chave(a) - chave(b) : 0))
+    : [];
   // Hoje (para o resumo)
   const hoje = new Date().toLocaleDateString("pt-BR", { timeZone: "Europe/London" });
   const deHoje = pedidos.filter((p) => new Date(p.criadoEm).toLocaleDateString("pt-BR", { timeZone: "Europe/London" }) === hoje && p.status !== "cancelado" && p.status !== "aguardando_pagamento");
@@ -119,27 +126,24 @@ export default function Painel() {
 
   return (
     <div className="painel">
-      <header className="painel-topo">
-        <div className="painel-miolo painel-linha">
-          <strong className="painel-marca">Pedidos</strong>
-          <div className="painel-acoes">
-            <button className={"btn" + (som ? " ativo" : "")} onClick={() => { setSom(!som); if (!som) bip(); }}>
-              {som ? "Som ligado" : "Ligar som de pedido novo"}
-            </button>
-            <form method="post" action="/api/sair"><input type="hidden" name="area" value="painel" /><button className="btn">Sair</button></form>
-          </div>
-        </div>
-      </header>
+      <div className="sq-cabeca">
+        <h1>{secao === "avaliacoes" ? "Avaliações" : "Pedidos"}</h1>
+        {secao === "pedidos" && (
+          <button className={"sq-btn" + (som ? " sq-btn-ativo" : "")} onClick={() => { setSom(!som); if (!som) bip(); }}>
+            {som ? "🔔 Som ligado" : "Ligar som de pedido novo"}
+          </button>
+        )}
+      </div>
 
-      <main className="painel-miolo" style={{ display: "grid", gap: 16, paddingBlock: 18 }}>
-        <section className="resumo" aria-label="Resumo de hoje">
+      <div style={{ display: "grid", gap: 16 }}>
+        {secao === "pedidos" && <section className="resumo" aria-label="Resumo de hoje">
           <div><span>Pedidos hoje</span><strong className="num">{deHoje.length}</strong></div>
           <div><span>Vendido hoje</span><strong className="num">{gbp(totalHoje)}</strong></div>
           <div><span>Em dinheiro</span><strong className="num">{gbp(dinheiroHoje)}</strong></div>
           <div><span>Novos agora</span><strong className={"num" + (qtdNovos ? " alerta" : "")}>{qtdNovos}</strong></div>
-        </section>
+        </section>}
 
-        <nav className="painel-abas" aria-label="Filtro">
+        {secao === "pedidos" && <nav className="painel-abas" aria-label="Filtro">
           {ABAS.map((a) => {
             const n = pedidos.filter((p) => a.status.includes(p.status)).length;
             return (
@@ -148,10 +152,7 @@ export default function Painel() {
               </button>
             );
           })}
-          <button aria-pressed={aba === "avaliacoes"} onClick={() => setAba("avaliacoes")}>
-            Avaliações <span className="num">{pendentes ? `${pendentes} nova${pendentes > 1 ? "s" : ""}` : avaliacoes.length}</span>
-          </button>
-        </nav>
+        </nav>}
 
         {erro && <p className="erro" role="alert">{erro}</p>}
         {aba === "avaliacoes" && (
@@ -182,7 +183,7 @@ export default function Painel() {
           <p className="vazio">{aba === "ativos" ? "Nenhum pedido em andamento. Quando chegar um, ele aparece aqui sozinho." : "Nada por aqui."}</p>
         )}
 
-        <div className="cartoes">
+        {aba !== "avaliacoes" && <div className="cartoes">
           {visiveis.map((p) => (
             <article key={p.numero} className={`pedido st-${p.status}`}>
               <header>
@@ -192,6 +193,9 @@ export default function Painel() {
                 </div>
                 <span className={`selo st-${p.status}`}>{NOMES[p.status]}</span>
               </header>
+              {p.agendadoPara && (
+                <div className="agendado">Reservado para <strong>{rotuloAgendado(p.agendadoPara)}</strong></div>
+              )}
 
               <ul className="itens">
                 {p.itens.map((l, i) => (
@@ -250,8 +254,8 @@ export default function Painel() {
               </footer>
             </article>
           ))}
-        </div>
-      </main>
+        </div>}
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { cardapio, emPence, type Item } from "./cardapio";
+import { emPence, type Cardapio, type Item } from "./cardapio";
 
 export type NivelFome = "lanche" | "normal" | "leao" | "sem-fundo";
 export type Gosto = "pastel" | "batata" | "doce" | "bebida";
@@ -23,7 +23,7 @@ export type Sugestao = { linhas: { item: Item; qtd: number }[]; total: number; r
 // Só sugere itens disponíveis e que não exigem escolher adicionais.
 const pronto = (i: Item) => i.disponivel && !(i.escolhas ?? []).some((e) => e.min > 0);
 
-function distribuir(categoria: string, qtd: number, preferir?: (i: Item) => boolean) {
+function distribuir(cardapio: Cardapio, categoria: string, qtd: number, preferir?: (i: Item) => boolean) {
   let opcoes = cardapio.itens.filter((i) => i.categoria === categoria && pronto(i));
   if (preferir) opcoes = [...opcoes.filter(preferir), ...opcoes.filter((i) => !preferir(i))];
   const mapa = new Map<Item, number>();
@@ -38,7 +38,7 @@ function distribuir(categoria: string, qtd: number, preferir?: (i: Item) => bool
 
 const plural = (n: number, s: string, p: string) => `${n} ${n === 1 ? s : p}`;
 
-export function sugerir(pessoas: number, fome: NivelFome, gostos: Gosto[]): Sugestao {
+export function sugerir(cardapio: Cardapio, pessoas: number, fome: NivelFome, gostos: Gosto[]): Sugestao {
   const fator = NIVEIS.find((n) => n.id === fome)!.fator;
   const porcoes = Math.max(1, Math.ceil(pessoas * fator));
   const querPastel = gostos.includes("pastel");
@@ -60,10 +60,10 @@ export function sugerir(pessoas: number, fome: NivelFome, gostos: Gosto[]): Suge
   const linhas: Sugestao["linhas"] = [];
   const juntar = (m: Map<Item, number>) => m.forEach((qtd, item) => linhas.push({ item, qtd }));
   // Começa pelos campeões de recheio (X-Tudo e os de carne) quando a fome é grande.
-  juntar(distribuir("pasteis", nPastel, fator >= 1.5 ? (i) => /x-tudo|carne/i.test(i.id) : undefined));
-  juntar(distribuir("batatas", nBatata));
-  juntar(distribuir("pasteis-doces", nDoce));
-  juntar(distribuir("bebidas", nBebida, (i) => /guarana|caldo/i.test(i.id)));
+  juntar(distribuir(cardapio, "pasteis", nPastel, fator >= 1.5 ? (i) => /x-tudo|carne/i.test(i.id) : undefined));
+  juntar(distribuir(cardapio, "batatas", nBatata));
+  juntar(distribuir(cardapio, "pasteis-doces", nDoce));
+  juntar(distribuir(cardapio, "bebidas", nBebida, (i) => /guarana|caldo/i.test(i.id)));
 
   const total = linhas.reduce((s, l) => s + emPence(l.item.preco) * l.qtd, 0);
   const partes = [

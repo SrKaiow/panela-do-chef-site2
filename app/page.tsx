@@ -1,6 +1,8 @@
 import Loja from "@/components/Loja";
 import { NaCozinha, SobreChef } from "@/components/Historia";
-import { loja, cartaoAtivo, dinheiroAtivo } from "@/lib/cardapio";
+import { getAjustes, getCardapio, cartaoConfigurado } from "@/lib/dados";
+import { publicos, telefoneBonito, whatsappInternacional } from "@/lib/ajustes";
+import { estadoLoja, horariosParaAgendar } from "@/lib/horario";
 
 import Avaliacoes, { type Depoimento } from "@/components/Avaliacoes";
 import avaliacoesJson from "@/data/avaliacoes.json";
@@ -23,12 +25,15 @@ async function depoimentos(): Promise<Depoimento[]> {
 }
 
 export default async function Home() {
-  const lista = await depoimentos();
-  const pagamentos = { dinheiro: dinheiroAtivo(), cartao: cartaoAtivo() };
+  const [lista, ajustes, cardapio] = await Promise.all([depoimentos(), getAjustes(), getCardapio()]);
+  const loja = publicos(ajustes, cartaoConfigurado());
+  const agora = new Date();
+  const estado = estadoLoja(ajustes.horarios, ajustes.pausado, agora);
+  const horarios = horariosParaAgendar(ajustes.horarios, agora);
 
   return (
     <>
-      <Loja pagamentos={pagamentos} />
+      <Loja cardapio={cardapio} loja={loja} estadoInicial={estado} horariosIniciais={horarios} pausado={ajustes.pausado} />
       <NaCozinha />
       <SobreChef />
 
@@ -42,14 +47,20 @@ export default async function Home() {
         </div>
         <div className="rodape-col">
           <span>
-            Instagram: <a href={`https://instagram.com/${loja.contato.instagram}`} target="_blank" rel="noreferrer">@{loja.contato.instagram}</a>
+            WhatsApp: <a href={`https://wa.me/${whatsappInternacional(loja.telefone)}`} target="_blank" rel="noreferrer">{telefoneBonito(loja.telefone)}</a>
           </span>
-          {loja.contato.grupoVip && (
+          <span>
+            E-mail: <a href={`mailto:${loja.email}`}>{loja.email}</a>
+          </span>
+          <span>
+            Instagram: <a href={`https://instagram.com/${loja.instagram}`} target="_blank" rel="noreferrer">@{loja.instagram}</a>
+          </span>
+          {loja.grupoVip && (
             <span>
-              Promoções primeiro no <a href={loja.contato.grupoVip} target="_blank" rel="noreferrer">Grupo VIP do WhatsApp</a>
+              Promoções primeiro no <a href={loja.grupoVip} target="_blank" rel="noreferrer">Grupo VIP do WhatsApp</a>
             </span>
           )}
-          <span>Entregamos em {loja.entrega.regiao}</span>
+          <span>Entregamos em {loja.regiao}</span>
           <span>© {new Date().getFullYear()} {loja.nome}</span>
         </div>
       </footer>

@@ -1,16 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { formatar, emPence, loja, type LinhaCarrinho } from "@/lib/cardapio";
+import { formatar, emPence, type Cardapio, type LinhaCarrinho } from "@/lib/cardapio";
 import { GOSTOS, NIVEIS, sugerir, type Gosto, type NivelFome } from "@/lib/fome";
 
-export default function QuantoPedir({ onAdicionar }: { onAdicionar: (linhas: LinhaCarrinho[]) => void }) {
+export default function QuantoPedir({ cardapio, falaDoChef, onAdicionar }: { cardapio: Cardapio; falaDoChef: string; onAdicionar: (linhas: LinhaCarrinho[]) => void }) {
   const [pessoas, setPessoas] = useState(2);
   const [fome, setFome] = useState<NivelFome>("leao");
   const [gostos, setGostos] = useState<Gosto[]>(["pastel", "batata", "bebida"]);
   const [adicionado, setAdicionado] = useState(false);
 
-  const s = useMemo(() => sugerir(pessoas, fome, gostos), [pessoas, fome, gostos]);
+  const s = useMemo(() => sugerir(cardapio, pessoas, fome, gostos), [cardapio, pessoas, fome, gostos]);
   const nivel = NIVEIS.find((n) => n.id === fome)!;
 
   function mudar<T>(fn: (v: T) => void) {
@@ -27,7 +27,7 @@ export default function QuantoPedir({ onAdicionar }: { onAdicionar: (linhas: Lin
 
         <div style={{ minWidth: 0 }}>
           <h2 id="fome-titulo">Tá com fome? <em>Deixa que o Chef calcula.</em></h2>
-          <p className="fome-intro">{loja.falaDoChef}</p>
+          <p className="fome-intro">{falaDoChef}</p>
 
           <div className="fome-form">
             <div className="fome-linha">
@@ -87,7 +87,7 @@ export default function QuantoPedir({ onAdicionar }: { onAdicionar: (linhas: Lin
                 <button
                   type="button"
                   className="botao"
-                  disabled={!s.linhas.length || !loja.aberto}
+                  disabled={!s.linhas.length}
                   onClick={() => {
                     onAdicionar(s.linhas.map((l) => ({ itemId: l.item.id, qtd: l.qtd, selecoes: {} })));
                     setAdicionado(true);

@@ -1,5 +1,6 @@
 import { buscarPorNumero, listarPorStatus, marcarAviso, type Local, type Status } from "./db";
-import { distanciaMetros, metrosAviso } from "./entrega";
+import { distanciaMetros } from "./entrega";
+import { getAjustes } from "./dados";
 import { enviarModelo } from "./whatsapp";
 import { siteUrl } from "./stripe";
 
@@ -21,11 +22,12 @@ export async function aoMudarStatus(numero: number, status: Status) {
  */
 export async function verificarChegadas(local: Local) {
   const emRota = await listarPorStatus(["saiu"]);
+  const limite = (await getAjustes()).entrega.avisoChegandoMetros;
   const manuais: number[] = [];
   for (const p of emRota) {
     if (p.avisadoChegando || p.lat == null || p.lng == null) continue;
     const d = distanciaMetros(local, { lat: p.lat, lng: p.lng });
-    if (d > metrosAviso()) continue;
+    if (d > limite) continue;
     const ok = await enviarModelo(p.telefone, process.env.WHATSAPP_MODELO_CHEGANDO || "", [primeiroNome(p.nome)]);
     if (ok) await marcarAviso(p.numero, "chegando");
     else manuais.push(p.numero);

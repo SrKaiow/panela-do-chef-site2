@@ -3,7 +3,10 @@ import Link from "next/link";
 import Rastreio from "@/components/Rastreio";
 import { buscarPorToken, confirmarPagamentoCartao, pedidoJaAvaliado } from "@/lib/db";
 import { situacaoAoVivo } from "@/lib/rastreio";
-import { formatar, loja } from "@/lib/cardapio";
+import { formatar } from "@/lib/cardapio";
+import { getAjustes } from "@/lib/dados";
+import { rotuloAgendado } from "@/lib/horario";
+import { telefoneBonito, whatsappInternacional } from "@/lib/ajustes";
 import { stripe } from "@/lib/stripe";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +32,7 @@ export default async function PaginaPedido({ params, searchParams }: { params: {
   const cancelado = pedido.status === "cancelado";
   const aoVivo = await situacaoAoVivo(pedido);
   const jaAvaliado = await pedidoJaAvaliado(pedido.numero);
+  const loja = await getAjustes();
 
   return (
     <>
@@ -36,11 +40,11 @@ export default async function PaginaPedido({ params, searchParams }: { params: {
         <div className="miolo">
           <Link href="/" style={{ textDecoration: "none" }}><img src="/fotos/logo-panela-do-chef.png" alt={loja.nome} style={{ width: 130, height: "auto", display: "block" }} /></Link>
           <h1 style={{ margin: 0, fontSize: "1.5rem" }}>
-            {cancelado ? "Pedido cancelado" : aguardando ? "Pagamento não concluído" : `Pedido nº ${pedido.numero} recebido!`}
+            {cancelado ? "Pedido cancelado" : aguardando ? "Pagamento não concluído" : pedido.agendadoPara && ["novo", "confirmado"].includes(pedido.status) ? `Pedido nº ${pedido.numero} reservado!` : `Pedido nº ${pedido.numero} recebido!`}
           </h1>
           <p className="slogan" style={{ margin: 0 }}>
             {cancelado
-              ? "Este pedido foi cancelado. Se tiver dúvida, fale com a gente pelo Instagram."
+              ? "Este pedido foi cancelado. Se tiver dúvida, fale com a gente no WhatsApp."
               : aguardando
                 ? "O pagamento no cartão não foi finalizado, então o pedido ainda não foi para a cozinha."
                 : pedido.pagamento === "dinheiro"
@@ -80,7 +84,9 @@ export default async function PaginaPedido({ params, searchParams }: { params: {
         </section>
 
         <section style={{ color: "var(--texto-2)" }}>
-          Entrega para <strong style={{ color: "var(--texto)" }}>{pedido.nome}</strong>, {pedido.endereco}, {pedido.postcode}.
+          Entrega para <strong style={{ color: "var(--texto)" }}>{pedido.nome}</strong>, {pedido.endereco}, {pedido.postcode}
+          {pedido.agendadoPara ? <>, <strong style={{ color: "var(--texto)" }}>{rotuloAgendado(pedido.agendadoPara)}</strong></> : null}.
+          <br />Dúvidas? WhatsApp <a href={`https://wa.me/${whatsappInternacional(loja.telefone)}`} target="_blank" rel="noreferrer">{telefoneBonito(loja.telefone)}</a>.
           <br />Guarde este link: é por ele que você acompanha o pedido ao vivo.
         </section>
       </main>

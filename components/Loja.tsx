@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { cardapio, loja, emPence, formatar, precoUnitario, type Item, type LinhaCarrinho } from "@/lib/cardapio";
+import { useCallback, useEffect, useState } from "react";
+import { emPence, formatar, precoUnitario, type Cardapio, type Item, type LinhaCarrinho } from "@/lib/cardapio";
+import type { AjustesPublicos } from "@/lib/ajustes";
+import { estadoLoja, type Estado, type Horario } from "@/lib/horario";
 import Hero, { Faixa } from "./Hero";
 import QuantoPedir from "./QuantoPedir";
 import { IconeCategoria } from "./Icones";
 
 type Linha = LinhaCarrinho & { chave: string };
 type Pagamentos = { dinheiro: boolean; cartao: boolean };
+type Cotacao = { ok: true; milhas: number; taxa: number; gratisAcima: number | null; gratis: boolean } | { ok: false; motivo: string };
 
 const CHAVE_STORAGE = "panela-carrinho-v1";
-const itemPorId = (id: string) => cardapio.itens.find((i) => i.id === id);
 
 function detalhes(item: Item, selecoes: Record<string, string[]>) {
   return (item.escolhas ?? [])
@@ -19,10 +21,39 @@ function detalhes(item: Item, selecoes: Record<string, string[]>) {
     .join(" · ");
 }
 
-export default function Loja({ pagamentos }: { pagamentos: Pagamentos }) {
+export default function Loja({
+  cardapio, loja, estadoInicial, horariosIniciais, pausado,
+}: {
+  cardapio: Cardapio;
+  loja: AjustesPublicos;
+  estadoInicial: Estado;
+  horariosIniciais: Horario[];
+  pausado: boolean;
+}) {
+  const pagamentos: Pagamentos = loja.pagamentos;
+  const itemPorId = useCallback((id: string) => cardapio.itens.find((i) => i.id === id), [cardapio]);
   const [carrinho, setCarrinho] = useState<Linha[]>([]);
   const [aberto, setAberto] = useState<Item | null>(null);
   const [verCarrinho, setVerCarrinho] = useState(false);
+  const [estado, setEstado] = useState<Estado>(estadoInicial);
+  const [horarios, setHorarios] = useState<Horario[]>(horariosIniciais);
+
+  // A loja fecha sozinha no fim do expediente: confere o relógio a cada 30 s e o servidor a cada minuto.
+  useEffect(() => {
+    let pausa = pausado;
+    const local = setInterval(() => setEstado(estadoLoja(loja.horarios, pausa)), 30000);
+    const servidor = setInterval(async () => {
+      try {
+        const r = await fetch("/api/loja/estado", { cache: "no-store" });
+        if (!r.ok) return;
+        const d = await r.json();
+        pausa = d.estado.pausado;
+        setEstado(d.estado);
+        setHorarios(d.horarios);
+      } catch {}
+    }, 60000);
+    return () => { clearInterval(local); clearInterval(servidor); };
+  }, [loja.horarios, pausado]);
 
   // Guarda o carrinho no navegador para não perder se a página recarregar.
   useEffect(() => {
@@ -30,7 +61,7 @@ export default function Loja({ pagamentos }: { pagamentos: Pagamentos }) {
       const salvo = JSON.parse(localStorage.getItem(CHAVE_STORAGE) || "[]") as Linha[];
       setCarrinho(salvo.filter((l) => itemPorId(l.itemId)?.disponivel));
     } catch {}
-  }, []);
+  }, [itemPorId]);
   useEffect(() => {
     try { localStorage.setItem(CHAVE_STORAGE, JSON.stringify(carrinho)); } catch {}
   }, [carrinho]);
@@ -38,7 +69,7 @@ export default function Loja({ pagamentos }: { pagamentos: Pagamentos }) {
   const qtdTotal = carrinho.reduce((s, l) => s + l.qtd, 0);
   const subtotal = carrinho.reduce((s, l) => {
     const item = itemPorId(l.itemId);
-    return item ? s + precoUnitario(item, l.selecoes) * l.qtd : s;
+    return item ? s + precoUnitario(cardapio, item, l.selecoes) * l.qtd : s;
   }, 0);
 
   function adicionar(l: LinhaCarrinho) {
@@ -59,9 +90,10 @@ export default function Loja({ pagamentos }: { pagamentos: Pagamentos }) {
 
   return (
     <>
-      <Hero dinheiro={pagamentos.dinheiro} cartao={pagamentos.cartao} />
+      {!estado.aberto && <AvisoFechado estado={estado} />}
+      <Hero loja={loja} aberto={estado.aberto} />
       <Faixa />
-      <QuantoPedir onAdicionar={adicionarVarios} />
+      <QuantoPedir cardapio={cardapio} falaDoChef={loja.falaDoChef} onAdicionar={adicionarVarios} />
 
       <nav className="abas" aria-label="Categorias" id="cardapio">
         <div className="miolo">
@@ -72,7 +104,12 @@ export default function Loja({ pagamentos }: { pagamentos: Pagamentos }) {
       </nav>
 
       <main className="miolo cardapio">
-        {!loja.aberto && <p className="aviso-fechado">{loja.mensagemFechado}</p>}
+        {!estado.aberto && (
+          <p className="aviso-agendar">
+            <strong>Cozinha fechada agora.</strong> Monte seu pedido e escolha o horário de entrega
+            {estado.proxima ? ` (a partir de ${estado.proxima.quando} às ${estado.proxima.abre})` : ""}: ele fica reservado pra você.
+          </p>
+        )}
         {cardapio.categorias.map((cat) => {
           const itens = cardapio.itens.filter((i) => i.categoria === cat.id);
           if (!itens.length) return null;
@@ -88,7 +125,7 @@ export default function Loja({ pagamentos }: { pagamentos: Pagamentos }) {
               </div>
               <div className="lista">
                 {itens.map((item) => (
-                  <button key={item.id} className="item" disabled={!item.disponivel || !loja.aberto} onClick={() => setAberto(item)}>
+                  <button key={item.id} className="item" disabled={!item.disponivel} onClick={() => setAberto(item)}>
                     <div className="foto">
                       {item.imagem ? <img src={item.imagem} alt="" loading="lazy" /> : <IconeCategoria categoria={item.categoria} />}
                     </div>
@@ -126,15 +163,19 @@ export default function Loja({ pagamentos }: { pagamentos: Pagamentos }) {
       {qtdTotal > 0 && !verCarrinho && !aberto && (
         <div className="barra">
           <button onClick={() => setVerCarrinho(true)}>
-            <span><span className="qtd num">{qtdTotal}</span>Ver carrinho</span>
+            <span><span className="qtd num">{qtdTotal}</span>{estado.aberto ? "Ver carrinho" : "Agendar pedido"}</span>
             <span className="preco">{formatar(subtotal)}</span>
           </button>
         </div>
       )}
 
-      {aberto && <FolhaItem item={aberto} onFechar={() => setAberto(null)} onAdicionar={adicionar} />}
+      {aberto && <FolhaItem cardapio={cardapio} item={aberto} onFechar={() => setAberto(null)} onAdicionar={adicionar} />}
       {verCarrinho && (
         <FolhaCarrinho
+          cardapio={cardapio}
+          loja={loja}
+          estado={estado}
+          horarios={horarios}
           carrinho={carrinho}
           setCarrinho={setCarrinho}
           subtotal={subtotal}
@@ -143,6 +184,25 @@ export default function Loja({ pagamentos }: { pagamentos: Pagamentos }) {
         />
       )}
     </>
+  );
+}
+
+function AvisoFechado({ estado }: { estado: Estado }) {
+  return (
+    <div className="fechado-faixa" role="status">
+      <div className="miolo fechado-miolo">
+        <span className="fechado-icone" aria-hidden="true">:C</span>
+        <div>
+          <strong>Cozinha fechada{estado.proxima ? `, pedir ${estado.proxima.quando}` : ""}</strong>
+          <span>
+            {estado.proxima
+              ? `Voltamos ${estado.proxima.quando} às ${estado.proxima.abre}. Olhe o cardápio e já deixe seu pedido reservado.`
+              : "Olhe o cardápio e já deixe seu pedido reservado."}
+          </span>
+        </div>
+        <a className="botao" href="#cardapio">Ver o cardápio</a>
+      </div>
+    </div>
   );
 }
 
@@ -161,13 +221,13 @@ function Fundo({ onFechar, titulo, children }: { onFechar: () => void; titulo: s
   );
 }
 
-function FolhaItem({ item, onFechar, onAdicionar }: { item: Item; onFechar: () => void; onAdicionar: (l: LinhaCarrinho) => void }) {
+function FolhaItem({ cardapio, item, onFechar, onAdicionar }: { cardapio: Cardapio; item: Item; onFechar: () => void; onAdicionar: (l: LinhaCarrinho) => void }) {
   const [selecoes, setSelecoes] = useState<Record<string, string[]>>({});
   const [qtd, setQtd] = useState(1);
   const [obs, setObs] = useState("");
 
   const faltando = (item.escolhas ?? []).filter((e) => (selecoes[e.grupo]?.length ?? 0) < e.min);
-  const unit = precoUnitario(item, selecoes);
+  const unit = precoUnitario(cardapio, item, selecoes);
 
   function alternar(grupo: string, nome: string, max: number) {
     setSelecoes((s) => {
@@ -181,6 +241,7 @@ function FolhaItem({ item, onFechar, onAdicionar }: { item: Item; onFechar: () =
 
   return (
     <Fundo onFechar={onFechar} titulo={item.nome}>
+      {item.imagem && <img className="folha-foto" src={item.imagem} alt={item.nome} />}
       <header>
         <div>
           <h2>{item.nome}</h2>
@@ -191,6 +252,7 @@ function FolhaItem({ item, onFechar, onAdicionar }: { item: Item; onFechar: () =
 
       {(item.escolhas ?? []).map((e) => {
         const grupo = cardapio.adicionais[e.grupo];
+        if (!grupo) return null;
         const escolhidos = selecoes[e.grupo] ?? [];
         const cheio = e.max > 1 && escolhidos.length >= e.max;
         const regra = e.max === 1 ? (e.min ? "Escolha 1" : "Opcional, até 1") : `${escolhidos.length} de ${e.max}${e.min ? `, mínimo ${e.min}` : ""}`;
@@ -239,7 +301,7 @@ function FolhaItem({ item, onFechar, onAdicionar }: { item: Item; onFechar: () =
           disabled={faltando.length > 0}
           onClick={() => onAdicionar({ itemId: item.id, qtd, selecoes, obs: obs.trim() || undefined })}
         >
-          <span>{faltando.length ? `Escolha: ${cardapio.adicionais[faltando[0].grupo].nome.toLowerCase()}` : "Adicionar"}</span>
+          <span>{faltando.length ? `Escolha: ${(cardapio.adicionais[faltando[0].grupo]?.nome ?? "uma opção").toLowerCase()}` : "Adicionar"}</span>
           <span className="preco">{formatar(unit * qtd)}</span>
         </button>
       </div>
@@ -248,8 +310,12 @@ function FolhaItem({ item, onFechar, onAdicionar }: { item: Item; onFechar: () =
 }
 
 function FolhaCarrinho({
-  carrinho, setCarrinho, subtotal, pagamentos, onFechar,
+  cardapio, loja, estado, horarios, carrinho, setCarrinho, subtotal, pagamentos, onFechar,
 }: {
+  cardapio: Cardapio;
+  loja: AjustesPublicos;
+  estado: Estado;
+  horarios: Horario[];
   carrinho: Linha[];
   setCarrinho: React.Dispatch<React.SetStateAction<Linha[]>>;
   subtotal: number;
@@ -261,15 +327,46 @@ function FolhaCarrinho({
   const [pagamento, setPagamento] = useState<"dinheiro" | "cartao">(pagamentos.dinheiro ? "dinheiro" : "cartao");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
+  const [quando, setQuando] = useState<string>(estado.aberto ? "" : horarios[0]?.valor ?? "");
+  const [cotacao, setCotacao] = useState<Cotacao | null>(null);
+  const [cotando, setCotando] = useState(false);
+  const itemPorId = (id: string) => cardapio.itens.find((i) => i.id === id);
+
+  // Fechou enquanto o cliente montava o pedido: passa a pedir um horário.
+  useEffect(() => {
+    if (!estado.aberto && !quando && horarios[0]) setQuando(horarios[0].valor);
+  }, [estado.aberto, quando, horarios]);
 
   // Lembra nome/endereço do cliente para o próximo pedido.
   useEffect(() => {
     try { const d = JSON.parse(localStorage.getItem("panela-cliente") || "{}"); setForm((f) => ({ ...f, ...d, observacao: "", troco: "" })); } catch {}
   }, []);
 
-  const taxa = emPence(loja.entrega.taxa);
-  const minimo = emPence(loja.entrega.pedidoMinimo);
-  const total = subtotal + taxa;
+  // Taxa de entrega pela distância: calcula quando o postcode está completo.
+  const postcodeLimpo = form.postcode.replace(/\s+/g, "").toUpperCase();
+  useEffect(() => {
+    if (!/^[A-Z]{1,2}\d[A-Z\d]?\d[A-Z]{2}$/.test(postcodeLimpo)) { setCotacao(null); return; }
+    let vivo = true;
+    setCotando(true);
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/entrega/cotacao?postcode=${postcodeLimpo}&subtotal=${subtotal}`);
+        const d = await r.json();
+        if (vivo) setCotacao(d);
+      } catch {
+        if (vivo) setCotacao(null);
+      } finally {
+        if (vivo) setCotando(false);
+      }
+    }, 400);
+    return () => { vivo = false; clearTimeout(t); };
+  }, [postcodeLimpo, subtotal]);
+
+  const primeiraFaixa = [...loja.faixas].sort((a, b) => a.ateMilhas - b.ateMilhas)[0];
+  const taxa = cotacao && cotacao.ok ? cotacao.taxa : null;
+  const minimo = emPence(loja.pedidoMinimo);
+  const total = subtotal + (taxa ?? 0);
+  const foraDaArea = !!cotacao && !cotacao.ok;
   const abaixoMinimo = minimo > 0 && subtotal < minimo;
   const nenhumPagamento = !pagamentos.dinheiro && !pagamentos.cartao;
 
@@ -296,6 +393,7 @@ function FolhaCarrinho({
           ...form,
           trocoPara: pagamento === "dinheiro" && form.troco ? parseFloat(form.troco.replace(",", ".")) : null,
           pagamento,
+          agendadoPara: quando || null,
           itens: carrinho.map(({ itemId, qtd, selecoes, obs }) => ({ itemId, qtd, selecoes, obs })),
         }),
       });
@@ -339,7 +437,7 @@ function FolhaCarrinho({
                     {l.obs && <div className="det">Obs.: {l.obs}</div>}
                   </div>
                   <div>
-                    <div className="preco" style={{ textAlign: "right", fontWeight: 700 }}>{formatar(precoUnitario(item, l.selecoes) * l.qtd)}</div>
+                    <div className="preco" style={{ textAlign: "right", fontWeight: 700 }}>{formatar(precoUnitario(cardapio, item, l.selecoes) * l.qtd)}</div>
                     <div className="acoes">
                       <button onClick={() => mudarQtd(l.chave, -1)} aria-label={`Tirar um ${item.nome}`}>−</button>
                       <span className="num">{l.qtd}</span>
@@ -350,10 +448,17 @@ function FolhaCarrinho({
               );
             })}
           </div>
-          <Totais subtotal={subtotal} taxa={taxa} total={total} />
+          <Totais subtotal={subtotal} taxa={null} total={subtotal} />
+          {primeiraFaixa && (
+            <p className="dica-entrega">
+              Entrega a partir de {formatar(emPence(primeiraFaixa.taxa))}
+              {primeiraFaixa.gratisAcima != null ? `, grátis acima de ${formatar(emPence(primeiraFaixa.gratisAcima))} perto da cozinha` : ""}.
+              A taxa exata aparece quando você colocar o postcode.
+            </p>
+          )}
           {abaixoMinimo && <p className="erro">Pedido mínimo para entrega: {formatar(minimo)}.</p>}
           <button className="principal" disabled={abaixoMinimo} onClick={() => setEtapa("dados")}>
-            <span>Continuar</span><span className="preco">{formatar(total)}</span>
+            <span>Continuar</span><span className="preco">{formatar(subtotal)}</span>
           </button>
         </>
       ) : (
@@ -368,8 +473,25 @@ function FolhaCarrinho({
             <input id="f-end" required maxLength={160} autoComplete="street-address" placeholder="Número, rua, apartamento" value={form.endereco} onChange={mudar("endereco")} />
           </label>
           <label className="campo" htmlFor="f-pc">Postcode
-            <input id="f-pc" required maxLength={10} autoComplete="postal-code" style={{ textTransform: "uppercase" }} value={form.postcode} onChange={mudar("postcode")} />
+            <input id="f-pc" required maxLength={10} autoComplete="postal-code" style={{ textTransform: "uppercase" }} value={form.postcode} onChange={mudar("postcode")} aria-describedby="f-pc-info" />
+            <span id="f-pc-info" className={"dica" + (foraDaArea ? " erro-texto" : "")} aria-live="polite">
+              {cotando ? "Calculando a entrega..." : cotacao ? (cotacao.ok ? (cotacao.gratis ? `${cotacao.milhas} milhas da cozinha: entrega grátis!` : `${cotacao.milhas} milhas da cozinha: entrega ${formatar(cotacao.taxa)}${cotacao.gratisAcima != null ? ` (grátis acima de ${formatar(cotacao.gratisAcima)})` : ""}.`) : cotacao.motivo) : ""}
+            </span>
           </label>
+
+          <div className="grupo">
+            <div className="grupo-titulo"><h3>Quando você quer receber?</h3></div>
+            {!estado.aberto && (
+              <p className="dica">A cozinha está fechada agora. Escolha um horário e seu pedido fica reservado.</p>
+            )}
+            <label className="campo" htmlFor="f-quando">
+              <span className="sr-only">Horário de entrega</span>
+              <select id="f-quando" className="select" value={quando} onChange={(e) => setQuando(e.target.value)} required={!estado.aberto}>
+                {estado.aberto && <option value="">Agora, o quanto antes</option>}
+                {horarios.map((h) => <option key={h.valor} value={h.valor}>{h.rotulo}</option>)}
+              </select>
+            </label>
+          </div>
           <label className="campo" htmlFor="f-obs">Observação para a entrega <span className="dica">(opcional)</span>
             <textarea id="f-obs" maxLength={300} placeholder="Ex.: tocar o interfone 3" value={form.observacao} onChange={mudar("observacao")} />
           </label>
@@ -403,8 +525,8 @@ function FolhaCarrinho({
 
           <Totais subtotal={subtotal} taxa={taxa} total={total} />
           {erro && <p className="erro" role="alert">{erro}</p>}
-          <button className="principal" type="submit" disabled={enviando || nenhumPagamento}>
-            <span>{enviando ? "Enviando..." : pagamento === "cartao" ? "Ir para o pagamento" : "Fazer pedido"}</span>
+          <button className="principal" type="submit" disabled={enviando || nenhumPagamento || foraDaArea || (!estado.aberto && !quando)}>
+            <span>{enviando ? "Enviando..." : pagamento === "cartao" ? "Ir para o pagamento" : quando ? "Reservar pedido" : "Fazer pedido"}</span>
             <span className="preco">{formatar(total)}</span>
           </button>
           <button type="button" className="secundario" onClick={() => setEtapa("carrinho")}>← Voltar ao carrinho</button>
@@ -414,11 +536,11 @@ function FolhaCarrinho({
   );
 }
 
-function Totais({ subtotal, taxa, total }: { subtotal: number; taxa: number; total: number }) {
+function Totais({ subtotal, taxa, total }: { subtotal: number; taxa: number | null; total: number }) {
   return (
     <div className="totais preco">
       <div><span>Subtotal</span><span>{formatar(subtotal)}</span></div>
-      <div><span>Entrega</span><span>{taxa ? formatar(taxa) : "Grátis"}</span></div>
+      <div><span>Entrega</span><span>{taxa == null ? "pelo postcode" : taxa ? formatar(taxa) : "Grátis"}</span></div>
       <div className="total"><span>Total</span><span>{formatar(total)}</span></div>
     </div>
   );

@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import { loja, emPence, validarCarrinho, cartaoAtivo, dinheiroAtivo } from "@/lib/cardapio";
+import { emPence, validarCarrinho } from "@/lib/cardapio";
+import { getAjustes, getCardapio, cartaoConfigurado } from "@/lib/dados";
+import { estadoLoja, horariosParaAgendar } from "@/lib/horario";
 import { criarPedido, salvarSessaoStripe } from "@/lib/db";
 import { stripe, siteUrl } from "@/lib/stripe";
-import { coordenadasDoPostcode } from "@/lib/entrega";
+import { coordenadasDoPostcode, cotarEntrega, distanciaMetros } from "@/lib/entrega";
 
 export const dynamic = "force-dynamic";
 
@@ -10,8 +12,19 @@ const texto = (v: unknown, max: number) => (typeof v === "string" ? v.trim().sli
 
 export async function POST(req: Request) {
   try {
-    if (!loja.aberto) throw new Error(loja.mensagemFechado);
+    const [ajustes, cardapio] = await Promise.all([getAjustes(), getCardapio()]);
     const b = await req.json();
+
+    // Fora do horário: só aceita pedido agendado para um horário válido da próxima abertura.
+    const estado = estadoLoja(ajustes.horarios, ajustes.pausado);
+    let agendadoPara: string | null = null;
+    if (typeof b.agendadoPara === "string" && b.agendadoPara) {
+      const valido = horariosParaAgendar(ajustes.horarios).some((h) => h.valor === b.agendadoPara);
+      if (!valido) throw new Error("Esse horário não está mais disponível. Escolha outro.");
+      agendadoPara = b.agendadoPara;
+    } else if (!estado.aberto) {
+      throw new Error("A cozinha está fechada agora. Escolha um horário para receber o seu pedido.");
+    }
 
     const nome = texto(b.nome, 80);
     const telefone = texto(b.telefone, 30);
@@ -21,13 +34,20 @@ export async function POST(req: Request) {
     if (!nome || !telefone || !endereco || !postcode) throw new Error("Preencha nome, telefone, endereço e postcode.");
 
     const pagamento = b.pagamento === "cartao" ? "cartao" : "dinheiro";
-    if (pagamento === "cartao" && !cartaoAtivo()) throw new Error("Pagamento com cartão indisponível no momento.");
-    if (pagamento === "dinheiro" && !dinheiroAtivo()) throw new Error("Pagamento em dinheiro indisponível no momento.");
+    if (pagamento === "cartao" && !(ajustes.pagamentos.cartao && cartaoConfigurado())) throw new Error("Pagamento com cartão indisponível no momento.");
+    if (pagamento === "dinheiro" && !ajustes.pagamentos.dinheiro) throw new Error("Pagamento em dinheiro indisponível no momento.");
 
-    const { linhas, subtotal } = validarCarrinho(b.itens);
-    const minimo = emPence(loja.entrega.pedidoMinimo);
+    const { linhas, subtotal } = validarCarrinho(cardapio, b.itens);
+    const minimo = emPence(ajustes.entrega.pedidoMinimo);
     if (minimo && subtotal < minimo) throw new Error("O pedido não atingiu o valor mínimo para entrega.");
-    const taxa = emPence(loja.entrega.taxa);
+
+    // Taxa de entrega pela distância da cozinha até o postcode (mesma regra da Square).
+    const coords = await coordenadasDoPostcode(postcode);
+    if (!coords) throw new Error("Não encontramos esse postcode. Confira e tente de novo (ex.: KT17 1JW).");
+    const distanciaM = Math.round(distanciaMetros(ajustes.entrega.cozinha, coords));
+    const cotacao = cotarEntrega(distanciaM, subtotal, ajustes.entrega.faixas, ajustes.entrega.raioMilhas);
+    if (!cotacao.ok) throw new Error(cotacao.motivo);
+    const taxa = cotacao.taxa;
     const total = subtotal + taxa;
 
     let trocoPara: number | null = null;
@@ -36,12 +56,9 @@ export async function POST(req: Request) {
       if (!(trocoPara >= total)) throw new Error("O valor do troco precisa ser maior que o total.");
     }
 
-    // Coordenadas do endereço para o rastreio e o aviso de "chegando" (se falhar, o pedido segue normal).
-    const coords = await coordenadasDoPostcode(postcode);
-
     const { numero, token } = await criarPedido({
       nome, telefone, endereco, postcode, observacao,
-      lat: coords?.lat ?? null, lng: coords?.lng ?? null,
+      lat: coords.lat, lng: coords.lng, agendadoPara, distanciaM,
       itens: linhas, subtotal, taxa, total, pagamento, trocoPara,
       pago: false,
       // Pedido em dinheiro vai direto para a cozinha; no cartão, só depois de pago.

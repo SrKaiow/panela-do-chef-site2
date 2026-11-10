@@ -1,6 +1,7 @@
-import { loja } from "@/lib/cardapio";
+import type { AjustesPublicos } from "@/lib/ajustes";
 
-export default function Hero({ dinheiro, cartao }: { dinheiro: boolean; cartao: boolean }) {
+export default function Hero({ loja, aberto }: { loja: AjustesPublicos; aberto: boolean }) {
+  const { dinheiro, cartao } = loja.pagamentos;
   const pagamento = dinheiro && cartao ? "Dinheiro na entrega ou cartão" : dinheiro ? "Dinheiro na entrega" : "Cartão, Apple Pay e Google Pay";
   return (
     <header className="hero">
@@ -12,9 +13,9 @@ export default function Hero({ dinheiro, cartao }: { dinheiro: boolean; cartao: 
           <div className="nav-direita">
             <a className="nav-link" href="#cardapio">Cardápio</a>
             <a className="nav-link" href="#quanto-pedir">Quanto pedir?</a>
-            <span className={"status" + (loja.aberto ? "" : " fechado")}>
+            <span className={"status" + (aberto ? "" : " fechado")}>
               <span className="ponto" aria-hidden="true" />
-              {loja.aberto ? "Aberto agora" : "Fechado agora"}
+              {aberto ? "Aberto agora" : "Cozinha fechada"}
             </span>
           </div>
         </div>

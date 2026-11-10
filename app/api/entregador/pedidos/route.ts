@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { logado } from "@/lib/auth";
 import { listarPorStatus, lerLocal } from "@/lib/db";
-import { distanciaMetros, metrosAviso, minutosAte } from "@/lib/entrega";
+import { distanciaMetros, minutosAte } from "@/lib/entrega";
+import { getAjustes } from "@/lib/dados";
 import { linkWhatsapp, mensagens, whatsappAutomatico } from "@/lib/whatsapp";
 import { siteUrl } from "@/lib/stripe";
 
@@ -10,11 +11,12 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   if (!logado("entregador")) return NextResponse.json({ erro: "Entre de novo." }, { status: 401 });
   const local = await lerLocal();
+  const ajustes = await getAjustes();
   const pedidos = await listarPorStatus(["confirmado", "preparando", "saiu"]);
   const nome = (n: string) => n.trim().split(/\s+/)[0] || n;
   return NextResponse.json({
     automatico: whatsappAutomatico(),
-    metrosAviso: metrosAviso(),
+    metrosAviso: ajustes.entrega.avisoChegandoMetros,
     pedidos: pedidos.map((p) => {
       const distancia = local && p.lat != null && p.lng != null ? Math.round(distanciaMetros(local, { lat: p.lat, lng: p.lng })) : null;
       return {
@@ -31,7 +33,7 @@ export async function GET() {
         trocoPara: p.trocoPara,
         itens: p.itens.map((l) => `${l.qtd}× ${l.nome}`),
         distancia,
-        minutos: distancia != null ? minutosAte(distancia) : null,
+        minutos: distancia != null ? minutosAte(distancia, ajustes.entrega.velocidadeMediaKmh) : null,
         avisadoSaiu: p.avisadoSaiu,
         avisadoChegando: p.avisadoChegando,
         temCoordenadas: p.lat != null,
