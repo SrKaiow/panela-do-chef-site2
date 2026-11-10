@@ -21,9 +21,6 @@ export function NaCozinha() {
         </div>
         <div className="cozinha-midia com-cinema">
           <VideoCinema />
-          <figure className="midia">
-            <img src="/fotos/chef-kaio-cozinha.jpg" alt="Chef Kaio na cozinha fazendo sinal de positivo" loading="lazy" />
-          </figure>
         </div>
       </div>
     </section>

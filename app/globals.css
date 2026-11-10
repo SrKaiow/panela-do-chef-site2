@@ -585,4 +585,5 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .principal, .botao, .barra button { box-shadow: var(--brilho-botao); }
 .principal:hover, .botao:hover { filter: brightness(1.06) saturate(1.05); }
 ::selection { background: var(--ouro); color: #000; }
-.cozinha-midia.com-cinema > .midia:not(.cinema) img { object-position: 82% center; }
+/* Só o vídeo: centralizado na coluna. */
+.cozinha-midia.com-cinema { grid-template-columns: auto; justify-content: center; }
