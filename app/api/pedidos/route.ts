@@ -72,12 +72,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ numero, redirecionar: `/pedido/${token}` });
     }
 
+    // Foto de cada item na página da Stripe (precisa de endereço completo).
+    const fotoDe = (itemId: string) => {
+      const img = cardapio.itens.find((i) => i.id === itemId)?.imagem;
+      if (!img) return undefined;
+      const url = img.startsWith("http") ? img : `${origem}${img}`;
+      return url.startsWith("https://") ? [url] : undefined;
+    };
     const lineItems = linhas.map((l) => ({
       quantity: l.qtd,
       price_data: {
         currency: "gbp",
         unit_amount: l.unitario,
-        product_data: { name: l.nome, ...(l.detalhes.length ? { description: l.detalhes.join(" | ").slice(0, 500) } : {}) },
+        product_data: {
+          name: l.nome,
+          ...(l.detalhes.length ? { description: l.detalhes.join(" | ").slice(0, 500) } : {}),
+          ...(fotoDe(l.itemId) ? { images: fotoDe(l.itemId) } : {}),
+        },
       },
     }));
     if (taxa) lineItems.push({ quantity: 1, price_data: { currency: "gbp", unit_amount: taxa, product_data: { name: "Taxa de entrega" } } });
@@ -89,6 +100,24 @@ export async function POST(req: Request) {
       client_reference_id: String(numero),
       // Sem lista fixa: a Stripe mostra o que estiver ligado no painel dela (cartão, Apple Pay, Google Pay, Pay by Bank...).
       payment_intent_data: { description: `Panela do Chef · pedido #${numero}`, metadata: { numero: String(numero) } },
+      locale: "auto",
+      // Página de pagamento com a cara da Panela: preto piano, botão amarelo, logo e ícone.
+      ...(origem.startsWith("https://")
+        ? {
+            branding_settings: {
+              display_name: "Panela do Chef",
+              background_color: "#0a0a0a",
+              button_color: "#ffd814",
+              border_style: "rounded" as const,
+              font_family: "montserrat" as const,
+              icon: { type: "url" as const, url: `${origem}/fotos/icone-panela.png` },
+              logo: { type: "url" as const, url: `${origem}/fotos/logo-panela-do-chef.png` },
+            },
+          }
+        : {}),
+      custom_text: {
+        submit: { message: `Pedido #${numero}. Assim que o pagamento entrar, ele vai direto para a cozinha.` },
+      },
       success_url: `${origem}/pedido/${token}?sessao={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origem}/pedido/${token}?cancelado=1`,
     });
