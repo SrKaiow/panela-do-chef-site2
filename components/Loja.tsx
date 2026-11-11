@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { emPence, formatar, precoUnitario, type Cardapio, type Item, type LinhaCarrinho } from "@/lib/cardapio";
+import { emPence, formatar, precoUnitario, resumirEscolhas, type Cardapio, type Item, type LinhaCarrinho } from "@/lib/cardapio";
 import type { AjustesPublicos } from "@/lib/ajustes";
 import { nomeAlergenico } from "@/lib/alergenicos";
 import { estadoLoja, type Estado, type Horario } from "@/lib/horario";
@@ -17,7 +17,7 @@ const CHAVE_STORAGE = "panela-carrinho-v1";
 
 function detalhes(item: Item, selecoes: Record<string, string[]>) {
   return (item.escolhas ?? [])
-    .map((e) => (selecoes[e.grupo]?.length ? selecoes[e.grupo].join(", ") : ""))
+    .map((e) => (selecoes[e.grupo]?.length ? resumirEscolhas(selecoes[e.grupo]) : ""))
     .filter(Boolean)
     .join(" · ");
 }
@@ -227,12 +227,30 @@ function Fundo({ onFechar, titulo, children }: { onFechar: () => void; titulo: s
 }
 
 function FolhaItem({ cardapio, item, onFechar, onAdicionar }: { cardapio: Cardapio; item: Item; onFechar: () => void; onAdicionar: (l: LinhaCarrinho) => void }) {
-  const [selecoes, setSelecoes] = useState<Record<string, string[]>>({});
+  // Opções marcadas como "pré-selecionar" no painel já vêm escolhidas.
+  const [selecoes, setSelecoes] = useState<Record<string, string[]>>(() => {
+    const ini: Record<string, string[]> = {};
+    for (const e of item.escolhas ?? []) {
+      const padrao = (cardapio.adicionais[e.grupo]?.opcoes ?? []).filter((o) => o.padrao && !o.esgotado).map((o) => o.nome);
+      if (padrao.length) ini[e.grupo] = padrao.slice(0, e.max);
+    }
+    return ini;
+  });
   const [qtd, setQtd] = useState(1);
   const [obs, setObs] = useState("");
 
   const faltando = (item.escolhas ?? []).filter((e) => (selecoes[e.grupo]?.length ?? 0) < e.min);
   const unit = precoUnitario(cardapio, item, selecoes);
+
+  // Grupos com "repetir": mais uma / menos uma da mesma opção.
+  function somar(grupo: string, nome: string, max: number, delta: 1 | -1) {
+    setSelecoes((s) => {
+      const atual = s[grupo] ?? [];
+      if (delta === 1) return atual.length >= max ? s : { ...s, [grupo]: [...atual, nome] };
+      const i = atual.lastIndexOf(nome);
+      return i < 0 ? s : { ...s, [grupo]: [...atual.slice(0, i), ...atual.slice(i + 1)] };
+    });
+  }
 
   function alternar(grupo: string, nome: string, max: number) {
     setSelecoes((s) => {
@@ -276,25 +294,49 @@ function FolhaItem({ cardapio, item, onFechar, onAdicionar }: { cardapio: Cardap
               <h3>{grupo.nome}</h3>
               <span className={escolhidos.length >= e.min && e.min > 0 ? "ok" : ""}>{regra}</span>
             </div>
-            <div className="opcoes">
-              {grupo.opcoes.map((op) => {
-                const marcado = escolhidos.includes(op.nome);
-                return (
-                  <button
-                    key={op.nome}
-                    type="button"
-                    className={"opcao" + (op.esgotado ? " riscado" : "")}
-                    aria-pressed={marcado}
-                    disabled={op.esgotado || (cheio && !marcado)}
-                    onClick={() => alternar(e.grupo, op.nome, e.max)}
-                  >
-                    {op.nome}
-                    {op.preco ? ` +${formatar(emPence(op.preco))}` : ""}
-                    {op.esgotado ? " (esgotado)" : ""}
-                  </button>
-                );
-              })}
-            </div>
+            {grupo.regras?.repetir && e.max > 1 ? (
+              <div className="opcoes-rep">
+                {grupo.opcoes.map((op) => {
+                  const n = escolhidos.filter((x) => x === op.nome).length;
+                  return (
+                    <div key={op.nome} className={"opcao-rep" + (n ? " ligada" : "") + (op.esgotado ? " riscado" : "")}>
+                      {op.imagem && <img className="opcao-foto" src={op.imagem} alt="" loading="lazy" />}
+                      <span className="opcao-nome">
+                        {op.nome}
+                        {op.preco ? <em className="extra">+{formatar(emPence(op.preco))}</em> : null}
+                        {op.esgotado ? <em> esgotado</em> : null}
+                      </span>
+                      <span className="opcao-qtd">
+                        {n > 0 && <button type="button" onClick={() => somar(e.grupo, op.nome, e.max, -1)} aria-label={`Tirar um ${op.nome}`}>−</button>}
+                        {n > 0 && <span className="num">{n}</span>}
+                        <button type="button" disabled={op.esgotado || cheio} onClick={() => somar(e.grupo, op.nome, e.max, 1)} aria-label={`Adicionar ${op.nome}`}>+</button>
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="opcoes">
+                {grupo.opcoes.map((op) => {
+                  const marcado = escolhidos.includes(op.nome);
+                  return (
+                    <button
+                      key={op.nome}
+                      type="button"
+                      className={"opcao" + (op.esgotado ? " riscado" : "") + (op.imagem ? " com-foto" : "")}
+                      aria-pressed={marcado}
+                      disabled={op.esgotado || (cheio && !marcado)}
+                      onClick={() => alternar(e.grupo, op.nome, e.max)}
+                    >
+                      {op.imagem && <img className="opcao-foto" src={op.imagem} alt="" loading="lazy" />}
+                      {op.nome}
+                      {op.preco ? <em className="extra">+{formatar(emPence(op.preco))}</em> : null}
+                      {op.esgotado ? " (esgotado)" : ""}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         );
       })}

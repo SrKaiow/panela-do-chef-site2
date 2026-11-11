@@ -3,8 +3,26 @@
  * e é passado como parâmetro, para funcionar igual no servidor e no navegador.
  */
 
-export type Opcao = { nome: string; preco?: number; esgotado?: boolean };
-export type GrupoAdicional = { nome: string; opcoes: Opcao[] };
+export type Opcao = {
+  nome: string;
+  /** Valor extra cobrado por esta opção (libras). */
+  preco?: number;
+  esgotado?: boolean;
+  /** Foto pequena da opção. */
+  imagem?: string;
+  /** Já vem marcada quando o cliente abre o item. */
+  padrao?: boolean;
+};
+/** Regras padrão do grupo, usadas quando ele é colocado num item (cada item pode mudar min/max). */
+export type RegrasGrupo = { obrigatorio: boolean; varios: boolean; max: number; repetir: boolean };
+export type GrupoAdicional = {
+  /** O que o cliente vê. */
+  nome: string;
+  /** Nome só para você no painel (ex.: "Açaí - toppings"). */
+  nomeInterno?: string;
+  opcoes: Opcao[];
+  regras?: RegrasGrupo;
+};
 export type Escolha = { grupo: string; min: number; max: number };
 export type Item = {
   id: string;
@@ -78,7 +96,9 @@ export function validarCarrinho(cardapio: Cardapio, linhas: LinhaCarrinho[]): { 
     for (const e of item.escolhas ?? []) {
       const grupo = cardapio.adicionais[e.grupo];
       if (!grupo) continue;
-      const escolhidos = Array.from(new Set((l.selecoes?.[e.grupo] ?? []).map(String)));
+      const brutos = (l.selecoes?.[e.grupo] ?? []).map(String);
+      // Com "repetir", a mesma opção pode vir mais de uma vez (ex.: 2× Nutella); senão, tira repetidas.
+      const escolhidos = grupo.regras?.repetir ? brutos : Array.from(new Set(brutos));
       if (escolhidos.length < e.min) throw new Error(`Escolha pelo menos ${e.min} em "${grupo.nome}" (${item.nome}).`);
       if (escolhidos.length > e.max) throw new Error(`No máximo ${e.max} em "${grupo.nome}" (${item.nome}).`);
       for (const nome of escolhidos) {
@@ -87,7 +107,7 @@ export function validarCarrinho(cardapio: Cardapio, linhas: LinhaCarrinho[]): { 
         if (op.esgotado) throw new Error(`"${nome}" esgotou. Troque a opção em ${item.nome}.`);
       }
       selecoes[e.grupo] = escolhidos;
-      if (escolhidos.length) detalhes.push(`${grupo.nome}: ${escolhidos.join(", ")}`);
+      if (escolhidos.length) detalhes.push(`${grupo.nome}: ${resumirEscolhas(escolhidos)}`);
     }
 
     const unitario = precoUnitario(cardapio, item, selecoes);
@@ -95,6 +115,13 @@ export function validarCarrinho(cardapio: Cardapio, linhas: LinhaCarrinho[]): { 
     resultado.push({ itemId: item.id, nome: item.nome, qtd, unitario, total: unitario * qtd, detalhes, obs: obs || undefined });
   }
   return { linhas: resultado, subtotal: resultado.reduce((s, l) => s + l.total, 0) };
+}
+
+/** ["Nutella","Nutella","Mel"] -> "2× Nutella, Mel" */
+export function resumirEscolhas(nomes: string[]) {
+  const conta = new Map<string, number>();
+  for (const n of nomes) conta.set(n, (conta.get(n) ?? 0) + 1);
+  return [...conta].map(([n, q]) => (q > 1 ? `${q}× ${n}` : n)).join(", ");
 }
 
 /** Cria um id simples a partir do nome: "Pastel de Carne" -> "pastel-de-carne". */

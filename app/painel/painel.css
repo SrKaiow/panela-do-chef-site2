@@ -274,3 +274,39 @@ a.btn.principal-p { color: #fff; justify-content: center; }
 .sq-alerg { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid var(--linha); border-radius: 999px; font-size: 0.86rem; font-weight: 600; cursor: pointer; background: #fff; }
 .sq-alerg input { accent-color: #151515; }
 .sq-alerg.ligado { border-color: #151515; background: #fff6c4; }
+
+/* Editor de modificadores (estilo Square) */
+.sq-erro { margin: 0; padding: 10px 14px; border-radius: 8px; background: #fde8e6; color: #a51d16; font-weight: 700; }
+.sq-mod-tabela { display: grid; gap: 0; border-top: 1px solid var(--linha); }
+.sq-mod-linha { display: grid; grid-template-columns: 22px 44px minmax(120px, 1fr) 110px 150px 90px auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--linha); background: #fff; }
+.sq-mod-linha.arrastando { opacity: 0.5; background: #fff6c4; }
+.sq-mod-cab { font-size: 0.75rem; font-weight: 700; color: var(--texto-2); background: transparent; }
+.sq-mod-linha > input:not([type="checkbox"]), .sq-preco-campo input { font: inherit; font-size: 0.93rem; border: 1px solid #cfccc5; border-radius: 8px; padding: 8px 10px; min-height: 40px; width: 100%; background: #fff; }
+.sq-alca { cursor: grab; color: #9a9a9a; text-align: center; letter-spacing: -2px; user-select: none; }
+.sq-mod-foto { width: 40px; height: 40px; border-radius: 8px; border: 1px dashed #cfccc5; display: grid; place-items: center; overflow: hidden; cursor: pointer; color: #9a9a9a; font-size: 1.1rem; background: #fbfbfa; }
+.sq-mod-foto img { width: 100%; height: 100%; object-fit: cover; }
+.sq-mod-foto.vazia { cursor: default; opacity: 0.5; }
+.sq-preco-campo { position: relative; display: block; }
+.sq-preco-campo > span { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--texto-2); font-weight: 700; }
+.sq-preco-campo input { padding-left: 24px; }
+.sq-estoque { font-size: 0.82rem; }
+.sq-pre { width: 18px; height: 18px; justify-self: center; accent-color: #151515; }
+.sq-mod-nova { grid-template-columns: 22px 44px minmax(120px, 1fr) auto; }
+.sq-regra { justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--linha); }
+.sq-regra > span:first-child { display: grid; gap: 2px; flex: 1; }
+.sq-regra .trilho { order: 2; }
+.sq-regra-max { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; font-weight: 600; font-size: 0.93rem; }
+.sq-aplicar { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px 14px; max-height: 300px; overflow: auto; padding: 4px 2px; }
+@media (max-width: 760px) {
+  .sq-mod-cab { display: none; }
+  .sq-mod-linha { grid-template-columns: 22px 44px 1fr 96px; grid-template-areas: "a f n p" "a e e c" "a x x x"; row-gap: 8px; }
+  .sq-mod-linha > .sq-alca { grid-area: a; }
+  .sq-mod-linha > .sq-mod-foto { grid-area: f; }
+  .sq-mod-linha > input { grid-area: n; }
+  .sq-mod-linha > .sq-preco-campo { grid-area: p; }
+  .sq-mod-linha > .sq-estoque { grid-area: e; }
+  .sq-mod-linha > .sq-pre { grid-area: c; }
+  .sq-mod-linha > .sq-opcao-acoes { grid-area: x; justify-content: end; }
+  .sq-mod-nova { grid-template-areas: none; grid-template-columns: 22px 44px 1fr; }
+  .sq-mod-nova > .sq-btn { grid-column: 3; }
+}

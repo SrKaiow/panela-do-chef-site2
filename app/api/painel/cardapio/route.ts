@@ -24,6 +24,18 @@ export async function PUT(req: Request) {
 function validar(c: Cardapio): string | null {
   if (!c || !Array.isArray(c.itens) || !Array.isArray(c.categorias) || typeof c.adicionais !== "object") return "Cardápio inválido.";
   const cats = new Set(c.categorias.map((x) => x.id));
+  for (const [id, g] of Object.entries(c.adicionais)) {
+    if (!g?.nome?.trim() || !Array.isArray(g.opcoes) || !g.opcoes.length) return `O grupo "${g?.nomeInterno || id}" precisa de nome e de pelo menos uma opção.`;
+    const nomes = new Set<string>();
+    for (const o of g.opcoes) {
+      if (!o.nome?.trim()) return `Opção sem nome em "${g.nome}".`;
+      if (nomes.has(o.nome)) return `Opção repetida em "${g.nome}": ${o.nome}.`;
+      nomes.add(o.nome);
+      if (o.preco != null && !(typeof o.preco === "number" && o.preco >= 0 && o.preco < 100)) return `Preço inválido em "${o.nome}".`;
+      if (o.imagem && !/^\/(api\/fotos|fotos)\//.test(o.imagem)) return `Foto inválida em "${o.nome}".`;
+    }
+    if (g.regras && !(g.regras.max >= 1 && g.regras.max <= 50)) return `Máximo de seleções inválido em "${g.nome}".`;
+  }
   const ids = new Set<string>();
   for (const i of c.itens) {
     if (!i.id || ids.has(i.id)) return `Item com código repetido: ${i.nome || i.id}.`;
@@ -36,7 +48,7 @@ function validar(c: Cardapio): string | null {
     if (i.alergenicos != null && (!Array.isArray(i.alergenicos) || i.alergenicos.some((a) => !IDS_ALERGENICOS.includes(a)))) return `Alergênicos inválidos em ${i.nome}.`;
     for (const e of i.escolhas ?? []) {
       if (!c.adicionais[e.grupo]) return `${i.nome} usa um grupo de adicionais que não existe.`;
-      if (!(e.min >= 0 && e.max >= 1 && e.min <= e.max)) return `Mínimo e máximo inválidos em ${i.nome}.`;
+      if (!(e.min >= 0 && e.max >= 1 && e.min <= e.max && e.max <= 50)) return `Mínimo e máximo inválidos em ${i.nome}.`;
     }
   }
   return null;

@@ -182,7 +182,11 @@ function EditorItem({ cardapio, item, salvar, voltar, avisar }: { cardapio: Card
   const escolhas = f.escolhas ?? [];
   function alternarGrupo(grupo: string) {
     const tem = escolhas.find((e) => e.grupo === grupo);
-    mudar("escolhas", tem ? escolhas.filter((e) => e.grupo !== grupo) : [...escolhas, { grupo, min: 0, max: Math.max(1, cardapio.adicionais[grupo]?.opcoes.length ?? 1) }]);
+    const g = cardapio.adicionais[grupo];
+    // Usa as regras padrão do conjunto (definidas em Modificadores).
+    const min = g?.regras?.obrigatorio ? 1 : 0;
+    const max = g?.regras ? (g.regras.varios ? g.regras.max : 1) : Math.max(1, g?.opcoes.length ?? 1);
+    mudar("escolhas", tem ? escolhas.filter((e) => e.grupo !== grupo) : [...escolhas, { grupo, min, max }]);
   }
   function mudarEscolha(grupo: string, campo: keyof Omit<Escolha, "grupo">, valor: number) {
     mudar("escolhas", escolhas.map((e) => (e.grupo === grupo ? { ...e, [campo]: valor } : e)));
@@ -261,7 +265,7 @@ function EditorItem({ cardapio, item, salvar, voltar, avisar }: { cardapio: Card
                     <label className="sq-check">
                       <input type="checkbox" checked={!!e} onChange={() => alternarGrupo(id)} />
                       <span>
-                        <strong>{g.nome}</strong>
+                        <strong>{g.nomeInterno || g.nome}</strong>
                         <span className="sq-sub">{g.opcoes.length} opções{g.opcoes.some((o) => o.preco) ? " · algumas pagas" : ""}</span>
                       </span>
                     </label>

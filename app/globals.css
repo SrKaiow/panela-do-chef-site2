@@ -615,3 +615,22 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .texto-legal a { color: var(--ouro); }
 .texto-legal .voltar { font-weight: 700; text-decoration: none; }
 .texto-legal hr { border: 0; border-top: 1px solid var(--linha); margin: 40px 0; }
+
+/* Opções com foto, valor extra e repetição */
+.opcao { display: inline-flex; align-items: center; gap: 6px; }
+.opcao .extra, .opcao-rep .extra { font-style: normal; font-weight: 800; color: var(--ouro); margin-left: 4px; }
+.opcao[aria-pressed="true"] .extra { color: #000; }
+.opcao.com-foto { padding-left: 5px; }
+.opcao-foto { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; flex: none; }
+.opcoes-rep { display: grid; gap: 8px; }
+.opcao-rep { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 14px; border: 1.5px solid var(--linha); background: var(--verniz), var(--bg); }
+.opcao-rep.ligada { border-color: var(--ouro); }
+.opcao-rep.riscado .opcao-nome { text-decoration: line-through; opacity: 0.5; }
+.opcao-rep .opcao-foto { width: 38px; height: 38px; border-radius: 10px; }
+.opcao-nome { flex: 1; font-weight: 700; font-size: 0.95rem; }
+.opcao-nome em { font-style: normal; color: var(--texto-2); font-weight: 600; }
+.opcao-qtd { display: inline-flex; align-items: center; gap: 8px; }
+.opcao-qtd button { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--linha); background: var(--superficie-2); color: var(--texto); font-size: 1.2rem; font-weight: 800; line-height: 1; }
+.opcao-qtd button:last-child { background: var(--ouro); border-color: var(--ouro); color: #000; }
+.opcao-qtd button:disabled { opacity: 0.35; }
+.opcao-qtd .num { min-width: 16px; text-align: center; font-weight: 800; }
