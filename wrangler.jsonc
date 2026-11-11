@@ -14,5 +14,8 @@
       "service": "panela-do-chef-site2"
     }
   ],
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  // Senhas e chaves ficam só no painel da Cloudflare (Variáveis e segredos), nunca aqui.
+  // keep_vars: o deploy automático não apaga as variáveis criadas no painel.
+  "keep_vars": true
 }
