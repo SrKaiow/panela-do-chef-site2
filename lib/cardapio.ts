@@ -16,6 +16,8 @@ export type Item = {
   disponivel: boolean;
   imagem?: string;
   escolhas?: Escolha[];
+  /** Alergênicos do item (ids de lib/alergenicos). undefined = ainda não informado. */
+  alergenicos?: string[];
 };
 export type Categoria = { id: string; nome: string };
 export type Cardapio = {

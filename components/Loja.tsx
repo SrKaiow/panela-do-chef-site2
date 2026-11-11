@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { emPence, formatar, precoUnitario, type Cardapio, type Item, type LinhaCarrinho } from "@/lib/cardapio";
 import type { AjustesPublicos } from "@/lib/ajustes";
+import { nomeAlergenico } from "@/lib/alergenicos";
 import { estadoLoja, type Estado, type Horario } from "@/lib/horario";
 import Hero, { Faixa } from "./Hero";
 import QuantoPedir from "./QuantoPedir";
@@ -110,6 +111,10 @@ export default function Loja({
             {estado.proxima ? ` (a partir de ${estado.proxima.quando} às ${estado.proxima.abre})` : ""}: ele fica reservado pra você.
           </p>
         )}
+        <p className="aviso-alergia">
+          <strong>Tem alguma alergia?</strong> Toque no item para ver os alergênicos. Na dúvida, fale com a gente no WhatsApp antes de pedir.
+          Tudo é preparado na mesma cozinha, então pode haver traços.
+        </p>
         {cardapio.categorias.map((cat) => {
           const itens = cardapio.itens.filter((i) => i.categoria === cat.id);
           if (!itens.length) return null;
@@ -249,6 +254,15 @@ function FolhaItem({ cardapio, item, onFechar, onAdicionar }: { cardapio: Cardap
         </div>
         <button className="fechar" onClick={onFechar} aria-label="Fechar">×</button>
       </header>
+      <p className={"alergenicos" + (item.alergenicos?.length ? " contem" : "")}>
+        <strong>Alergênicos:</strong>{" "}
+        {item.alergenicos == null
+          ? "ainda não informados. Tem alergia? Fale com a gente no WhatsApp antes de pedir."
+          : item.alergenicos.length
+            ? `contém ${item.alergenicos.map(nomeAlergenico).join(", ").toLowerCase()}.`
+            : "não contém nenhum dos 14 alergênicos principais."}
+        <span> Tudo é preparado na mesma cozinha, então pode haver traços.</span>
+      </p>
 
       {(item.escolhas ?? []).map((e) => {
         const grupo = cardapio.adicionais[e.grupo];
@@ -499,8 +513,8 @@ function FolhaCarrinho({
               </select>
             </label>
           </div>
-          <label className="campo" htmlFor="f-obs">Observação para a entrega <span className="dica">(opcional)</span>
-            <textarea id="f-obs" maxLength={300} placeholder="Ex.: tocar o interfone 3" value={form.observacao} onChange={mudar("observacao")} />
+          <label className="campo" htmlFor="f-obs">Observação <span className="dica">(entrega ou alergia, opcional)</span>
+            <textarea id="f-obs" maxLength={300} placeholder="Ex.: tocar o interfone 3 · tenho alergia a amendoim" value={form.observacao} onChange={mudar("observacao")} />
           </label>
 
           <div className="grupo">
@@ -572,6 +586,7 @@ function FolhaCarrinho({
           )}
 
           <Totais subtotal={subtotal} taxa={taxa} total={total} />
+          <p className="dica">Usamos seus dados só para preparar e entregar o pedido. <a href="/privacidade" target="_blank">Política de privacidade</a>.</p>
           {erro && <p className="erro" role="alert">{erro}</p>}
           <button className="principal" type="submit" disabled={enviando || nenhumPagamento || foraDaArea || (!estado.aberto && !quando) || (pagamento === "dinheiro" && !troco)}>
             <span>{enviando ? "Enviando..." : pagamento === "cartao" ? "Ir para o pagamento" : quando ? "Reservar pedido" : "Fazer pedido"}</span>

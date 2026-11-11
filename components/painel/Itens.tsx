@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { gerarId, type Cardapio, type Escolha, type Item } from "@/lib/cardapio";
+import { ALERGENICOS } from "@/lib/alergenicos";
 import type { Salvar } from "./Admin";
 
 type Aviso = (a: { tipo: "ok" | "erro"; texto: string }) => void;
@@ -126,6 +127,7 @@ function Biblioteca({ cardapio, salvar, ir }: { cardapio: Cardapio; salvar: Salv
                     <span>
                       <strong>{i.nome}</strong>
                       {!i.imagem && <span className="sq-sub sq-alerta">Sem foto</span>}
+                      {i.alergenicos == null && <span className="sq-sub sq-alerta">Sem alergênicos</span>}
                     </span>
                   </a>
                 </td>
@@ -301,6 +303,30 @@ function EditorItem({ cardapio, item, salvar, voltar, avisar }: { cardapio: Card
               {f.imagem && <button type="button" className="sq-btn" onClick={() => mudar("imagem", undefined)}>Remover</button>}
             </div>
             <p className="sq-sub">Pode mandar direto do celular. A foto é ajustada sozinha para carregar rápido no site.</p>
+          </section>
+
+          <section className="sq-cartao">
+            <h2>Alergênicos</h2>
+            <p className="sq-sub">Marque o que o item contém, incluindo os toppings e opções. A lei exige mostrar isso antes da compra.</p>
+            <div className="sq-alergenicos">
+              {ALERGENICOS.map((a) => {
+                const marcado = (f.alergenicos ?? []).includes(a.id);
+                return (
+                  <label key={a.id} className={"sq-alerg" + (marcado ? " ligado" : "")}>
+                    <input
+                      type="checkbox"
+                      checked={marcado}
+                      onChange={() => mudar("alergenicos", marcado ? (f.alergenicos ?? []).filter((x) => x !== a.id) : [...(f.alergenicos ?? []), a.id])}
+                    />
+                    {a.nome}
+                  </label>
+                );
+              })}
+            </div>
+            <label className="sq-check">
+              <input type="checkbox" checked={f.alergenicos != null && f.alergenicos.length === 0} onChange={(e) => mudar("alergenicos", e.target.checked ? [] : undefined)} />
+              <span><strong>Não contém nenhum dos 14</strong><span className="sq-sub">Deixe tudo desmarcado e esta caixa vazia se ainda não conferiu: o site mostra "pergunte antes de pedir".</span></span>
+            </label>
           </section>
 
           <section className="sq-cartao">

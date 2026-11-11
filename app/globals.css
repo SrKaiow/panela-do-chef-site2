@@ -598,3 +598,20 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .selo-pg.master { background: #fff; gap: 0; }
 .selo-pg.master b { width: 14px; height: 14px; border-radius: 50%; background: #eb001b; }
 .selo-pg.master b + b { background: #f79e1b; margin-left: -6px; mix-blend-mode: multiply; }
+
+/* Alergênicos */
+.aviso-alergia { margin: 14px 0 0; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--linha); background: var(--verniz), var(--superficie); font-size: 0.92rem; color: var(--texto-2); }
+.aviso-alergia strong { color: var(--texto); }
+.alergenicos { margin: 0 0 12px; padding: 10px 12px; border-radius: 10px; background: var(--superficie-2); font-size: 0.88rem; color: var(--texto-2); }
+.alergenicos strong { color: var(--texto); }
+.alergenicos.contem { border-left: 3px solid var(--sol); }
+.alergenicos span { display: block; margin-top: 2px; font-size: 0.8rem; }
+/* Página de privacidade */
+.texto-legal { max-width: 760px; margin: 0 auto; padding: 40px 16px 80px; line-height: 1.65; }
+.texto-legal h1 { font-family: var(--fonte-titulo); font-weight: 400; text-transform: uppercase; font-size: clamp(2rem, 6vw, 3rem); margin: 18px 0 6px; }
+.texto-legal h2 { font-size: 1.15rem; margin: 30px 0 8px; color: var(--ouro); }
+.texto-legal p, .texto-legal li { color: var(--texto-2); }
+.texto-legal strong { color: var(--texto); }
+.texto-legal a { color: var(--ouro); }
+.texto-legal .voltar { font-weight: 700; text-decoration: none; }
+.texto-legal hr { border: 0; border-top: 1px solid var(--linha); margin: 40px 0; }

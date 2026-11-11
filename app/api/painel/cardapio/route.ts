@@ -1,3 +1,4 @@
+import { IDS_ALERGENICOS } from "@/lib/alergenicos";
 import { NextResponse } from "next/server";
 import { logado } from "@/lib/auth";
 import { getCardapio, salvarCardapio } from "@/lib/dados";
@@ -32,6 +33,7 @@ function validar(c: Cardapio): string | null {
     if (i.precoAntigo != null && !(typeof i.precoAntigo === "number" && i.precoAntigo > 0)) return `Preço antigo inválido em ${i.nome}.`;
     if (!cats.has(i.categoria)) return `${i.nome} está numa categoria que não existe.`;
     if (i.imagem && !/^\/(api\/fotos|fotos)\//.test(i.imagem)) return `Foto inválida em ${i.nome}.`;
+    if (i.alergenicos != null && (!Array.isArray(i.alergenicos) || i.alergenicos.some((a) => !IDS_ALERGENICOS.includes(a)))) return `Alergênicos inválidos em ${i.nome}.`;
     for (const e of i.escolhas ?? []) {
       if (!c.adicionais[e.grupo]) return `${i.nome} usa um grupo de adicionais que não existe.`;
       if (!(e.min >= 0 && e.max >= 1 && e.min <= e.max)) return `Mínimo e máximo inválidos em ${i.nome}.`;

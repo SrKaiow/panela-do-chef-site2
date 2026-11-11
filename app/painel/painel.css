@@ -270,3 +270,7 @@ a.btn.principal-p { color: #fff; justify-content: center; }
   .sq-cabeca h1 { font-size: 1.4rem; }
   .sq-tabela td, .sq-tabela th { padding-inline: 10px; }
 }
+.sq-alergenicos { display: flex; flex-wrap: wrap; gap: 8px; }
+.sq-alerg { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid var(--linha); border-radius: 999px; font-size: 0.86rem; font-weight: 600; cursor: pointer; background: #fff; }
+.sq-alerg input { accent-color: #151515; }
+.sq-alerg.ligado { border-color: #151515; background: #fff6c4; }

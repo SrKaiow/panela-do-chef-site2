@@ -61,6 +61,9 @@ export default async function Home() {
             </span>
           )}
           <span>Entregamos em {loja.regiao}</span>
+          <span>
+            <a href="/privacidade">Privacidade</a> · <a href="#cardapio">Alergênicos</a>
+          </span>
           <span>© {new Date().getFullYear()} {loja.nome}</span>
         </div>
       </footer>
