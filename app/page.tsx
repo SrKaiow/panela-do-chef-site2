@@ -64,7 +64,7 @@ export default async function Home() {
           <span>
             <a href="/privacidade">Privacidade</a> · <a href="#cardapio">Alergênicos</a>
           </span>
-          <span>© {new Date().getFullYear()} {loja.nome}</span>
+          <span>© {new Date().getFullYear()} PANELA DO CHEF LTD · Empresa registrada na Inglaterra e País de Gales, nº 16939262</span>
         </div>
       </footer>
     </>

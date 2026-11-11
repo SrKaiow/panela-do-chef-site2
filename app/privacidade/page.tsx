@@ -23,8 +23,8 @@ export default async function Privacidade() {
 
       <h2>Quem somos</h2>
       <p>
-        <strong>Panela do Chef</strong> (Panela do Chef LTD), cozinha brasileira com entrega em {a.entrega.regiao}. Somos os
-        responsáveis pelos seus dados. Fale com a gente pelo e-mail {email} ou pelo WhatsApp {telefoneBonito(a.telefone)}.
+        <strong>PANELA DO CHEF LTD</strong>, empresa registrada na Inglaterra e País de Gales sob o nº 16939262, cozinha brasileira
+        com entrega em {a.entrega.regiao}. Somos os responsáveis pelos seus dados. Fale com a gente pelo e-mail {email} ou pelo WhatsApp {telefoneBonito(a.telefone)}.
       </p>
 
       <h2>Quais dados usamos</h2>
@@ -86,7 +86,8 @@ export default async function Privacidade() {
         <p>Last updated: 11 November 2026.</p>
         <h2>Who we are</h2>
         <p>
-          <strong>Panela do Chef</strong> (Panela do Chef LTD) is the controller of your data. Contact us at {email} or on WhatsApp{" "}
+          <strong>PANELA DO CHEF LTD</strong>, a company registered in England and Wales (company number 16939262), is the controller of
+          your data. Contact us at {email} or on WhatsApp{" "}
           {telefoneBonito(a.telefone)}.
         </p>
         <h2>What we collect and why</h2>
