@@ -91,7 +91,7 @@ O site roda na **Cloudflare Workers** (plano Free) pelo adaptador OpenNext. O ba
 
 1. **Turso**: em [turso.tech](https://turso.tech), abra o banco (ou crie um) e copie a URL (`libsql://...`) e um token.
 2. **Cloudflare**: dash.cloudflare.com → **Workers & Pages → Create → Workers → Import a repository** (não é "Pages") → escolha `SrKaiow/panela-do-chef-site2`.
-   - Nome do projeto: **panela-do-chef** (precisa ser igual ao `name` do `wrangler.jsonc`).
+   - Nome do projeto: **panela-do-chef-site2** (precisa ser igual ao `name` do `wrangler.jsonc`).
    - Build command: `npx opennextjs-cloudflare build`
    - Deploy command: `npx opennextjs-cloudflare deploy`
    - Branch: `main`.
