@@ -324,7 +324,7 @@ function FolhaCarrinho({
 }) {
   const [etapa, setEtapa] = useState<"carrinho" | "dados">("carrinho");
   const [form, setForm] = useState({ nome: "", telefone: "", endereco: "", postcode: "", observacao: "", troco: "" });
-  const [pagamento, setPagamento] = useState<"dinheiro" | "cartao">(pagamentos.dinheiro ? "dinheiro" : "cartao");
+  const [pagamento, setPagamento] = useState<"dinheiro" | "cartao">(pagamentos.cartao ? "cartao" : "dinheiro");
   /** Dinheiro: o cliente sempre diz se vai pagar exato ou se precisa de troco. */
   const [troco, setTroco] = useState<"exato" | "sim" | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -505,18 +505,25 @@ function FolhaCarrinho({
             <div className="grupo-titulo"><h3>Como vai pagar?</h3></div>
             {nenhumPagamento && <p className="erro">Nenhuma forma de pagamento está ativa no momento.</p>}
             <div className="pagamentos" role="radiogroup">
+              {pagamentos.cartao && (
+                <label className="pagamento pagamento-online">
+                  <input type="radio" name="pagamento" checked={pagamento === "cartao"} onChange={() => setPagamento("cartao")} />
+                  <strong>Apple Pay, Google Pay ou cartão</strong>
+                  <span>Pague agora, em página segura da Stripe. Seu pedido vai direto para a cozinha.</span>
+                  <span className="selos" aria-label="Aceitamos Apple Pay, Google Pay, Visa, Mastercard e American Express">
+                    <i className="selo-pg preto">Apple Pay</i>
+                    <i className="selo-pg branco">G Pay</i>
+                    <i className="selo-pg visa">VISA</i>
+                    <i className="selo-pg master"><b /><b /></i>
+                    <i className="selo-pg amex">AMEX</i>
+                  </span>
+                </label>
+              )}
               {pagamentos.dinheiro && (
                 <label className="pagamento">
                   <input type="radio" name="pagamento" checked={pagamento === "dinheiro"} onChange={() => setPagamento("dinheiro")} />
                   <strong>Dinheiro na entrega</strong>
                   <span>Você paga em cash para o entregador.</span>
-                </label>
-              )}
-              {pagamentos.cartao && (
-                <label className="pagamento">
-                  <input type="radio" name="pagamento" checked={pagamento === "cartao"} onChange={() => setPagamento("cartao")} />
-                  <strong>Pagar agora no site</strong>
-                  <span>Cartão, Apple Pay, Google Pay ou transferência pelo app do seu banco. Página segura da Stripe.</span>
                 </label>
               )}
             </div>

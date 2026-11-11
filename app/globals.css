@@ -587,3 +587,14 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 ::selection { background: var(--ouro); color: #000; }
 /* Só o vídeo: centralizado na coluna. */
 .cozinha-midia.com-cinema { grid-template-columns: auto; justify-content: center; }
+
+/* Selos de pagamento online (desenhados em texto, sem imagens) */
+.pagamento .selos { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.selo-pg { font-style: normal; display: inline-flex; align-items: center; justify-content: center; height: 24px; min-width: 42px; padding: 0 8px; border-radius: 5px; font: 800 0.72rem/1 var(--fonte-texto); letter-spacing: 0.02em; }
+.selo-pg.preto { background: #000; color: #fff; border: 1px solid #555; }
+.selo-pg.branco { background: #fff; color: #3c4043; }
+.selo-pg.visa { background: #fff; color: #1a1f71; font-style: italic; font-size: 0.78rem; }
+.selo-pg.amex { background: #2e77bc; color: #fff; }
+.selo-pg.master { background: #fff; gap: 0; }
+.selo-pg.master b { width: 14px; height: 14px; border-radius: 50%; background: #eb001b; }
+.selo-pg.master b + b { background: #f79e1b; margin-left: -6px; mix-blend-mode: multiply; }
