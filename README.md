@@ -105,6 +105,18 @@ Cada envio para a `main` publica sozinho. Sem `STRIPE_SECRET_KEY`, o site funcio
 
 Para testar no motor da Cloudflare no computador: copie `.dev.vars.example` para `.dev.vars`, preencha e rode `npm run preview`.
 
+## Segurança
+
+- Painel e tela do entregador só com senha; 8 tentativas erradas por IP travam o login por 15 minutos.
+- Limite de pedidos (6 a cada 10 min e 20 por hora por IP), de avaliações (5 por hora) e de consulta de entrega.
+- Campo-isca contra robôs no pedido e na avaliação.
+- Envios para a API só aceitos vindos do próprio site (exceto o aviso assinado da Stripe).
+- Preço e taxa sempre recalculados no servidor; o navegador não decide valor.
+- Fotos conferidas pelo conteúdo (só JPG, PNG e WebP de verdade).
+- Cabeçalhos de segurança (CSP, sem iframe, HSTS, nosniff) e sem revelar a tecnologia do site.
+- Erros internos nunca aparecem para o cliente.
+- Senhas e chaves só nas Variáveis e segredos da Cloudflare, nunca no código.
+
 ## Rodar no computador
 
 ```bash

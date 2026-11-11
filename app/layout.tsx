@@ -1,5 +1,11 @@
 import type { Metadata, Viewport } from "next";
+import { Anton, Figtree, Yellowtail } from "next/font/google";
 import "./globals.css";
+
+// Fontes baixadas na hora do build e servidas pelo próprio site (mais rápido, sem chamar o Google).
+const anton = Anton({ weight: "400", subsets: ["latin"], variable: "--f-anton", display: "swap" });
+const yellowtail = Yellowtail({ weight: "400", subsets: ["latin"], variable: "--f-yellowtail", display: "swap" });
+const figtree = Figtree({ weight: ["400", "600", "700", "800"], subsets: ["latin"], variable: "--f-figtree", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Panela do Chef | Comida brasileira com entrega",
@@ -10,21 +16,12 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#0b0a07",
+  themeColor: "#000000",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Anton&family=Yellowtail&family=Figtree:wght@400;600;700;800&display=swap"
-        />
-      </head>
+    <html lang="pt-BR" className={`${anton.variable} ${yellowtail.variable} ${figtree.variable}`}>
       <body>{children}</body>
     </html>
   );

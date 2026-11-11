@@ -62,6 +62,13 @@ async function preparar(c: Client) {
     precisao REAL,
     atualizado_em TEXT NOT NULL
   )`);
+  await c.execute(`CREATE TABLE IF NOT EXISTS limites (
+    chave TEXT NOT NULL,
+    janela INTEGER NOT NULL,
+    n INTEGER NOT NULL,
+    expira INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (chave, janela)
+  )`);
 }
 
 function db() {
@@ -281,6 +288,31 @@ export async function confirmarPagamentoCartao(numero: number) {
     "UPDATE pedidos SET pago = 1, status = CASE WHEN status = 'aguardando_pagamento' THEN 'novo' ELSE status END, status_em = CASE WHEN status = 'aguardando_pagamento' THEN ? ELSE status_em END WHERE numero = ?",
     [new Date().toISOString(), numero],
   );
+}
+
+/* ------------------------- Limite de tentativas ------------------------- */
+
+/**
+ * Conta tentativas por chave (ex.: "login:1.2.3.4") numa janela de tempo, guardado no banco,
+ * então vale para todos os servidores ao mesmo tempo. Devolve true se ainda está dentro do limite.
+ */
+export async function dentroDoLimite(chave: string, max: number, janelaSeg: number) {
+  const agora = Math.floor(Date.now() / 1000);
+  const janela = Math.floor(agora / janelaSeg);
+  const r = await exec(
+    "INSERT INTO limites (chave, janela, n, expira) VALUES (?, ?, 1, ?) ON CONFLICT(chave, janela) DO UPDATE SET n = n + 1 RETURNING n",
+    [chave.slice(0, 120), janela, (janela + 1) * janelaSeg],
+  );
+  if (Math.random() < 0.02) {
+    // Limpeza de vez em quando: contagens que já venceram.
+    await exec("DELETE FROM limites WHERE expira < ?", [agora]).catch(() => {});
+  }
+  return Number(r.rows[0]?.n ?? 1) <= max;
+}
+
+/** Apaga as contagens de uma chave (ex.: depois de entrar com a senha certa). */
+export async function zerarLimite(chave: string) {
+  await exec("DELETE FROM limites WHERE chave = ?", [chave.slice(0, 120)]);
 }
 
 /* ------------------------- Localização do entregador ------------------------- */

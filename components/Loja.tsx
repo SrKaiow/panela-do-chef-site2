@@ -323,7 +323,7 @@ function FolhaCarrinho({
   onFechar: () => void;
 }) {
   const [etapa, setEtapa] = useState<"carrinho" | "dados">("carrinho");
-  const [form, setForm] = useState({ nome: "", telefone: "", endereco: "", postcode: "", observacao: "", troco: "" });
+  const [form, setForm] = useState({ nome: "", telefone: "", endereco: "", postcode: "", observacao: "", troco: "", site: "" });
   const [pagamento, setPagamento] = useState<"dinheiro" | "cartao">(pagamentos.cartao ? "cartao" : "dinheiro");
   /** Dinheiro: o cliente sempre diz se vai pagar exato ou se precisa de troco. */
   const [troco, setTroco] = useState<"exato" | "sim" | null>(null);
@@ -468,6 +468,8 @@ function FolhaCarrinho({
         </>
       ) : (
         <form onSubmit={enviar} style={{ display: "grid", gap: 14 }}>
+          {/* campo-isca contra robôs: escondido de pessoas */}
+          <input className="isca" tabIndex={-1} autoComplete="off" aria-hidden="true" name="site" value={form.site} onChange={mudar("site")} />
           <label className="campo" htmlFor="f-nome">Nome
             <input id="f-nome" required maxLength={80} autoComplete="name" value={form.nome} onChange={mudar("nome")} />
           </label>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { logado } from "@/lib/auth";
 import { salvarFoto } from "@/lib/db";
+import { tipoRealDaImagem } from "@/lib/seguranca";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,10 @@ export async function POST(req: Request) {
   if (!(arquivo instanceof Blob)) return NextResponse.json({ erro: "Escolha uma foto." }, { status: 400 });
   if (!TIPOS.includes(arquivo.type)) return NextResponse.json({ erro: "Use uma foto em JPG, PNG ou WebP." }, { status: 400 });
   if (arquivo.size > MAX) return NextResponse.json({ erro: "Foto grande demais. Tente uma menor que 1,5 MB." }, { status: 400 });
-  const id = await salvarFoto(arquivo.type, new Uint8Array(await arquivo.arrayBuffer()));
+  const bytes = new Uint8Array(await arquivo.arrayBuffer());
+  // Não confia no tipo informado: confere pelo conteúdo que é mesmo JPG, PNG ou WebP.
+  const tipo = tipoRealDaImagem(bytes);
+  if (!tipo) return NextResponse.json({ erro: "Esse arquivo não é uma foto válida." }, { status: 400 });
+  const id = await salvarFoto(tipo, bytes);
   return NextResponse.json({ url: `/api/fotos/${id}` });
 }

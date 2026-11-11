@@ -1,26 +1,17 @@
 import { NextResponse } from "next/server";
 import { buscarPorToken, criarAvaliacao, pedidoJaAvaliado } from "@/lib/db";
+import { permitir } from "@/lib/seguranca";
 
 export const dynamic = "force-dynamic";
 
 const texto = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, max) : "");
 
-// Freio simples contra envio em massa (por instância do servidor).
-const ultimos = new Map<string, number[]>();
-function muitoRapido(ip: string) {
-  const agora = Date.now();
-  const lista = (ultimos.get(ip) ?? []).filter((t) => agora - t < 60 * 60 * 1000);
-  lista.push(agora);
-  ultimos.set(ip, lista);
-  return lista.length > 5;
-}
 
 /** Cliente envia uma avaliação. Ela entra como "pendente" e só aparece no site depois que você aprovar no painel. */
 export async function POST(req: Request) {
   const b = await req.json().catch(() => ({}));
   if (b.site) return NextResponse.json({ ok: true }); // robô preencheu o campo-isca: finge que deu certo
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "?";
-  if (muitoRapido(ip)) return NextResponse.json({ erro: "Muitas avaliações seguidas. Tente mais tarde." }, { status: 429 });
+  if (!(await permitir(req, "avaliacao", 5, 60 * 60))) return NextResponse.json({ erro: "Muitas avaliações seguidas. Tente mais tarde." }, { status: 429 });
 
   const nome = texto(b.nome, 40);
   const local = texto(b.local, 40) || null;

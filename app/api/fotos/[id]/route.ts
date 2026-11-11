@@ -9,6 +9,11 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   const f = await lerFoto(params.id);
   if (!f) return new Response("Foto não encontrada", { status: 404 });
   return new Response(Buffer.from(f.dados), {
-    headers: { "Content-Type": f.tipo, "Cache-Control": "public, max-age=31536000, immutable" },
+    headers: {
+      "Content-Type": ["image/jpeg", "image/png", "image/webp"].includes(f.tipo) ? f.tipo : "application/octet-stream",
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'",
+    },
   });
 }

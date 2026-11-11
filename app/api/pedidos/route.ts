@@ -6,15 +6,22 @@ import { criarPedido, salvarSessaoStripe } from "@/lib/db";
 import { stripe, siteUrl } from "@/lib/stripe";
 import { avisarLojaNovoPedido } from "@/lib/avisoLoja";
 import { coordenadasDoPostcode, cotarEntrega, distanciaMetros } from "@/lib/entrega";
+import { mensagemSegura, permitir, respostaLimite } from "@/lib/seguranca";
 
 export const dynamic = "force-dynamic";
 
 const texto = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
 export async function POST(req: Request) {
+  // Contra pedidos falsos em massa: 6 a cada 10 minutos e 20 por hora, por IP.
+  if (!(await permitir(req, "pedido", 6, 10 * 60)) || !(await permitir(req, "pedido-hora", 20, 60 * 60))) {
+    return respostaLimite("Muitos pedidos seguidos daqui. Espere alguns minutos ou fale com a gente no WhatsApp.");
+  }
   try {
     const [ajustes, cardapio] = await Promise.all([getAjustes(), getCardapio()]);
     const b = await req.json();
+    // Campo-isca invisível: só robô preenche.
+    if (b.site) throw new Error("Não foi possível enviar o pedido.");
 
     // Fora do horário: só aceita pedido agendado para um horário válido da próxima abertura.
     const estado = estadoLoja(ajustes.horarios, ajustes.pausado);
@@ -33,6 +40,8 @@ export async function POST(req: Request) {
     const postcode = texto(b.postcode, 10).toUpperCase();
     const observacao = texto(b.observacao, 300) || null;
     if (!nome || !telefone || !endereco || !postcode) throw new Error("Preencha nome, telefone, endereço e postcode.");
+    const digitos = telefone.replace(/\D/g, "");
+    if (digitos.length < 10 || digitos.length > 15) throw new Error("Confira o telefone (ex.: 07123 456789).");
 
     const pagamento = b.pagamento === "cartao" ? "cartao" : "dinheiro";
     if (pagamento === "cartao" && !(ajustes.pagamentos.cartao && cartaoConfigurado())) throw new Error("Pagamento com cartão indisponível no momento.");
@@ -124,7 +133,7 @@ export async function POST(req: Request) {
     await salvarSessaoStripe(numero, sessao.id);
     return NextResponse.json({ numero, redirecionar: sessao.url });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Erro ao criar o pedido.";
+    const msg = mensagemSegura(e, "Não deu para concluir o pedido agora. Tente de novo em instantes ou fale com a gente no WhatsApp.");
     console.error("[pedidos]", e);
     return NextResponse.json({ erro: msg }, { status: 400 });
   }

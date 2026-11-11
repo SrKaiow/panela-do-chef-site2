@@ -26,9 +26,9 @@
   --folha: #2bd67b;
   --pimenta: #ff5a4e;
   /* tipografia */
-  --fonte-titulo: "Anton", "Impact", "Arial Narrow", sans-serif;
-  --fonte-script: "Yellowtail", "Brush Script MT", cursive;
-  --fonte-texto: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fonte-titulo: var(--f-anton), "Impact", "Arial Narrow", sans-serif;
+  --fonte-script: var(--f-yellowtail), "Brush Script MT", cursive;
+  --fonte-texto: var(--f-figtree), system-ui, -apple-system, "Segoe UI", sans-serif;
   --raio: 16px;
   /* preto piano: reflexo de verniz por cima das superfícies */
   --verniz: linear-gradient(180deg, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0.018) 34%, rgba(255, 255, 255, 0) 62%);

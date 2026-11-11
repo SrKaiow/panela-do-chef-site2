@@ -19,7 +19,11 @@ export default async function EntrarEntregador(props: { searchParams: Promise<{ 
         <label className="campo" htmlFor="senha">Senha do entregador
           <input id="senha" name="senha" type="password" required autoFocus autoComplete="current-password" />
         </label>
-        {searchParams.erro && <p className="erro" role="alert">Senha incorreta. Tente de novo.</p>}
+        {searchParams.erro && (
+          <p className="erro" role="alert">
+            {searchParams.erro === "limite" ? "Muitas tentativas erradas. Espere 15 minutos e tente de novo." : "Senha incorreta. Tente de novo."}
+          </p>
+        )}
         <button className="principal" type="submit" disabled={semSenha}><span>Entrar</span><span>→</span></button>
       </form>
     </main>
