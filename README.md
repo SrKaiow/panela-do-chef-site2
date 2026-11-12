@@ -2,6 +2,16 @@
 
 Loja online da Panela do Chef: o cliente monta o pedido, escolhe **dinheiro na entrega** ou **cartão** (Stripe, com Apple Pay e Google Pay) e o pedido cai no **painel** (`/painel`).
 
+## Pagamento online pela Square (recomendado)
+
+Usa a mesma conta da maquininha: o dinheiro e os relatórios ficam no painel da Square. O cliente paga na página da Square (cartão, Apple Pay, Google Pay) e volta para o acompanhamento do pedido. O pedido só vai para a cozinha depois que a Square confirma o pagamento.
+
+1. developer.squareup.com → entre com a conta da Square → **Create application** (nome: Panela do Chef site).
+2. No app, troque para **Production**. Em **Credentials**, copie o **Production Access token** → na Cloudflare, segredo `SQUARE_ACCESS_TOKEN`.
+3. Em **Locations**, copie o **Location ID** da loja → segredo `SQUARE_LOCATION_ID`.
+4. Em **Webhooks → Subscriptions → Add subscription** (Production): URL `https://SEU-SITE/api/square/webhook`, eventos `payment.created` e `payment.updated`. Salve e copie a **Signature key** → segredo `SQUARE_WEBHOOK_SIGNATURE_KEY`.
+5. Confira se `SITE_URL` é exatamente o endereço do site usado no webhook. Implante de novo.
+
 ## Pagamento online (Stripe): cartão e transferência
 
 1. Crie a conta em stripe.com (conta UK, em libras) e ative os pagamentos.

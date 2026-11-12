@@ -38,4 +38,10 @@ export async function salvarAjustes(a: Ajustes) {
   await salvarConfig("ajustes", a);
 }
 
-export const cartaoConfigurado = () => !!process.env.STRIPE_SECRET_KEY;
+/** Quem processa o pagamento online. A Square tem prioridade quando as duas estão configuradas. */
+export function provedorCartao(): "square" | "stripe" | null {
+  if (process.env.SQUARE_ACCESS_TOKEN && process.env.SQUARE_LOCATION_ID) return "square";
+  if (process.env.STRIPE_SECRET_KEY) return "stripe";
+  return null;
+}
+export const cartaoConfigurado = () => provedorCartao() !== null;

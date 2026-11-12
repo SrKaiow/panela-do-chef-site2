@@ -49,9 +49,10 @@ export function telefoneBonito(tel: string) {
 export type AjustesPublicos = Pick<
   Ajustes,
   "nome" | "slogan" | "falaDoChef" | "clientesSatisfeitos" | "telefone" | "email" | "instagram" | "grupoVip" | "pagamentos" | "horarios" | "preparoMin"
-> & { regiao: string; raioMilhas: number; faixas: Faixa[]; pedidoMinimo: number };
+> & { regiao: string; raioMilhas: number; faixas: Faixa[]; pedidoMinimo: number; provedorCartao: "square" | "stripe" | null };
 
-export function publicos(a: Ajustes, cartaoConfigurado: boolean): AjustesPublicos {
+export function publicos(a: Ajustes, provedor: "square" | "stripe" | null): AjustesPublicos {
+  const cartaoConfigurado = provedor !== null;
   return {
     nome: a.nome,
     slogan: a.slogan,
@@ -68,5 +69,6 @@ export function publicos(a: Ajustes, cartaoConfigurado: boolean): AjustesPublico
     raioMilhas: a.entrega.raioMilhas,
     faixas: a.entrega.faixas,
     pedidoMinimo: a.entrega.pedidoMinimo,
+    provedorCartao: provedor,
   };
 }

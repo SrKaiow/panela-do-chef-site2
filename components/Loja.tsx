@@ -567,7 +567,7 @@ function FolhaCarrinho({
                 <label className="pagamento pagamento-online">
                   <input type="radio" name="pagamento" checked={pagamento === "cartao"} onChange={() => setPagamento("cartao")} />
                   <strong>Apple Pay, Google Pay ou cartão</strong>
-                  <span>Pague agora, em página segura da Stripe. Seu pedido vai direto para a cozinha.</span>
+                  <span>Pague agora, em página segura da {loja.provedorCartao === "square" ? "Square" : "Stripe"}. Seu pedido vai direto para a cozinha.</span>
                   <span className="selos" aria-label="Aceitamos Apple Pay, Google Pay, Visa, Mastercard e American Express">
                     <i className="selo-pg preto">Apple Pay</i>
                     <i className="selo-pg branco">G Pay</i>

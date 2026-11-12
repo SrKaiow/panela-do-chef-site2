@@ -31,6 +31,7 @@ async function preparar(c: Client) {
     "avisado_saiu INTEGER NOT NULL DEFAULT 0", "avisado_chegando INTEGER NOT NULL DEFAULT 0",
     "agendado_para TEXT", "distancia_m INTEGER", "aceito_em TEXT", "preparo_em TEXT", "saiu_em TEXT", "entregue_em TEXT",
     "avisado_loja INTEGER NOT NULL DEFAULT 0",
+    "square_pedido TEXT", "link_pagamento TEXT",
   ]) {
     try { await c.execute(`ALTER TABLE pedidos ADD COLUMN ${col}`); } catch {}
   }
@@ -112,6 +113,10 @@ export type Pedido = {
   status: Status;
   statusEm: string | null;
   stripeSessao: string | null;
+  /** Id do pedido na Square, quando o pagamento online é pela Square. */
+  squarePedido: string | null;
+  /** Link da página de pagamento (para tentar de novo). */
+  linkPagamento: string | null;
   lat: number | null;
   lng: number | null;
   avisadoSaiu: boolean;
@@ -146,6 +151,8 @@ function linhaParaPedido(r: Record<string, unknown>): Pedido {
     status: r.status as Status,
     statusEm: (r.status_em as string) ?? null,
     stripeSessao: (r.stripe_sessao as string) ?? null,
+    squarePedido: (r.square_pedido as string) ?? null,
+    linkPagamento: (r.link_pagamento as string) ?? null,
     lat: numOuNull(r.lat),
     lng: numOuNull(r.lng),
     avisadoSaiu: Number(r.avisado_saiu) === 1,
@@ -159,7 +166,7 @@ function linhaParaPedido(r: Record<string, unknown>): Pedido {
   };
 }
 
-type NovoPedido = Omit<Pedido, "numero" | "token" | "criadoEm" | "stripeSessao" | "statusEm" | "avisadoSaiu" | "avisadoChegando" | "aceitoEm" | "preparoEm" | "saiuEm" | "entregueEm">;
+type NovoPedido = Omit<Pedido, "numero" | "token" | "criadoEm" | "stripeSessao" | "squarePedido" | "linkPagamento" | "statusEm" | "avisadoSaiu" | "avisadoChegando" | "aceitoEm" | "preparoEm" | "saiuEm" | "entregueEm">;
 
 export async function criarPedido(p: NovoPedido) {
   const token = randomBytes(12).toString("base64url");
@@ -270,6 +277,15 @@ export async function marcarPago(numero: number, pago: boolean) {
 
 export async function marcarAviso(numero: number, qual: "saiu" | "chegando") {
   await exec(`UPDATE pedidos SET ${qual === "saiu" ? "avisado_saiu" : "avisado_chegando"} = 1 WHERE numero = ?`, [numero]);
+}
+
+export async function salvarPagamentoSquare(numero: number, orderId: string, link: string) {
+  await exec("UPDATE pedidos SET square_pedido = ?, link_pagamento = ? WHERE numero = ?", [orderId, link, numero]);
+}
+
+export async function buscarPorPedidoSquare(orderId: string) {
+  const r = await exec("SELECT * FROM pedidos WHERE square_pedido = ?", [orderId]);
+  return r.rows[0] ? linhaParaPedido(r.rows[0] as Record<string, unknown>) : null;
 }
 
 export async function salvarSessaoStripe(numero: number, sessao: string) {

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { emPence, validarCarrinho } from "@/lib/cardapio";
-import { getAjustes, getCardapio, cartaoConfigurado } from "@/lib/dados";
+import { getAjustes, getCardapio, cartaoConfigurado, provedorCartao } from "@/lib/dados";
+import { criarPagamentoSquare } from "@/lib/square";
 import { estadoLoja, horariosParaAgendar } from "@/lib/horario";
-import { criarPedido, salvarSessaoStripe } from "@/lib/db";
+import { criarPedido, salvarPagamentoSquare, salvarSessaoStripe } from "@/lib/db";
 import { stripe, siteUrl } from "@/lib/stripe";
 import { avisarLojaNovoPedido } from "@/lib/avisoLoja";
 import { coordenadasDoPostcode, cotarEntrega, distanciaMetros } from "@/lib/entrega";
@@ -79,6 +80,19 @@ export async function POST(req: Request) {
     if (pagamento === "dinheiro") {
       await avisarLojaNovoPedido(numero, origem);
       return NextResponse.json({ numero, redirecionar: `/pedido/${token}` });
+    }
+
+    // Pagamento online pela Square (mesma conta da maquininha): cai direto no painel da Square.
+    if (provedorCartao() === "square") {
+      const sq = await criarPagamentoSquare({
+        numero,
+        linhas,
+        taxa,
+        total: subtotal + taxa,
+        voltarPara: `${origem}/pedido/${token}?pago=1`,
+      });
+      await salvarPagamentoSquare(numero, sq.orderId, sq.url);
+      return NextResponse.json({ numero, redirecionar: sq.url });
     }
 
     // Foto de cada item na página da Stripe (precisa de endereço completo).

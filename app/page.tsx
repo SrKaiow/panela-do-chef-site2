@@ -1,6 +1,6 @@
 import Loja from "@/components/Loja";
 import { NaCozinha, SobreChef } from "@/components/Historia";
-import { getAjustes, getCardapio, cartaoConfigurado } from "@/lib/dados";
+import { getAjustes, getCardapio, provedorCartao } from "@/lib/dados";
 import { publicos, telefoneBonito, whatsappInternacional } from "@/lib/ajustes";
 import { estadoLoja, horariosParaAgendar } from "@/lib/horario";
 
@@ -26,7 +26,7 @@ async function depoimentos(): Promise<Depoimento[]> {
 
 export default async function Home() {
   const [lista, ajustes, cardapio] = await Promise.all([depoimentos(), getAjustes(), getCardapio()]);
-  const loja = publicos(ajustes, cartaoConfigurado());
+  const loja = publicos(ajustes, provedorCartao());
   const agora = new Date();
   const estado = estadoLoja(ajustes.horarios, ajustes.pausado, agora);
   const horarios = horariosParaAgendar(ajustes.horarios, agora);
