@@ -29,7 +29,7 @@ export default async function Recibo(props: { params: Promise<{ numero: string }
   return (
     <div className="recibo">
       <style>{CSS}</style>
-      {auto === "1" && <ImprimirAuto />}
+      <ImprimirAuto auto={auto === "1"} />
 
       <header className="r-topo">
         <img src="/fotos/logo-ticket.png" alt="Panela do Chef" className="r-logo" />
@@ -86,7 +86,7 @@ export default async function Recibo(props: { params: Promise<{ numero: string }
 }
 
 const CSS = `
-@page { margin: 0; }
+
 html, body { background: #fff !important; color: #000 !important; margin: 0; color-scheme: light only; }
 :root { color-scheme: light only; --bg: #fff; }
 body::before { display: none !important; }

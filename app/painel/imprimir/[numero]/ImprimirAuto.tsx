@@ -3,26 +3,30 @@
 import { useEffect } from "react";
 
 /**
- * Abre a impressão sozinho quando o recibo termina de carregar (logo incluída).
- * Antes, mede o recibo e define o papel com exatamente essa altura: sai tudo numa nota só,
- * por maior que seja o pedido (sem quebrar em duas folhas).
+ * Define o papel com exatamente a altura do recibo: sai tudo numa nota só, por maior que seja o pedido.
+ * Vale para o botão Imprimir, para a impressão automática e também para Ctrl+P nesta página.
+ * Com auto=true, abre a impressão sozinho quando a logo termina de carregar.
  */
-export default function ImprimirAuto() {
+export default function ImprimirAuto({ auto }: { auto: boolean }) {
   useEffect(() => {
-    const imprimir = () =>
-      setTimeout(() => {
-        const r = document.querySelector<HTMLElement>(".recibo");
-        if (r) {
-          const mm = Math.ceil((r.scrollHeight * 25.4) / 96) + 4;
-          const s = document.createElement("style");
-          s.textContent = `@page { size: 63mm ${mm}mm; margin: 0; } @media print { html, body { height: auto; overflow: visible; } }`;
-          document.head.appendChild(s);
-        }
-        window.print();
-      }, 300);
+    const estilo = document.createElement("style");
+    document.head.appendChild(estilo);
+    const medir = () => {
+      const r = document.querySelector<HTMLElement>(".recibo");
+      if (!r) return;
+      const mm = Math.ceil((r.scrollHeight * 25.4) / 96) + 6;
+      estilo.textContent = `@page { size: 63mm ${mm}mm !important; margin: 0 !important; } @media print { html, body { height: auto !important; overflow: visible !important; } .recibo { break-inside: avoid; } }`;
+    };
+    medir();
+    window.addEventListener("beforeprint", medir);
     const logo = document.querySelector<HTMLImageElement>(".r-logo");
-    if (logo && !logo.complete) logo.addEventListener("load", imprimir, { once: true });
-    else imprimir();
-  }, []);
+    const pronto = () => {
+      medir();
+      if (auto) setTimeout(() => { medir(); window.print(); }, 300);
+    };
+    if (logo && !logo.complete) logo.addEventListener("load", pronto, { once: true });
+    else pronto();
+    return () => window.removeEventListener("beforeprint", medir);
+  }, [auto]);
   return null;
 }
