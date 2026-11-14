@@ -40,24 +40,14 @@ export default async function Recibo(props: { params: Promise<{ numero: string }
       <div className="r-centro">{quando(p.criadoEm)}</div>
       {p.agendadoPara && <div className="r-reserva">RESERVADO PARA<br />{rotuloAgendado(p.agendadoPara).toUpperCase()}</div>}
 
-      {/* Pagamento em destaque */}
+      {/* Pagamento: caixa só para cash (o que o entregador precisa lembrar). Cartão é só uma linha. */}
       {p.pagamento === "dinheiro" ? (
         <div className="r-pag">
           <div className="r-pag-titulo">PAGAMENTO EM CASH</div>
-          {troco > 0 ? (
-            <>
-              <div className="r-pag-linha"><b>CLIENTE PRECISA DE TROCO</b></div>
-              <div className="r-troco">{gbp(troco)}</div>
-            </>
-          ) : (
-            <div className="r-troco">SEM TROCO</div>
-          )}
+          {troco > 0 ? <div className="r-troco">Troco: {gbp(troco)}</div> : <div className="r-troco">Sem troco</div>}
         </div>
       ) : (
-        <div className="r-pag">
-          <div className="r-pag-titulo">{p.pago ? "JÁ PAGO NO SITE" : "AGUARDANDO PAGAMENTO"}</div>
-          <div className="r-troco">{p.pago ? "NÃO COBRAR" : "CONFERIR ANTES"}<br /><small>{gbp(p.total)} · cartão</small></div>
-        </div>
+        <div className="r-pago">{p.pago ? "Pago no site (cartão)" : "Cartão: aguardando pagamento"}</div>
       )}
 
       <div className="r-sep">ITENS</div>
@@ -80,7 +70,7 @@ export default async function Recibo(props: { params: Promise<{ numero: string }
       <div className="r-sep">CLIENTE</div>
       <div className="r-cliente">
         <b>{p.nome.toUpperCase()}</b><br />
-        Tel: <b>{p.telefone}</b><br />
+        Tel: {p.telefone}<br />
         {p.endereco}<br />
         <b className="r-postcode">{p.postcode}</b>
         {p.distanciaM != null && p.distanciaM >= 160 && <> · {(p.distanciaM / 1609.344).toFixed(1)} milhas</>}
@@ -101,32 +91,35 @@ html, body { background: #fff !important; color: #000 !important; margin: 0; col
 :root { color-scheme: light only; --bg: #fff; }
 body::before { display: none !important; }
 body * { box-shadow: none !important; text-shadow: none !important; }
-.recibo { width: 100%; max-width: 63mm; box-sizing: border-box; margin: 0; padding: 2mm 2mm 8mm; font-family: Arial, Helvetica, sans-serif; font-size: 12pt; line-height: 1.25; color: #000; background: #fff; }
+/* Matricial com fita: pouco negrito, linhas finas e logo pequena para gastar menos tinta.
+   Margem maior na esquerda porque a SP742 corta um pouco desse lado. */
+.recibo { width: 100%; max-width: 63mm; box-sizing: border-box; margin: 0; padding: 1mm 2mm 5mm 5mm; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; line-height: 1.25; color: #000; background: #fff; }
 .r-topo { text-align: center; }
-.r-logo { width: 40mm; height: auto; display: block; margin: 0 auto 1mm; image-rendering: pixelated; }
-.r-loja { font-size: 10pt; font-weight: 700; letter-spacing: 1px; }
-.r-numero { font-size: 22pt; font-weight: 900; text-align: center; margin: 3mm 0 0; letter-spacing: 0.5px; }
-.r-centro { text-align: center; font-size: 11pt; }
-.r-reserva { margin: 2mm 0; padding: 1.5mm; border: 2px dashed #000; text-align: center; font-weight: 900; font-size: 12pt; }
-.r-pag { margin: 3mm 0; border: 4px solid #000; padding: 2mm; text-align: center; }
-.r-pag-titulo { font-size: 15pt; font-weight: 900; letter-spacing: 0.5px; border-bottom: 2px solid #000; padding-bottom: 1.5mm; margin-bottom: 1.5mm; }
-.r-pag-linha { font-size: 13pt; }
-.r-pag-linha b { font-size: 13pt; }
-.r-troco { margin-top: 1mm; font-size: 24pt; font-weight: 900; line-height: 1.1; }
-.r-troco small { font-size: 11pt; font-weight: 700; }
-.r-sep { margin: 3mm 0 1mm; font-weight: 900; font-size: 11pt; border-top: 2px solid #000; border-bottom: 2px solid #000; text-align: center; letter-spacing: 2px; }
+.r-logo { width: 22mm; height: auto; display: block; margin: 0 auto; image-rendering: pixelated; }
+.r-loja { display: none; }
+.r-numero { font-size: 16pt; font-weight: 700; text-align: center; margin: 1.5mm 0 0; }
+.r-centro { text-align: center; font-size: 9pt; }
+.r-reserva { margin: 1.5mm 0; padding: 1mm; border: 1px dashed #000; text-align: center; font-weight: 700; font-size: 10pt; }
+.r-pag { margin: 2mm 0; border: 1.5px solid #000; padding: 1.5mm; text-align: center; }
+.r-pag-titulo { font-size: 11pt; font-weight: 700; }
+.r-troco { margin-top: 0.5mm; font-size: 15pt; font-weight: 700; }
+.r-pago { margin: 2mm 0; text-align: center; font-size: 10pt; }
+.r-sep { margin: 2mm 0 0.5mm; font-size: 9pt; border-bottom: 1px solid #000; letter-spacing: 1px; }
 .r-itens { list-style: none; margin: 0; padding: 0; }
-.r-itens li { padding: 1.2mm 0; border-bottom: 1px dashed #000; }
-.r-item { display: flex; gap: 2mm; font-size: 13pt; }
+.r-itens li { padding: 0.8mm 0; }
+.r-item { display: flex; gap: 1.5mm; font-size: 10.5pt; }
+.r-item b { font-weight: 700; }
+.r-item b + b { font-weight: 400; }
 .r-item span { margin-left: auto; white-space: nowrap; }
-.r-det { font-size: 11pt; padding-left: 5mm; }
-.r-obs { font-size: 11.5pt; font-weight: 900; padding-left: 5mm; }
-.r-totais { margin-top: 2mm; font-size: 12pt; }
+.r-det { font-size: 9.5pt; padding-left: 4mm; }
+.r-obs { font-size: 10pt; font-weight: 700; padding-left: 4mm; }
+.r-totais { margin-top: 1mm; font-size: 10pt; border-top: 1px dashed #000; padding-top: 1mm; }
 .r-totais div { display: flex; justify-content: space-between; }
-.r-total { font-size: 15pt; font-weight: 900; border-top: 2px solid #000; margin-top: 1mm; padding-top: 1mm; }
-.r-cliente { font-size: 12.5pt; }
-.r-postcode { font-size: 15pt; }
-.r-obs-geral { margin-top: 2mm; border: 2px solid #000; padding: 1.5mm; font-weight: 700; font-size: 12pt; }
-.r-rodape { margin-top: 4mm; text-align: center; font-size: 10pt; border-top: 1px dashed #000; padding-top: 2mm; }
+.r-total { font-size: 11.5pt; font-weight: 700; }
+.r-cliente { font-size: 10.5pt; }
+.r-cliente b { font-weight: 700; }
+.r-postcode { font-size: 11.5pt; }
+.r-obs-geral { margin-top: 1.5mm; border: 1px solid #000; padding: 1mm; font-size: 10pt; }
+.r-rodape { margin-top: 2mm; text-align: center; font-size: 8.5pt; }
 @media screen { body { background: #ddd !important; } .recibo { background: #fff; margin: 10px auto; box-shadow: 0 2px 10px rgba(0,0,0,.3) !important; } }
 `;
