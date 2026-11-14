@@ -23,7 +23,7 @@ export type AoVivo = {
   chegando: boolean;
 };
 
-// Guarda a última posição vista para calcular a direção da moto.
+// Guarda a última posição vista para calcular a direção do carro.
 let ultimaPosicao: { lat: number; lng: number; direcao: number | null } | null = null;
 
 /** Situação ao vivo de um pedido (página do pedido e a API que ela consulta). */

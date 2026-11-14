@@ -23,6 +23,7 @@ type PedidoRota = {
   waSaiu: string;
   waChegando: string;
   mapa: string;
+  waze: string;
 };
 
 const gbp = (p: number) => "£" + (p / 100).toFixed(2);
@@ -130,7 +131,7 @@ export default function Entregador() {
             </strong>
             <span>
               {gps === "ligado"
-                ? `Os clientes em rota veem você no mapa${segundos != null ? ` · enviado há ${segundos}s` : ""}. Deixe esta tela aberta.`
+                ? `Os clientes em rota veem você no mapa${segundos != null ? ` · enviado há ${segundos}s` : ""}. Toque em "Abrir rota no Waze", depois volte para esta tela e deixe ela aberta: o Waze continua falando o caminho.`
                 : "Ligue antes de sair. Os clientes acompanham você no mapa e recebem o aviso de 1 minuto."}
             </span>
           </div>
@@ -179,7 +180,8 @@ export default function Entregador() {
               {p.avisadoChegando && <div className="ok-aviso">Cliente avisado que você está chegando ✓</div>}
 
               <footer>
-                <a className="btn" href={p.mapa} target="_blank" rel="noreferrer">Abrir rota no Maps</a>
+                <a className="btn principal-p" href={p.waze} target="_blank" rel="noreferrer">Abrir rota no Waze</a>
+                <a className="btn" href={p.mapa} target="_blank" rel="noreferrer">Google Maps</a>
                 {!automatico && !p.avisadoSaiu && (
                   <a className="btn" href={p.waSaiu} target="_blank" rel="noreferrer" onClick={() => acao(p.numero, { avisoManual: "saiu" })}>Mandar link do rastreio</a>
                 )}

@@ -39,6 +39,10 @@ export async function GET(req: Request) {
         temCoordenadas: p.lat != null,
         waSaiu: linkWhatsapp(p.telefone, mensagens.saiu(nome(p.nome), `${siteUrl(req)}/pedido/${p.token}`)),
         waChegando: linkWhatsapp(p.telefone, mensagens.chegando(nome(p.nome))),
+        // Waze: vai direto para as coordenadas do postcode; sem coordenadas, busca pelo endereço.
+        waze: p.lat != null && p.lng != null
+          ? `https://waze.com/ul?ll=${p.lat},${p.lng}&navigate=yes`
+          : `https://waze.com/ul?q=${encodeURIComponent(p.endereco + ", " + p.postcode)}&navigate=yes`,
         mapa: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(p.endereco + ", " + p.postcode)}&travelmode=driving`,
       };
     }),

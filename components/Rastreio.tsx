@@ -27,7 +27,7 @@ function manchete(ao: AoVivo): { titulo: string; texto: string } {
     case "preparando":
       return { titulo: "A cozinha começou o seu pedido agora", texto: "Tá na panela! Assim que ficar pronto, sai para entrega." };
     case "saiu":
-      return { titulo: "Saiu para entrega", texto: ao.saiuEm ? `Saiu da cozinha às ${hora(ao.saiuEm)}. Acompanhe a moto no mapa.` : "O entregador está a caminho." };
+      return { titulo: "Saiu para entrega", texto: ao.saiuEm ? `Saiu da cozinha às ${hora(ao.saiuEm)}. Acompanhe o carro no mapa.` : "O entregador está a caminho." };
     case "entregue":
       return { titulo: "Pedido entregue", texto: "Bom apetite! Obrigado por pedir na Panela do Chef." };
     default:
@@ -61,7 +61,7 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
         if (r.ok && vivo) setAo(await r.json());
       } catch {}
     }
-    // A caminho: a cada 4 s, para a moto andar no mapa. Antes disso: a cada 8 s.
+    // A caminho: a cada 4 s, para o carro andar no mapa. Antes disso: a cada 8 s.
     const t = setInterval(buscar, ao.status === "saiu" ? 4000 : 8000);
     const voltou = () => { if (document.visibilityState === "visible") buscar(); };
     document.addEventListener("visibilitychange", voltou);
@@ -177,8 +177,8 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
             <strong>
               {ao.entregador
                 ? ao.distancia != null
-                  ? `A moto está a ${km(ao.distancia)}${ao.minutos != null ? ` · cerca de ${Math.max(1, Math.round(ao.minutos))} min` : ""}`
-                  : "A moto está a caminho"
+                  ? `O entregador está a ${km(ao.distancia)}${ao.minutos != null ? ` · cerca de ${Math.max(1, Math.round(ao.minutos))} min` : ""}`
+                  : "O entregador está a caminho"
                 : "Aguardando a localização do entregador..."}
             </strong>
           </div>
