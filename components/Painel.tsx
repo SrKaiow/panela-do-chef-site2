@@ -38,21 +38,27 @@ function whatsapp(tel: string) {
 }
 
 const linkRastreio = (p: Pedido) => `${window.location.origin}/pedido/${p.token}`;
-const msgSaiu = (p: Pedido) => `Oi ${p.nome.split(" ")[0]}! Aqui é da Panela do Chef. Seu pedido saiu para entrega. Acompanhe o entregador ao vivo: ${linkRastreio(p)}`;
+// Sem emoji nas mensagens: o WhatsApp no computador (Windows) troca vários deles por "�" quando vêm pelo link.
+// *texto* sai em negrito no WhatsApp; \n vira quebra de linha.
+const primeiroNome = (p: Pedido) => {
+  const n = p.nome.trim().split(/\s+/)[0] || "";
+  return n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+};
+const msgSaiu = (p: Pedido) =>
+  `Oi, ${primeiroNome(p)}! Aqui é da *Panela do Chef*.\n\nSeu pedido *#${p.numero}* acabou de *sair para entrega*.\n\nAcompanhe o entregador ao vivo no mapa:\n${linkRastreio(p)}`;
 
-/** Mensagem pronta de WhatsApp para cada etapa (o cliente também vê tudo ao vivo na página do pedido). */
 function msgEtapa(p: Pedido): { rotulo: string; texto: string } | null {
-  const nome = p.nome.split(" ")[0];
+  const nome = primeiroNome(p);
   const link = linkRastreio(p);
   switch (p.status) {
     case "confirmado":
-      return { rotulo: "Avisar: pedido aceito", texto: `Oi ${nome}! Aqui é da Panela do Chef 🇧🇷 Recebemos e aceitamos o seu pedido #${p.numero} ✅ Acompanhe tudo ao vivo por aqui: ${link}` };
+      return { rotulo: "Avisar: pedido aceito", texto: `Oi, ${nome}! Aqui é da *Panela do Chef*.\n\nRecebemos e *aceitamos o seu pedido #${p.numero}*.\n\nAcompanhe cada etapa ao vivo:\n${link}` };
     case "preparando":
-      return { rotulo: "Avisar: na cozinha", texto: `Oi ${nome}! A cozinha começou o seu pedido #${p.numero} agora 🍳🔥 Assim que sair para entrega te aviso. Acompanhe: ${link}` };
+      return { rotulo: "Avisar: na cozinha", texto: `Oi, ${nome}! Seu pedido *#${p.numero}* já está *na cozinha*.\n\nAssim que sair para entrega, a gente te avisa. Acompanhe por aqui:\n${link}` };
     case "saiu":
       return { rotulo: "Avisar: saiu para entrega", texto: msgSaiu(p) };
     case "entregue":
-      return { rotulo: "Agradecer e pedir avaliação", texto: `Oi ${nome}! Seu pedido #${p.numero} foi entregue. Obrigado por pedir na Panela do Chef 💛 Se puder, conta pra gente como estava (pode mandar foto!): ${link}` };
+      return { rotulo: "Agradecer e pedir avaliação", texto: `Oi, ${nome}! Seu pedido *#${p.numero}* foi entregue.\n\nMuito obrigado por pedir na *Panela do Chef*! Bom apetite.\n\nSe puder, conta pra gente o que achou (dá até para mandar foto):\n${link}` };
     default:
       return null;
   }

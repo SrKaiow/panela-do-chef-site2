@@ -18,9 +18,9 @@ export function linkWhatsapp(tel: string, texto: string) {
 
 export const mensagens = {
   saiu: (nome: string, link: string) =>
-    `Oi ${nome}! Aqui é da Panela do Chef. Seu pedido saiu para entrega. Acompanhe o entregador ao vivo: ${link}`,
+    `Oi, ${nome}! Aqui é da *Panela do Chef*.\n\nSeu pedido acabou de *sair para entrega*.\n\nAcompanhe o entregador ao vivo no mapa:\n${link}`,
   chegando: (nome: string) =>
-    `Oi ${nome}! Seu pedido da Panela do Chef está chegando, falta mais ou menos 1 minuto. Já pode ir até a porta!`,
+    `Oi, ${nome}! Seu pedido da *Panela do Chef* está *chegando*: falta mais ou menos 1 minuto.\n\nJá pode ir até a porta!`,
 };
 
 export const whatsappAutomatico = () => !!(process.env.WHATSAPP_TOKEN && process.env.WHATSAPP_PHONE_ID);
