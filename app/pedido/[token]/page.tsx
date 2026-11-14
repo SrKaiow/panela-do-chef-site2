@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Seu pedido | Panela do Chef", robots: { index: false } };
 
 
-export default async function PaginaPedido(props: { params: Promise<{ token: string }>; searchParams: Promise<{ sessao?: string; cancelado?: string; pago?: string }> }) {
+export default async function PaginaPedido(props: { params: Promise<{ token: string }>; searchParams: Promise<{ sessao?: string; cancelado?: string; pago?: string; orderId?: string; transactionId?: string }> }) {
   const params = await props.params;
   const searchParams = await props.searchParams;
   let pedido = await buscarPorToken(params.token);
@@ -37,7 +37,9 @@ export default async function PaginaPedido(props: { params: Promise<{ token: str
   // Pago pela Square: confere direto na Square (o aviso do webhook pode chegar alguns segundos depois).
   if (pedido.pagamento === "cartao" && !pedido.pago && pedido.squarePedido && squareConfigurado()) {
     try {
-      if (await pedidoSquarePago(pedido.squarePedido, pedido.total)) {
+      // A Square devolve o cliente com o id do pedido pago (orderId); confere esse e o original.
+      const ids = [pedido.squarePedido, searchParams.orderId, searchParams.transactionId];
+      if (await pedidoSquarePago(ids, pedido.numero, pedido.total, pedido.squarePedido)) {
         await confirmarPagamentoCartao(pedido.numero);
         await avisarLojaNovoPedido(pedido.numero);
         pedido = (await buscarPorToken(params.token))!;

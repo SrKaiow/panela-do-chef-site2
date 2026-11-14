@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { buscarPorPedidoSquare, confirmarPagamentoCartao } from "@/lib/db";
-import { assinaturaSquareValida, pedidoSquarePago } from "@/lib/square";
+import { buscarPorNumero, buscarPorPedidoSquare, confirmarPagamentoCartao } from "@/lib/db";
+import { assinaturaSquareValida, infoPedidoSquare } from "@/lib/square";
 import { avisarLojaNovoPedido } from "@/lib/avisoLoja";
 import { siteUrl } from "@/lib/stripe";
 
@@ -27,8 +27,10 @@ export async function POST(req: Request) {
 
   const pagamento = evento.data?.object?.payment;
   if (pagamento?.status === "COMPLETED" && pagamento.order_id) {
-    const pedido = await buscarPorPedidoSquare(pagamento.order_id);
-    if (pedido && !pedido.pago && (await pedidoSquarePago(pagamento.order_id, pedido.total))) {
+    // Acha o pedido do site pelo id original ou pela referência gravada no pedido da Square.
+    const info = await infoPedidoSquare(pagamento.order_id);
+    const pedido = (await buscarPorPedidoSquare(pagamento.order_id)) ?? (info.numero ? await buscarPorNumero(info.numero) : null);
+    if (pedido && pedido.pagamento === "cartao" && !pedido.pago && (info.pagoPence >= pedido.total || info.quitado)) {
       await confirmarPagamentoCartao(pedido.numero);
       await avisarLojaNovoPedido(pedido.numero, siteUrl(req));
     }

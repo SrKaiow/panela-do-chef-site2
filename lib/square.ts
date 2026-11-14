@@ -85,19 +85,52 @@ export async function criarPagamentoSquare(p: {
 
 type Pagamento = { id: string; status: string; order_id?: string; amount_money?: { amount: number; currency: string }; total_money?: { amount: number } };
 
+export type InfoPedidoSquare = { numero: number | null; pagoPence: number; quitado: boolean };
+
 /**
- * Confere na Square se o pedido foi pago por completo.
- * Não confia em voltar da página de pagamento: olha os pagamentos concluídos do pedido.
+ * Lê um pedido da Square: de qual pedido do site ele é (reference_id / metadata) e quanto foi pago
+ * em pagamentos CONCLUÍDOS. Não confia em voltar da página de pagamento.
+ * (Ao pagar, a Square pode registrar o pagamento num pedido com outro id; a referência continua a mesma.)
  */
-export async function pedidoSquarePago(orderId: string, totalPence: number) {
-  const d = await chamar<{ order?: { tenders?: { payment_id?: string }[]; state?: string } }>(`/v2/orders/${encodeURIComponent(orderId)}`);
-  const ids = (d.order?.tenders ?? []).map((t) => t.payment_id).filter(Boolean) as string[];
+export async function infoPedidoSquare(orderId: string): Promise<InfoPedidoSquare> {
+  const d = await chamar<{
+    order?: {
+      reference_id?: string;
+      metadata?: Record<string, string>;
+      location_id?: string;
+      tenders?: { payment_id?: string }[];
+      net_amount_due_money?: { amount?: number };
+    };
+  }>(
+    `/v2/orders/${encodeURIComponent(orderId)}`,
+  );
+  const o = d.order;
+  if (!o || (process.env.SQUARE_LOCATION_ID && o.location_id && o.location_id !== process.env.SQUARE_LOCATION_ID)) return { numero: null, pagoPence: 0, quitado: false };
+  const ref = Number(o.metadata?.numero ?? o.reference_id);
+  const ids = (o.tenders ?? []).map((t) => t.payment_id).filter(Boolean) as string[];
   let pago = 0;
   for (const id of ids) {
     const p = await chamar<{ payment: Pagamento }>(`/v2/payments/${encodeURIComponent(id)}`);
     if (p.payment.status === "COMPLETED") pago += p.payment.amount_money?.amount ?? 0;
   }
-  return pago >= totalPence;
+  // Quitado: a Square diz que não falta nada a pagar (já conta descontos e vouchers aplicados por ela).
+  const quitado = pago > 0 && (o.net_amount_due_money?.amount ?? 1) === 0;
+  return { numero: Number.isFinite(ref) && ref > 0 ? ref : null, pagoPence: pago, quitado };
+}
+
+/** true se algum dos pedidos da Square informados pertence ao pedido do site e está pago por completo. */
+export async function pedidoSquarePago(orderIds: (string | null | undefined)[], numero: number, totalPence: number, idOriginal?: string | null) {
+  for (const id of [...new Set(orderIds.filter(Boolean) as string[])]) {
+    if (!/^[A-Za-z0-9_-]{6,64}$/.test(id)) continue;
+    try {
+      const info = await infoPedidoSquare(id);
+      const dele = id === idOriginal || info.numero === numero;
+      if (dele && (info.pagoPence >= totalPence || info.quitado)) return true;
+    } catch (e) {
+      console.error("[square] conferir", id, e);
+    }
+  }
+  return false;
 }
 
 /** Confere a assinatura do webhook da Square: base64(HMAC-SHA256(chave, url + corpo)). */
