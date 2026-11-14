@@ -77,7 +77,31 @@ export default function Entregador() {
     }
   }
 
+  // Lembra que o GPS foi ligado: ao voltar para a página (ou se o celular recarregar a aba), religa sozinho.
+  const lembrar = (v: boolean) => { try { localStorage.setItem("panela-gps", v ? "1" : "0"); } catch {} };
+  useEffect(() => {
+    let querLigado = false;
+    try { querLigado = localStorage.getItem("panela-gps") === "1"; } catch {}
+    if (querLigado) ligarGps();
+    const voltou = () => {
+      if (document.visibilityState !== "visible") return;
+      let quer = false;
+      try { quer = localStorage.getItem("panela-gps") === "1"; } catch {}
+      if (!quer) return;
+      // O navegador solta a tela e às vezes o GPS quando a aba some: pede de novo.
+      if (watchId.current != null) navigator.geolocation.clearWatch(watchId.current);
+      watchId.current = null;
+      ultimoPost.current = 0;
+      ligarGps();
+    };
+    document.addEventListener("visibilitychange", voltou);
+    window.addEventListener("pageshow", voltou);
+    return () => { document.removeEventListener("visibilitychange", voltou); window.removeEventListener("pageshow", voltou); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function ligarGps() {
+    lembrar(true);
     if (!("geolocation" in navigator)) { setGps("erro"); setErro("Este celular não libera a localização pelo navegador."); return; }
     setGps("ligando");
     watchId.current = navigator.geolocation.watchPosition(
@@ -95,14 +119,15 @@ export default function Entregador() {
     } catch {}
   }
 
-  function desligarGps() {
+  function pararGps() {
     if (watchId.current != null) navigator.geolocation.clearWatch(watchId.current);
     watchId.current = null;
     wakeLock.current?.release().catch(() => {});
     wakeLock.current = null;
     setGps("desligado");
   }
-  useEffect(() => () => desligarGps(), []);
+  function desligarGps() { lembrar(false); pararGps(); }
+  useEffect(() => () => pararGps(), []);
 
   async function acao(numero: number, dados: Record<string, unknown>) {
     const r = await fetch(`/api/entregador/pedidos/${numero}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dados) });
