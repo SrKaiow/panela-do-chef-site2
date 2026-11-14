@@ -44,14 +44,13 @@ export default async function Recibo(props: { params: Promise<{ numero: string }
       {p.pagamento === "dinheiro" ? (
         <div className="r-pag">
           <div className="r-pag-titulo">PAGAMENTO EM CASH</div>
-          <div className="r-pag-linha">COBRAR <b>{gbp(p.total)}</b></div>
-          {p.trocoPara ? (
+          {troco > 0 ? (
             <>
-              <div className="r-pag-linha">CLIENTE PAGA COM <b>{gbp(p.trocoPara)}</b></div>
-              <div className="r-troco">LEVAR TROCO<br />{gbp(troco)}</div>
+              <div className="r-pag-linha"><b>CLIENTE PRECISA DE TROCO</b></div>
+              <div className="r-troco">{gbp(troco)}</div>
             </>
           ) : (
-            <div className="r-troco">SEM TROCO<br /><small>(valor exato)</small></div>
+            <div className="r-troco">SEM TROCO</div>
           )}
         </div>
       ) : (
@@ -112,8 +111,8 @@ body * { box-shadow: none !important; text-shadow: none !important; }
 .r-pag { margin: 3mm 0; border: 4px solid #000; padding: 2mm; text-align: center; }
 .r-pag-titulo { font-size: 15pt; font-weight: 900; letter-spacing: 0.5px; border-bottom: 2px solid #000; padding-bottom: 1.5mm; margin-bottom: 1.5mm; }
 .r-pag-linha { font-size: 13pt; }
-.r-pag-linha b { font-size: 15pt; }
-.r-troco { margin-top: 1.5mm; font-size: 19pt; font-weight: 900; line-height: 1.1; }
+.r-pag-linha b { font-size: 13pt; }
+.r-troco { margin-top: 1mm; font-size: 24pt; font-weight: 900; line-height: 1.1; }
 .r-troco small { font-size: 11pt; font-weight: 700; }
 .r-sep { margin: 3mm 0 1mm; font-weight: 900; font-size: 11pt; border-top: 2px solid #000; border-bottom: 2px solid #000; text-align: center; letter-spacing: 2px; }
 .r-itens { list-style: none; margin: 0; padding: 0; }
