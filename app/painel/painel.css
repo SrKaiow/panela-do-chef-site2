@@ -137,7 +137,7 @@ a.btn.principal-p { color: #fff; justify-content: center; }
 .sq-btn-primario:hover { background: #f2cb00; }
 .sq-btn-perigo { color: var(--pimenta); }
 .sq-btn-perigo.cheio { background: var(--pimenta); color: #fff; border-color: var(--pimenta); }
-.sq-btn-ativo { background: #151515; color: #fff; border-color: #151515; }
+.sq-btn.sq-btn-ativo, .sq-btn.sq-btn-ativo:hover { background: #151515; color: #fff; border-color: #151515; }
 .sq-link { background: none; border: 0; padding: 0; color: var(--texto); text-decoration: underline; text-underline-offset: 3px; font-weight: 600; }
 .sq-link.forte { text-decoration: none; font-weight: 700; }
 .sq-link.forte:hover { text-decoration: underline; }

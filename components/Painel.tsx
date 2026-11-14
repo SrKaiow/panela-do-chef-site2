@@ -93,6 +93,23 @@ function alarme() {
 }
 const bip = alarme;
 
+const CHAVE_IMPRESSOS = "panela-impressos";
+function lerImpressos(): number[] {
+  try { return JSON.parse(localStorage.getItem(CHAVE_IMPRESSOS) || "[]"); } catch { return []; }
+}
+function guardarImpressos(ns: number[]) {
+  try { localStorage.setItem(CHAVE_IMPRESSOS, JSON.stringify([...new Set(ns)].slice(-300))); } catch {}
+}
+/** Abre o recibo num quadro escondido e manda imprimir (sai na impressora padrão do computador). */
+function imprimir(numero: number) {
+  const f = document.createElement("iframe");
+  f.setAttribute("aria-hidden", "true");
+  f.style.cssText = "position:fixed;right:0;bottom:0;width:80mm;height:10px;border:0;opacity:0;pointer-events:none";
+  f.src = `/painel/imprimir/${numero}?auto=1`;
+  document.body.appendChild(f);
+  setTimeout(() => f.remove(), 120_000);
+}
+
 export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliacoes"; onNovos?: (n: number, avaliacoes: number, somPronto: boolean) => void }) {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [abaPedidos, setAba] = useState("ativos");
@@ -116,6 +133,11 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
     document.addEventListener("keydown", liberar);
     return () => { document.removeEventListener("pointerdown", liberar); document.removeEventListener("keydown", liberar); };
   }, []);
+  // Impressora da cozinha: imprime sozinho cada pedido novo (lembra neste aparelho quais já saíram).
+  const [autoImprimir, setAutoEstado] = useState(false);
+  const autoRef = useRef(false);
+  const setAuto = (v: boolean) => { setAutoEstado(v); autoRef.current = v; try { localStorage.setItem("panela-imprimir", v ? "1" : "0"); } catch {} };
+  useEffect(() => { try { if (localStorage.getItem("panela-imprimir") === "1") { setAutoEstado(true); autoRef.current = true; } } catch {} }, []);
   const [carregado, setCarregado] = useState(false);
   const vistos = useRef<Set<number> | null>(null);
   const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
@@ -154,6 +176,12 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
         } catch {}
       }
       vistos.current = new Set(novos);
+      if (autoRef.current) {
+        const feitos = lerImpressos();
+        // Só pedidos de agora (últimas 3 h) e que ainda não saíram na impressora.
+        const fila = lista.filter((p) => p.status === "novo" && !feitos.includes(p.numero) && Date.now() - new Date(p.criadoEm).getTime() < 3 * 3600_000);
+        if (fila.length) { guardarImpressos([...feitos, ...fila.map((p) => p.numero)]); fila.forEach((p, i) => setTimeout(() => imprimir(p.numero), i * 4000)); }
+      }
       setPedidos(lista);
       setErro("");
     } catch {
@@ -216,6 +244,14 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
             ) : qtdNovos > 0 && som ? (
               <button className="sq-btn" onClick={() => setSilencioAte(Date.now() + 5 * 60 * 1000)}>Silenciar 5 min</button>
             ) : null}
+            <button className={"sq-btn" + (autoImprimir ? " sq-btn-ativo" : "")} onClick={() => {
+              const v = !autoImprimir;
+              // Ao ligar, os pedidos que já estão na tela não saem de novo: só os que chegarem daqui pra frente.
+              if (v) guardarImpressos([...lerImpressos(), ...pedidos.map((p) => p.numero)]);
+              setAuto(v);
+            }} title="Cada pedido novo sai sozinho na impressora da cozinha">
+              {autoImprimir ? "🖨 Imprimir sozinho: ligado" : "🖨 Imprimir sozinho: desligado"}
+            </button>
             <button className={"sq-btn" + (som ? " sq-btn-ativo" : "")} onClick={() => { const v = !som; setSom(v); if (v) { contextoAudio(); bip(); try { if ("Notification" in window && Notification.permission === "default") Notification.requestPermission(); } catch {} } }}>
               {som ? "🔔 Alarme ligado" : "🔕 Alarme desligado"}
             </button>
@@ -335,6 +371,9 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
                   >
                     💬 {msgEtapa(p)!.rotulo}
                   </a>
+                )}
+                {p.status !== "cancelado" && (
+                  <button className="btn" onClick={() => imprimir(p.numero)} title="Imprimir o recibo da cozinha">🖨 Imprimir</button>
                 )}
                 {p.status !== "aguardando_pagamento" && p.status !== "cancelado" && (
                   <a className="btn" href={`/pedido/${p.token}`} target="_blank" rel="noreferrer">Ver rastreio</a>
