@@ -1,4 +1,4 @@
-import { buscarPorNumero, listarPorStatus, marcarAviso, type Local, type Status } from "./db";
+import { buscarPorNumero, entregaAtual, listarPorStatus, marcarAviso, type Local, type Status } from "./db";
 import { distanciaMetros } from "./entrega";
 import { getAjustes } from "./dados";
 import { enviarModelo } from "./whatsapp";
@@ -21,7 +21,9 @@ export async function aoMudarStatus(numero: number, status: Status, origem?: str
  * Devolve os pedidos que precisam de aviso manual (quando o envio automático não está ligado).
  */
 export async function verificarChegadas(local: Local) {
-  const emRota = await listarPorStatus(["saiu"]);
+  // Só a entrega que está sendo feita agora (os outros pedidos no carro esperam a vez deles).
+  const atual = await entregaAtual();
+  const emRota = (await listarPorStatus(["saiu"])).filter((p) => p.numero === atual);
   const limite = (await getAjustes()).entrega.avisoChegandoMetros;
   const manuais: number[] = [];
   for (const p of emRota) {

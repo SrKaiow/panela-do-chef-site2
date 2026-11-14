@@ -20,6 +20,8 @@ type PedidoRota = {
   avisadoSaiu: boolean;
   avisadoChegando: boolean;
   temCoordenadas: boolean;
+  /** A entrega que está sendo feita agora (o cliente vê o carro e recebe o aviso de 1 min). */
+  atual: boolean;
   waSaiu: string;
   waChegando: string;
   mapa: string;
@@ -136,7 +138,7 @@ export default function Entregador() {
   }
 
   const prontos = pedidos.filter((p) => p.status !== "saiu");
-  const emRota = pedidos.filter((p) => p.status === "saiu").sort((a, b) => (a.distancia ?? 1e9) - (b.distancia ?? 1e9));
+  const emRota = pedidos.filter((p) => p.status === "saiu").sort((a, b) => Number(b.atual) - Number(a.atual) || (a.distancia ?? 1e9) - (b.distancia ?? 1e9));
   const segundos = ultimoEnvio ? Math.round((agora - ultimoEnvio) / 1000) : null;
 
   return (
@@ -169,9 +171,12 @@ export default function Entregador() {
 
         {erro && <p className="erro" role="alert">{erro}</p>}
 
-        {emRota.length > 0 && <h2 className="secao-titulo">Em rota ({emRota.length})</h2>}
+        {emRota.length > 0 && <h2 className="secao-titulo">No carro ({emRota.length})</h2>}
+        {emRota.length > 1 && !emRota.some((p) => p.atual) && (
+          <p className="sub">Toque em <strong>Ir para este cliente</strong> na entrega que você vai fazer agora. Só esse cliente vê o carro no mapa; os outros esperam a vez.</p>
+        )}
         {emRota.map((p) => {
-          const pertinho = p.distancia != null && p.distancia <= metrosAviso;
+          const pertinho = p.atual && p.distancia != null && p.distancia <= metrosAviso;
           return (
             <article key={p.numero} className={"pedido st-saiu" + (pertinho ? " pertinho" : "")}>
               <header>
@@ -204,8 +209,16 @@ export default function Entregador() {
               )}
               {p.avisadoChegando && <div className="ok-aviso">Cliente avisado que você está chegando ✓</div>}
 
+              {p.atual ? <div className="ok-aviso">🚗 Indo para este cliente agora · ele vê você no mapa</div> : <div className="sub">Esperando a vez · o cliente ainda não vê o carro</div>}
+
               <footer>
-                <a className="btn principal-p" href={p.waze} target="_blank" rel="noreferrer">Abrir rota no Waze</a>
+                {p.atual ? (
+                  <a className="btn principal-p" href={p.waze} target="_blank" rel="noreferrer">Abrir rota no Waze</a>
+                ) : (
+                  <a className="btn principal-p" href={p.waze} target="_blank" rel="noreferrer" onClick={() => { if (gps === "desligado") ligarGps(); acao(p.numero, { iniciar: true }); }}>
+                    Ir para este cliente
+                  </a>
+                )}
                 <a className="btn" href={p.mapa} target="_blank" rel="noreferrer">Google Maps</a>
                 {!automatico && !p.avisadoSaiu && (
                   <a className="btn" href={p.waSaiu} target="_blank" rel="noreferrer" onClick={() => acao(p.numero, { avisoManual: "saiu" })}>Mandar link do rastreio</a>

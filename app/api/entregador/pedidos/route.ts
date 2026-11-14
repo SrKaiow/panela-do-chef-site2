@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { logado } from "@/lib/auth";
-import { listarPorStatus, lerLocal } from "@/lib/db";
+import { entregaAtual, listarPorStatus, lerLocal } from "@/lib/db";
 import { distanciaMetros, minutosAte } from "@/lib/entrega";
 import { getAjustes } from "@/lib/dados";
 import { linkWhatsapp, mensagens, whatsappAutomatico } from "@/lib/whatsapp";
@@ -13,6 +13,7 @@ export async function GET(req: Request) {
   const local = await lerLocal();
   const ajustes = await getAjustes();
   const pedidos = await listarPorStatus(["confirmado", "preparando", "saiu"]);
+  const atual = await entregaAtual();
   const nome = (n: string) => n.trim().split(/\s+/)[0] || n;
   return NextResponse.json({
     automatico: whatsappAutomatico(),
@@ -37,6 +38,7 @@ export async function GET(req: Request) {
         avisadoSaiu: p.avisadoSaiu,
         avisadoChegando: p.avisadoChegando,
         temCoordenadas: p.lat != null,
+        atual: p.numero === atual,
         waSaiu: linkWhatsapp(p.telefone, mensagens.saiu(nome(p.nome), `${siteUrl(req)}/pedido/${p.token}`)),
         waChegando: linkWhatsapp(p.telefone, mensagens.chegando(nome(p.nome))),
         // Waze: vai direto para as coordenadas do postcode; sem coordenadas, busca pelo endereço.

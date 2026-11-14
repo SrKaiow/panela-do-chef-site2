@@ -27,6 +27,7 @@ function manchete(ao: AoVivo): { titulo: string; texto: string } {
     case "preparando":
       return { titulo: "A cozinha começou o seu pedido agora", texto: "Tá na panela! Assim que ficar pronto, sai para entrega." };
     case "saiu":
+      if (ao.naFila) return { titulo: "Seu pedido está no carro", texto: "O entregador está fazendo uma entrega antes da sua. Quando ele vier até você, o carro aparece no mapa com o tempo de chegada." };
       return { titulo: "Saiu para entrega", texto: ao.saiuEm ? `Saiu da cozinha às ${hora(ao.saiuEm)}. Acompanhe o carro no mapa.` : "O entregador está a caminho." };
     case "entregue":
       return { titulo: "Pedido entregue", texto: "Bom apetite! Obrigado por pedir na Panela do Chef." };
@@ -179,7 +180,9 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
                 ? ao.distancia != null
                   ? `O entregador está a ${km(ao.distancia)}${ao.minutos != null ? ` · cerca de ${Math.max(1, Math.round(ao.minutos))} min` : ""}`
                   : "O entregador está a caminho"
-                : "Aguardando a localização do entregador..."}
+                : ao.naFila
+                  ? "O entregador está terminando outra entrega. Você é um dos próximos."
+                  : "Aguardando a localização do entregador..."}
             </strong>
           </div>
           <Mapa entregador={ao.entregador} destino={ao.destino} cozinha={ao.cozinha} />

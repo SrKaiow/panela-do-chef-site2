@@ -32,6 +32,7 @@ async function preparar(c: Client) {
     "agendado_para TEXT", "distancia_m INTEGER", "aceito_em TEXT", "preparo_em TEXT", "saiu_em TEXT", "entregue_em TEXT",
     "avisado_loja INTEGER NOT NULL DEFAULT 0",
     "square_pedido TEXT", "link_pagamento TEXT",
+    "a_caminho_em TEXT",
   ]) {
     try { await c.execute(`ALTER TABLE pedidos ADD COLUMN ${col}`); } catch {}
   }
@@ -130,6 +131,8 @@ export type Pedido = {
   preparoEm: string | null;
   saiuEm: string | null;
   entregueEm: string | null;
+  /** Quando o entregador tocou "Ir para este cliente" (a entrega que está sendo feita agora). */
+  aCaminhoEm: string | null;
 };
 
 const numOuNull = (v: unknown) => (v == null ? null : Number(v));
@@ -166,10 +169,11 @@ function linhaParaPedido(r: Record<string, unknown>): Pedido {
     preparoEm: (r.preparo_em as string) ?? null,
     saiuEm: (r.saiu_em as string) ?? null,
     entregueEm: (r.entregue_em as string) ?? null,
+    aCaminhoEm: (r.a_caminho_em as string) ?? null,
   };
 }
 
-type NovoPedido = Omit<Pedido, "numero" | "token" | "criadoEm" | "stripeSessao" | "squarePedido" | "linkPagamento" | "statusEm" | "avisadoSaiu" | "avisadoChegando" | "aceitoEm" | "preparoEm" | "saiuEm" | "entregueEm">;
+type NovoPedido = Omit<Pedido, "numero" | "token" | "criadoEm" | "stripeSessao" | "squarePedido" | "linkPagamento" | "statusEm" | "avisadoSaiu" | "avisadoChegando" | "aceitoEm" | "preparoEm" | "saiuEm" | "entregueEm" | "aCaminhoEm">;
 
 export async function criarPedido(p: NovoPedido) {
   const token = randomBytes(12).toString("base64url");
@@ -276,6 +280,23 @@ export async function apagarFoto(id: string) {
 
 export async function marcarPago(numero: number, pago: boolean) {
   await exec("UPDATE pedidos SET pago = ? WHERE numero = ?", [pago ? 1 : 0, numero]);
+}
+
+/** O entregador vai para este cliente agora: só ele vê o carro no mapa e recebe o aviso de 1 minuto. */
+export async function iniciarEntrega(numero: number) {
+  await exec(`UPDATE pedidos SET a_caminho_em = NULL WHERE status = 'saiu' AND numero != ?`, [numero]);
+  await exec(`UPDATE pedidos SET a_caminho_em = ? WHERE numero = ? AND status = 'saiu'`, [new Date().toISOString(), numero]);
+}
+
+/**
+ * Qual entrega está sendo feita agora: a que o entregador iniciou;
+ * se só tem um pedido no carro, é ele (não precisa tocar em nada).
+ */
+export async function entregaAtual(): Promise<number | null> {
+  const noCarro = await listarPorStatus(["saiu"]);
+  const iniciada = noCarro.filter((p) => p.aCaminhoEm).sort((a, b) => b.aCaminhoEm!.localeCompare(a.aCaminhoEm!))[0];
+  if (iniciada) return iniciada.numero;
+  return noCarro.length === 1 ? noCarro[0].numero : null;
 }
 
 export async function marcarAviso(numero: number, qual: "saiu" | "chegando") {

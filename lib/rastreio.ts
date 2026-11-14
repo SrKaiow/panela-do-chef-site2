@@ -1,4 +1,4 @@
-import { lerLocal, pedidosNaFrente, type Pedido, type Status } from "./db";
+import { entregaAtual, lerLocal, pedidosNaFrente, type Pedido, type Status } from "./db";
 import { distanciaMetros, direcaoGraus, minutosAte } from "./entrega";
 import { getAjustes } from "./dados";
 
@@ -21,6 +21,8 @@ export type AoVivo = {
   distancia: number | null;
   minutos: number | null;
   chegando: boolean;
+  /** No carro, mas o entregador está fazendo outra entrega antes desta. */
+  naFila: boolean;
 };
 
 // Guarda a última posição vista para calcular a direção do carro.
@@ -55,7 +57,8 @@ export async function situacaoAoVivo(p: Pedido): Promise<AoVivo> {
   }
 
   // A posição do entregador só aparece enquanto o pedido está a caminho, e se for recente.
-  if (p.status === "saiu") {
+  const naFila = p.status === "saiu" && (await entregaAtual()) !== p.numero;
+  if (p.status === "saiu" && !naFila) {
     const local = await lerLocal();
     if (local && Date.now() - new Date(local.atualizadoEm).getTime() < 10 * 60 * 1000) {
       let direcao: number | null = ultimaPosicao?.direcao ?? null;
@@ -89,6 +92,7 @@ export async function situacaoAoVivo(p: Pedido): Promise<AoVivo> {
     entregador,
     distancia,
     minutos,
-    chegando: p.avisadoChegando || (distancia != null && distancia <= a.entrega.avisoChegandoMetros),
+    chegando: !naFila && (p.avisadoChegando || (distancia != null && distancia <= a.entrega.avisoChegandoMetros)),
+    naFila,
   };
 }
