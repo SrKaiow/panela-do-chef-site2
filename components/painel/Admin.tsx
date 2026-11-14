@@ -40,6 +40,7 @@ export default function Admin() {
   const [aviso, setAviso] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
   const [novos, setNovos] = useState(0);
   const [avPendentes, setAvPendentes] = useState(0);
+  const [somPronto, setSomPronto] = useState(true);
 
   useEffect(() => {
     const mudar = () => { setRota(lerHash()); setMenuAberto(false); window.scrollTo({ top: 0 }); };
@@ -93,7 +94,7 @@ export default function Admin() {
     }
   }, []);
 
-  const onNovos = useCallback((n: number, av: number) => { setNovos(n); setAvPendentes(av); }, []);
+  const onNovos = useCallback((n: number, av: number, pronto: boolean) => { setNovos(n); setAvPendentes(av); setSomPronto(pronto); }, []);
   const ir = (secao: string, sub?: string) => { window.location.hash = sub ? `${secao}/${encodeURIComponent(sub)}` : secao; };
   const pronto = cardapio && ajustes;
 
@@ -140,6 +141,16 @@ export default function Admin() {
           {ajustes && <EstadoLoja ajustes={ajustes} />}
         </header>
 
+        {!somPronto && (
+          <button type="button" className="sq-faixa-som">🔔 Toque aqui para ligar o alarme de pedidos novos</button>
+        )}
+        {novos > 0 && (
+          <a href="#pedidos" className="sq-faixa-novo" role="alert">
+            <span aria-hidden="true">🔔</span>
+            <strong>{novos === 1 ? "1 pedido novo esperando você aceitar" : `${novos} pedidos novos esperando você aceitar`}</strong>
+            <span className="sq-faixa-acao">Ver agora →</span>
+          </a>
+        )}
         <main className="sq-conteudo">
           {/* Pedidos fica sempre montado: continua tocando o som de pedido novo em qualquer tela. */}
           <div hidden={rota.secao !== "pedidos" && rota.secao !== "avaliacoes"}>

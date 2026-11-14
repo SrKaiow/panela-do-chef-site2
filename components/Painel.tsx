@@ -40,24 +40,82 @@ function whatsapp(tel: string) {
 const linkRastreio = (p: Pedido) => `${window.location.origin}/pedido/${p.token}`;
 const msgSaiu = (p: Pedido) => `Oi ${p.nome.split(" ")[0]}! Aqui é da Panela do Chef. Seu pedido saiu para entrega. Acompanhe o entregador ao vivo: ${linkRastreio(p)}`;
 
-function bip() {
-  try {
-    const ctx = new AudioContext();
-    [0, 0.25].forEach((t) => {
-      const o = ctx.createOscillator(); const g = ctx.createGain();
-      o.frequency.value = 880; o.connect(g); g.connect(ctx.destination);
-      g.gain.setValueAtTime(0.25, ctx.currentTime + t); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.2);
-      o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.22);
-    });
-  } catch {}
+/** Mensagem pronta de WhatsApp para cada etapa (o cliente também vê tudo ao vivo na página do pedido). */
+function msgEtapa(p: Pedido): { rotulo: string; texto: string } | null {
+  const nome = p.nome.split(" ")[0];
+  const link = linkRastreio(p);
+  switch (p.status) {
+    case "confirmado":
+      return { rotulo: "Avisar: pedido aceito", texto: `Oi ${nome}! Aqui é da Panela do Chef 🇧🇷 Recebemos e aceitamos o seu pedido #${p.numero} ✅ Acompanhe tudo ao vivo por aqui: ${link}` };
+    case "preparando":
+      return { rotulo: "Avisar: na cozinha", texto: `Oi ${nome}! A cozinha começou o seu pedido #${p.numero} agora 🍳🔥 Assim que sair para entrega te aviso. Acompanhe: ${link}` };
+    case "saiu":
+      return { rotulo: "Avisar: saiu para entrega", texto: msgSaiu(p) };
+    case "entregue":
+      return { rotulo: "Agradecer e pedir avaliação", texto: `Oi ${nome}! Seu pedido #${p.numero} foi entregue. Obrigado por pedir na Panela do Chef 💛 Se puder, conta pra gente como estava (pode mandar foto!): ${link}` };
+    default:
+      return null;
+  }
 }
 
-export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliacoes"; onNovos?: (n: number, avaliacoes: number) => void }) {
+/* ---------- Alarme de pedido novo ---------- */
+let audio: AudioContext | null = null;
+function contextoAudio() {
+  try {
+    if (!audio) audio = new AudioContext();
+    if (audio.state === "suspended") audio.resume().catch(() => {});
+    return audio;
+  } catch {
+    return null;
+  }
+}
+/** Toque forte de 3 notas subindo (parecido com tablet de delivery). */
+function alarme() {
+  const ctx = contextoAudio();
+  if (!ctx) return;
+  const notas = [880, 1175, 1568];
+  for (let rep = 0; rep < 2; rep++) {
+    notas.forEach((f, i) => {
+      const t = ctx.currentTime + rep * 0.75 + i * 0.16;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "square";
+      o.frequency.value = f;
+      o.connect(g);
+      g.connect(ctx.destination);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.35, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+      o.start(t);
+      o.stop(t + 0.16);
+    });
+  }
+}
+const bip = alarme;
+
+export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliacoes"; onNovos?: (n: number, avaliacoes: number, somPronto: boolean) => void }) {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [abaPedidos, setAba] = useState("ativos");
   const aba = secao === "avaliacoes" ? "avaliacoes" : abaPedidos;
   const [erro, setErro] = useState("");
-  const [som, setSom] = useState(false);
+  // Som fica ligado por padrão e lembra a escolha neste aparelho.
+  const [som, setSomEstado] = useState(true);
+  const [somPronto, setSomPronto] = useState(false);
+  const [silencioAte, setSilencioAte] = useState(0);
+  const setSom = (v: boolean) => { setSomEstado(v); try { localStorage.setItem("panela-som", v ? "1" : "0"); } catch {} };
+  useEffect(() => {
+    try { if (localStorage.getItem("panela-som") === "0") setSomEstado(false); } catch {}
+    // O navegador só libera o som depois de um toque na tela: o primeiro toque em qualquer lugar já libera.
+    const liberar = () => {
+      const ctx = contextoAudio();
+      if (ctx) ctx.resume().then(() => setSomPronto(ctx.state === "running")).catch(() => {});
+    };
+    const ctx = contextoAudio();
+    if (ctx?.state === "running") setSomPronto(true);
+    document.addEventListener("pointerdown", liberar);
+    document.addEventListener("keydown", liberar);
+    return () => { document.removeEventListener("pointerdown", liberar); document.removeEventListener("keydown", liberar); };
+  }, []);
   const [carregado, setCarregado] = useState(false);
   const vistos = useRef<Set<number> | null>(null);
   const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
@@ -84,7 +142,17 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
       const d = await r.json();
       const lista: Pedido[] = d.pedidos;
       const novos = lista.filter((p) => p.status === "novo").map((p) => p.numero);
-      if (vistos.current && novos.some((n) => !vistos.current!.has(n)) && som) bip();
+      const chegou = vistos.current ? lista.filter((p) => p.status === "novo" && !vistos.current!.has(p.numero)) : [];
+      if (chegou.length) {
+        if (som) bip();
+        try { navigator.vibrate?.([400, 150, 400]); } catch {}
+        try {
+          if ("Notification" in window && Notification.permission === "granted") {
+            const p = chegou[0];
+            new Notification(`🔔 Pedido novo #${p.numero} · ${gbp(p.total)}`, { body: `${p.nome} · ${p.itens.map((l) => `${l.qtd}× ${l.nome}`).join(", ").slice(0, 120)}`, tag: `pedido-${p.numero}`, requireInteraction: true });
+          }
+        } catch {}
+      }
       vistos.current = new Set(novos);
       setPedidos(lista);
       setErro("");
@@ -102,8 +170,21 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
   }, [carregar]);
 
   const qtdNovos = pedidos.filter((p) => p.status === "novo").length;
+  // Enquanto tiver pedido esperando "Aceitar", o alarme toca de novo a cada 6 segundos (até aceitar ou silenciar).
+  useEffect(() => {
+    if (!som || !qtdNovos) return;
+    const t = setInterval(() => { if (Date.now() > silencioAte) alarme(); }, 6000);
+    return () => clearInterval(t);
+  }, [som, qtdNovos, silencioAte]);
+  // Título da aba piscando quando tem pedido novo.
+  useEffect(() => {
+    if (!qtdNovos) return;
+    let alt = false;
+    const t = setInterval(() => { alt = !alt; document.title = alt ? `🔔 ${qtdNovos} PEDIDO${qtdNovos > 1 ? "S" : ""} NOVO${qtdNovos > 1 ? "S" : ""}!` : "Painel | Panela do Chef"; }, 1000);
+    return () => clearInterval(t);
+  }, [qtdNovos]);
   useEffect(() => { document.title = qtdNovos ? `(${qtdNovos}) Pedidos novos` : "Painel | Panela do Chef"; }, [qtdNovos]);
-  useEffect(() => { onNovos?.(qtdNovos, pendentes); }, [qtdNovos, pendentes, onNovos]);
+  useEffect(() => { onNovos?.(qtdNovos, pendentes, somPronto || !som); }, [qtdNovos, pendentes, somPronto, som, onNovos]);
 
   async function atualizar(numero: number, dados: { status?: Status; pago?: boolean; avisoManual?: "saiu" | "chegando" }) {
     setPedidos((ps) => ps.map((p) => (p.numero === numero ? { ...p, ...dados } : p)));
@@ -129,9 +210,16 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
       <div className="sq-cabeca">
         <h1>{secao === "avaliacoes" ? "Avaliações" : "Pedidos"}</h1>
         {secao === "pedidos" && (
-          <button className={"sq-btn" + (som ? " sq-btn-ativo" : "")} onClick={() => { setSom(!som); if (!som) bip(); }}>
-            {som ? "🔔 Som ligado" : "Ligar som de pedido novo"}
-          </button>
+          <span style={{ display: "inline-flex", gap: 8, flexWrap: "wrap" }}>
+            {qtdNovos > 0 && som && Date.now() < silencioAte ? (
+              <button className="sq-btn" onClick={() => setSilencioAte(0)}>🔕 Silenciado · religar</button>
+            ) : qtdNovos > 0 && som ? (
+              <button className="sq-btn" onClick={() => setSilencioAte(Date.now() + 5 * 60 * 1000)}>Silenciar 5 min</button>
+            ) : null}
+            <button className={"sq-btn" + (som ? " sq-btn-ativo" : "")} onClick={() => { const v = !som; setSom(v); if (v) { contextoAudio(); bip(); try { if ("Notification" in window && Notification.permission === "default") Notification.requestPermission(); } catch {} } }}>
+              {som ? "🔔 Alarme ligado" : "🔕 Alarme desligado"}
+            </button>
+          </span>
         )}
       </div>
 
@@ -170,6 +258,7 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
                   </span>
                 </header>
                 <p style={{ margin: 0 }}>{a.texto}</p>
+                {a.foto && <a href={a.foto} target="_blank" rel="noreferrer"><img className="av-foto" src={a.foto} alt={`Foto enviada por ${a.nome}`} /></a>}
                 <footer>
                   {a.status !== "aprovada" && <button className="btn principal-p" onClick={() => moderar(a.id, "aprovada")}>Aprovar e mostrar no site</button>}
                   {a.status !== "oculta" && <button className="btn" onClick={() => moderar(a.id, "oculta")}>{a.status === "aprovada" ? "Tirar do site" : "Não mostrar"}</button>}
@@ -216,7 +305,7 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
                 ) : (
                   <>
                     <strong>PAGO NO SITE · {gbp(p.total)}</strong>
-                    <span>{p.pago ? "Pago pela Stripe (cartão ou banco)" : "Ainda não pago"}</span>
+                    <span>{p.pago ? (p.squarePedido ? "Pago pela Square (cartão / Apple Pay / Google Pay)" : "Pago online (cartão)") : "Aguardando o pagamento"}</span>
                   </>
                 )}
               </div>
@@ -236,9 +325,15 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
                     {PROXIMO[p.status]!.rotulo}
                   </button>
                 )}
-                {p.status === "saiu" && !p.avisadoSaiu && (
-                  <a className="btn" href={`https://wa.me/${whatsapp(p.telefone)}?text=${encodeURIComponent(msgSaiu(p))}`} target="_blank" rel="noreferrer" onClick={() => atualizar(p.numero, { avisoManual: "saiu" })}>
-                    Mandar link do rastreio
+                {msgEtapa(p) && (
+                  <a
+                    className="btn btn-zap"
+                    href={`https://wa.me/${whatsapp(p.telefone)}?text=${encodeURIComponent(msgEtapa(p)!.texto)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => { if (p.status === "saiu" && !p.avisadoSaiu) atualizar(p.numero, { avisoManual: "saiu" }); }}
+                  >
+                    💬 {msgEtapa(p)!.rotulo}
                   </a>
                 )}
                 {p.status !== "aguardando_pagamento" && p.status !== "cancelado" && (

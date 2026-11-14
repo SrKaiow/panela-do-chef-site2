@@ -16,7 +16,7 @@ async function depoimentos(): Promise<Depoimento[]> {
   try {
     const novas = await listarAvaliacoes(true);
     return [
-      ...novas.map((a) => ({ nome: a.nome, local: a.local, nota: a.nota, texto: a.texto, verificado: a.pedidoNumero != null, data: a.criadoEm })),
+      ...novas.map((a) => ({ nome: a.nome, local: a.local, nota: a.nota, texto: a.texto, verificado: a.pedidoNumero != null, data: a.criadoEm, fotoPedido: a.foto ?? undefined })),
       ...fixas,
     ];
   } catch {

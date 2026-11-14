@@ -18,7 +18,7 @@ export async function POST(req: Request) {
   const corpo = texto(b.texto, 500);
   const nota = Math.round(Number(b.nota));
   if (!nome) return NextResponse.json({ erro: "Escreva seu nome." }, { status: 400 });
-  if (corpo.length < 10) return NextResponse.json({ erro: "Conta um pouquinho mais sobre o pedido (mínimo 10 letras)." }, { status: 400 });
+  if (corpo.length < 3) return NextResponse.json({ erro: "Escreve um pouquinho sobre o pedido." }, { status: 400 });
   if (!(nota >= 1 && nota <= 5)) return NextResponse.json({ erro: "Escolha de 1 a 5 estrelas." }, { status: 400 });
 
   // Veio da página do pedido: vira "cliente verificado".
@@ -31,6 +31,8 @@ export async function POST(req: Request) {
     }
   }
 
-  await criarAvaliacao({ nome, local, nota, texto: corpo, pedidoNumero });
+  // Foto só vale em avaliação de pedido entregue e só se for uma foto enviada para o nosso site.
+  const foto = pedidoNumero && typeof b.foto === "string" && /^\/api\/fotos\/[A-Za-z0-9_-]{6,40}$/.test(b.foto) ? b.foto : null;
+  await criarAvaliacao({ nome, local, nota, texto: corpo, pedidoNumero, foto });
   return NextResponse.json({ ok: true });
 }

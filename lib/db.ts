@@ -43,8 +43,11 @@ async function preparar(c: Client) {
     nota INTEGER NOT NULL,
     texto TEXT NOT NULL,
     pedido_numero INTEGER,
-    status TEXT NOT NULL DEFAULT 'pendente'
+    status TEXT NOT NULL DEFAULT 'pendente',
+    foto TEXT
   )`);
+  // Avaliações criadas antes da foto do pedido.
+  try { await c.execute("ALTER TABLE avaliacoes ADD COLUMN foto TEXT"); } catch {}
   await c.execute(`CREATE TABLE IF NOT EXISTS config (
     chave TEXT PRIMARY KEY,
     valor TEXT NOT NULL,
@@ -360,6 +363,8 @@ export type Avaliacao = {
   texto: string;
   pedidoNumero: number | null;
   status: "pendente" | "aprovada" | "oculta";
+  /** Foto de como o pedido chegou (enviada pelo cliente). */
+  foto: string | null;
 };
 
 function linhaParaAvaliacao(r: Record<string, unknown>): Avaliacao {
@@ -372,12 +377,13 @@ function linhaParaAvaliacao(r: Record<string, unknown>): Avaliacao {
     texto: String(r.texto),
     pedidoNumero: numOuNull(r.pedido_numero),
     status: r.status as Avaliacao["status"],
+    foto: (r.foto as string) ?? null,
   };
 }
 
-export async function criarAvaliacao(a: { nome: string; local: string | null; nota: number; texto: string; pedidoNumero: number | null }) {
-  await exec("INSERT INTO avaliacoes (criado_em, nome, local, nota, texto, pedido_numero, status) VALUES (?, ?, ?, ?, ?, ?, 'pendente')",
-    [new Date().toISOString(), a.nome, a.local, a.nota, a.texto, a.pedidoNumero]);
+export async function criarAvaliacao(a: { nome: string; local: string | null; nota: number; texto: string; pedidoNumero: number | null; foto?: string | null }) {
+  await exec("INSERT INTO avaliacoes (criado_em, nome, local, nota, texto, pedido_numero, status, foto) VALUES (?, ?, ?, ?, ?, ?, 'pendente', ?)",
+    [new Date().toISOString(), a.nome, a.local, a.nota, a.texto, a.pedidoNumero, a.foto ?? null]);
 }
 
 export async function listarAvaliacoes(somenteAprovadas: boolean) {

@@ -310,3 +310,13 @@ a.btn.principal-p { color: #fff; justify-content: center; }
   .sq-mod-nova { grid-template-areas: none; grid-template-columns: 22px 44px 1fr; }
   .sq-mod-nova > .sq-btn { grid-column: 3; }
 }
+
+/* Alerta de pedido novo e liberação do som */
+.sq-faixa-novo { display: flex; align-items: center; gap: 12px; margin: 0; padding: 14px 24px; background: #ffd814; color: #151515; text-decoration: none; font-size: 1.05rem; position: sticky; top: 58px; z-index: 15; animation: piscar-novo 1s ease-in-out infinite; }
+.sq-faixa-novo > span:first-child { font-size: 1.5rem; animation: sino 0.6s ease-in-out infinite; }
+.sq-faixa-acao { margin-left: auto; font-weight: 800; white-space: nowrap; }
+@keyframes piscar-novo { 50% { background: #ffe866; } }
+@keyframes sino { 25% { transform: rotate(-15deg); } 75% { transform: rotate(15deg); } }
+.sq-faixa-som { width: 100%; border: 0; padding: 12px 24px; background: #151515; color: #fff; font-weight: 800; font-size: 0.95rem; cursor: pointer; text-align: left; }
+.btn-zap { background: #e7f8ee !important; border-color: #25d366 !important; color: #0b5d2e !important; }
+@media (prefers-reduced-motion: reduce) { .sq-faixa-novo, .sq-faixa-novo > span:first-child { animation: none; } }

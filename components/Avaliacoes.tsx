@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Avaliar from "./Avaliar";
 
-export type Depoimento = { nome: string; local: string | null; nota: number; texto: string; foto?: string; verificado?: boolean; data?: string };
+export type Depoimento = { nome: string; local: string | null; nota: number; texto: string; foto?: string; fotoPedido?: string; verificado?: boolean; data?: string };
 
 const Estrelas = ({ n }: { n: number }) => (
   <span className="estrelas" aria-label={`${n} de 5 estrelas`}>
@@ -57,6 +57,7 @@ export default function Avaliacoes({ lista, clientes }: { lista: Depoimento[]; c
       <div className="depo-trilho" ref={trilho} tabIndex={0} aria-label="Avaliações, role para o lado para ver mais">
         {lista.map((d, i) => (
           <blockquote key={i} className="depo-cartao">
+            {d.fotoPedido && <img className="depo-foto" src={d.fotoPedido} alt={`Pedido de ${d.nome}`} loading="lazy" />}
             <Estrelas n={d.nota} />
             <p>{d.texto}</p>
             <footer>
