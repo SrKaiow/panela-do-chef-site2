@@ -102,18 +102,18 @@ html, body { background: #fff !important; color: #000 !important; margin: 0; col
 :root { color-scheme: light only; --bg: #fff; }
 body::before { display: none !important; }
 body * { box-shadow: none !important; text-shadow: none !important; }
-.recibo { width: 76mm; box-sizing: border-box; margin: 0; padding: 3mm 4mm 8mm; font-family: Arial, Helvetica, sans-serif; font-size: 12pt; line-height: 1.25; color: #000; background: #fff; }
+.recibo { width: 64mm; box-sizing: border-box; margin: 0; padding: 2mm 2mm 8mm; font-family: Arial, Helvetica, sans-serif; font-size: 12pt; line-height: 1.25; color: #000; background: #fff; }
 .r-topo { text-align: center; }
-.r-logo { width: 46mm; height: auto; display: block; margin: 0 auto 1mm; image-rendering: pixelated; }
+.r-logo { width: 40mm; height: auto; display: block; margin: 0 auto 1mm; image-rendering: pixelated; }
 .r-loja { font-size: 10pt; font-weight: 700; letter-spacing: 1px; }
-.r-numero { font-size: 26pt; font-weight: 900; text-align: center; margin: 3mm 0 0; letter-spacing: 0.5px; }
+.r-numero { font-size: 22pt; font-weight: 900; text-align: center; margin: 3mm 0 0; letter-spacing: 0.5px; }
 .r-centro { text-align: center; font-size: 11pt; }
 .r-reserva { margin: 2mm 0; padding: 1.5mm; border: 2px dashed #000; text-align: center; font-weight: 900; font-size: 12pt; }
 .r-pag { margin: 3mm 0; border: 4px solid #000; padding: 2mm; text-align: center; }
-.r-pag-titulo { font-size: 17pt; font-weight: 900; letter-spacing: 0.5px; border-bottom: 2px solid #000; padding-bottom: 1.5mm; margin-bottom: 1.5mm; }
+.r-pag-titulo { font-size: 15pt; font-weight: 900; letter-spacing: 0.5px; border-bottom: 2px solid #000; padding-bottom: 1.5mm; margin-bottom: 1.5mm; }
 .r-pag-linha { font-size: 13pt; }
 .r-pag-linha b { font-size: 15pt; }
-.r-troco { margin-top: 1.5mm; font-size: 22pt; font-weight: 900; line-height: 1.1; }
+.r-troco { margin-top: 1.5mm; font-size: 19pt; font-weight: 900; line-height: 1.1; }
 .r-troco small { font-size: 11pt; font-weight: 700; }
 .r-sep { margin: 3mm 0 1mm; font-weight: 900; font-size: 11pt; border-top: 2px solid #000; border-bottom: 2px solid #000; text-align: center; letter-spacing: 2px; }
 .r-itens { list-style: none; margin: 0; padding: 0; }
