@@ -137,7 +137,8 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
   const [autoImprimir, setAutoEstado] = useState(false);
   const autoRef = useRef(false);
   const setAuto = (v: boolean) => { setAutoEstado(v); autoRef.current = v; try { localStorage.setItem("panela-imprimir", v ? "1" : "0"); } catch {} };
-  useEffect(() => { try { if (localStorage.getItem("panela-imprimir") === "1") { setAutoEstado(true); autoRef.current = true; } } catch {} }, []);
+  // Ligado por padrão neste aparelho; só fica desligado se alguém desligar no botão.
+  useEffect(() => { let v = true; try { v = localStorage.getItem("panela-imprimir") !== "0"; } catch {} setAutoEstado(v); autoRef.current = v; }, []);
   const [carregado, setCarregado] = useState(false);
   const vistos = useRef<Set<number> | null>(null);
   const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
@@ -176,7 +177,11 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
         } catch {}
       }
       vistos.current = new Set(novos);
-      if (autoRef.current) {
+      // Primeira vez neste aparelho: os pedidos que já existem não saem na impressora, só os que chegarem depois.
+      let primeiraVez = false;
+      try { primeiraVez = localStorage.getItem(CHAVE_IMPRESSOS) === null; } catch {}
+      if (primeiraVez) guardarImpressos(lista.map((p) => p.numero));
+      else if (autoRef.current) {
         const feitos = lerImpressos();
         // Só pedidos de agora (últimas 3 h) e que ainda não saíram na impressora.
         const fila = lista.filter((p) => p.status === "novo" && !feitos.includes(p.numero) && Date.now() - new Date(p.criadoEm).getTime() < 3 * 3600_000);

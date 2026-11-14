@@ -12,8 +12,9 @@ const csp = [
   "font-src 'self' data:",
   "media-src 'self'",
   "connect-src 'self'",
-  "frame-src 'none'",
-  "frame-ancestors 'none'",
+  // Só o próprio site em quadros (o painel usa um quadro escondido para imprimir o recibo).
+  "frame-src 'self'",
+  "frame-ancestors 'self'",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -22,7 +23,7 @@ const csp = [
 
 const seguranca = [
   { key: "Content-Security-Policy", value: csp },
-  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), payment=(), usb=(), geolocation=(self)" },
