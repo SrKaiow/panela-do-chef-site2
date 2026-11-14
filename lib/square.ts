@@ -43,6 +43,14 @@ async function chamar<T>(caminho: string, init: { method?: string; body?: unknow
 
 const dinheiro = (pence: number) => ({ amount: pence, currency: "GBP" });
 
+/** 07123 456789 -> +447123456789 */
+function telefoneE164(tel: string) {
+  let n = tel.replace(/\D/g, "");
+  if (n.startsWith("00")) n = n.slice(2);
+  if (n.startsWith("0")) n = "44" + n.slice(1);
+  return "+" + n;
+}
+
 /** Cria o pedido na Square e devolve o link da página de pagamento. */
 export async function criarPagamentoSquare(p: {
   numero: number;
@@ -51,6 +59,9 @@ export async function criarPagamentoSquare(p: {
   total: number;
   voltarPara: string;
   telefone?: string;
+  nome?: string;
+  endereco?: string;
+  postcode?: string;
 }) {
   const itens = p.linhas.map((l) => ({
     name: l.nome.slice(0, 500),
@@ -60,11 +71,11 @@ export async function criarPagamentoSquare(p: {
   }));
   if (p.taxa) itens.push({ name: "Taxa de entrega", quantity: "1", base_price_money: dinheiro(p.taxa) });
 
-  const d = await chamar<{ payment_link: { id: string; url: string; order_id: string } }>("/v2/online-checkout/payment-links", {
+  const criar = (comDados: boolean) => chamar<{ payment_link: { id: string; url: string; order_id: string } }>("/v2/online-checkout/payment-links", {
     method: "POST",
     body: {
       // Mesmo pedido nunca gera dois links (se o cliente clicar duas vezes).
-      idempotency_key: `panela-pedido-${p.numero}`,
+      idempotency_key: `panela-pedido-${p.numero}${comDados ? "" : "-simples"}`,
       description: `Panela do Chef · pedido #${p.numero}`,
       order: {
         location_id: process.env.SQUARE_LOCATION_ID,
@@ -78,8 +89,30 @@ export async function criarPagamentoSquare(p: {
         accepted_payment_methods: { apple_pay: true, google_pay: true },
       },
       payment_note: `Panela do Chef - pedido #${p.numero}`,
+      // Dados que o cliente já digitou no site: a Square não pede de novo.
+      pre_populated_data: !comDados ? undefined : {
+        ...(p.telefone ? { buyer_phone_number: telefoneE164(p.telefone) } : {}),
+        ...(p.endereco && p.postcode
+          ? {
+              buyer_address: {
+                address_line_1: p.endereco.slice(0, 120),
+                postal_code: p.postcode,
+                country: "GB",
+                ...(p.nome ? { first_name: p.nome.split(" ")[0].slice(0, 60), last_name: p.nome.split(" ").slice(1).join(" ").slice(0, 60) || undefined } : {}),
+              },
+            }
+          : {}),
+      },
     },
   });
+  let d;
+  try {
+    d = await criar(true);
+  } catch (e) {
+    // Telefone ou endereço que a Square não aceitou: cria sem os dados preenchidos (o cliente digita lá).
+    if (e instanceof ErroSquare && e.status === 400) d = await criar(false);
+    else throw e;
+  }
   return { url: d.payment_link.url, orderId: d.payment_link.order_id, linkId: d.payment_link.id };
 }
 

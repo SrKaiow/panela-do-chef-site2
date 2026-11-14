@@ -90,6 +90,10 @@ export async function POST(req: Request) {
         taxa,
         total: subtotal + taxa,
         voltarPara: `${origem}/pedido/${token}?pago=1`,
+        telefone,
+        nome,
+        endereco,
+        postcode,
       });
       await salvarPagamentoSquare(numero, sq.orderId, sq.url);
       return NextResponse.json({ numero, redirecionar: sq.url });
