@@ -47,7 +47,8 @@ const MOTO = `
 
 const pino = (classe: string, conteudo: string) => `<div class="pino ${classe}">${conteudo}</div>`;
 
-export default function Mapa({ entregador, destino, cozinha }: { entregador: Entregador | null; destino: Ponto | null; cozinha?: Ponto | null }) {
+export default function Mapa({ entregador, destino, cozinha, alerta }: { entregador: Entregador | null; destino: Ponto | null; cozinha?: Ponto | null; alerta?: (Ponto & { icone: string }) | null }) {
+  const marcaAlerta = useRef<any>(null);
   const caixa = useRef<HTMLDivElement>(null);
   const mapa = useRef<any>(null);
   const moto = useRef<any>(null);
@@ -127,6 +128,17 @@ export default function Mapa({ entregador, destino, cozinha }: { entregador: Ent
       }
       girar(entregador.direcao);
     }
+    // Imprevisto (trânsito, acidente, obras): mancha vermelha no lugar avisado pelo entregador.
+    if (marcaAlerta.current) { marcaAlerta.current.remove(); marcaAlerta.current = null; }
+    if (alerta) {
+      marcaAlerta.current = L.layerGroup([
+        L.circle([alerta.lat, alerta.lng], { radius: 180, color: "#D92B2B", weight: 2, fillColor: "#D92B2B", fillOpacity: 0.28 }),
+        L.marker([alerta.lat, alerta.lng], {
+          icon: L.divIcon({ className: "", html: `<div class="alerta-mapa">${alerta.icone}</div>`, iconSize: [34, 34], iconAnchor: [17, 17] }),
+          keyboard: false,
+        }),
+      ]).addTo(mapa.current);
+    }
     const pontos = [entregador, destino, entregador ? null : cozinha].filter(Boolean) as Ponto[];
     if (!ajustou.current && pontos.length >= 2) {
       mapa.current.fitBounds(pontos.map((p) => [p.lat, p.lng]), { padding: [50, 50], maxZoom: 16 });
@@ -140,7 +152,7 @@ export default function Mapa({ entregador, destino, cozinha }: { entregador: Ent
     const L = (window as any).L;
     if (L) atualizar(L);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entregador?.lat, entregador?.lng, entregador?.direcao, destino?.lat, destino?.lng]);
+  }, [entregador?.lat, entregador?.lng, entregador?.direcao, destino?.lat, destino?.lng, alerta?.lat, alerta?.lng, alerta?.icone]);
 
   return <div ref={caixa} className="mapa" role="img" aria-label="Mapa com o carro do entregador, a cozinha e o seu endereço" />;
 }

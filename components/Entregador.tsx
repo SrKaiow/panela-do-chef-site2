@@ -22,6 +22,7 @@ type PedidoRota = {
   temCoordenadas: boolean;
   /** A entrega que está sendo feita agora (o cliente vê o carro e recebe o aviso de 1 min). */
   atual: boolean;
+  atraso: { minutos: number; motivo: string; em: string } | null;
   waSaiu: string;
   waChegando: string;
   mapa: string;
@@ -30,6 +31,12 @@ type PedidoRota = {
 
 const gbp = (p: number) => "£" + (p / 100).toFixed(2);
 const km = (m: number) => (m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1).replace(".", ",")} km`);
+
+const MOTIVOS = [
+  { id: "transito", nome: "Muito trânsito", icone: "🚦" },
+  { id: "acidente", nome: "Acidente", icone: "💥" },
+  { id: "obras", nome: "Obras / desvio", icone: "🚧" },
+];
 
 export default function Entregador() {
   const [pedidos, setPedidos] = useState<PedidoRota[]>([]);
@@ -131,6 +138,17 @@ export default function Entregador() {
   function desligarGps() { lembrar(false); pararGps(); }
   useEffect(() => () => pararGps(), []);
 
+  const [motivo, setMotivo] = useState("transito");
+  async function avisarAtraso(minutos: number) {
+    const r = await fetch("/api/entregador/imprevisto", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ minutos, motivo }) });
+    if (!r.ok) setErro("Não consegui avisar. Confira a internet.");
+    carregar();
+  }
+  async function limparAtraso() {
+    await fetch("/api/entregador/imprevisto", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ limpar: true }) });
+    carregar();
+  }
+
   async function acao(numero: number, dados: Record<string, unknown>) {
     const r = await fetch(`/api/entregador/pedidos/${numero}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dados) });
     if (!r.ok) setErro("Não consegui salvar. Confira a internet.");
@@ -172,6 +190,30 @@ export default function Entregador() {
         {erro && <p className="erro" role="alert">{erro}</p>}
 
         {emRota.length > 0 && <h2 className="secao-titulo">No carro ({emRota.length})</h2>}
+        {emRota.length > 0 && (
+          <section className="imprevisto">
+            <strong>Imprevisto no caminho?</strong>
+            <span className="sub">Avisa todos os clientes com pedido no carro e marca no mapa deles onde você está.</span>
+            <div className="imprevisto-motivos" role="group" aria-label="Motivo">
+              {MOTIVOS.map((m) => (
+                <button key={m.id} type="button" className={"btn" + (motivo === m.id ? " ativo" : "")} aria-pressed={motivo === m.id} onClick={() => setMotivo(m.id)}>
+                  {m.icone} {m.nome}
+                </button>
+              ))}
+            </div>
+            <div className="imprevisto-min">
+              {[5, 10, 15].map((n) => (
+                <button key={n} type="button" className="btn principal-p" onClick={() => avisarAtraso(n)}>+{n} min</button>
+              ))}
+            </div>
+            {emRota[0].atraso && (
+              <div className="ok-aviso">
+                Clientes avisados: +{emRota[0].atraso.minutos} min · {MOTIVOS.find((m) => m.id === emRota[0].atraso!.motivo)?.nome ?? "Imprevisto"}{" "}
+                <button type="button" className="btn" onClick={limparAtraso}>Já normalizou</button>
+              </div>
+            )}
+          </section>
+        )}
         {emRota.length > 1 && !emRota.some((p) => p.atual) && (
           <p className="sub">Toque em <strong>Ir para este cliente</strong> na entrega que você vai fazer agora. Só esse cliente vê o carro no mapa; os outros esperam a vez.</p>
         )}

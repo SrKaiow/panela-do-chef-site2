@@ -320,3 +320,9 @@ a.btn.principal-p { color: #fff; justify-content: center; }
 .sq-faixa-som { width: 100%; border: 0; padding: 12px 24px; background: #151515; color: #fff; font-weight: 800; font-size: 0.95rem; cursor: pointer; text-align: left; }
 .btn-zap { background: #e7f8ee !important; border-color: #25d366 !important; color: #0b5d2e !important; }
 @media (prefers-reduced-motion: reduce) { .sq-faixa-novo, .sq-faixa-novo > span:first-child { animation: none; } }
+
+/* Entregador: avisar imprevisto no caminho */
+.imprevisto { display: grid; gap: 10px; padding: 14px; border-radius: 14px; border: 2px solid #D92B2B; background: rgba(217,43,43,.08); }
+.imprevisto-motivos, .imprevisto-min { display: flex; flex-wrap: wrap; gap: 8px; }
+.imprevisto-motivos .btn.ativo { background: #D92B2B; border-color: #D92B2B; color: #fff; }
+.imprevisto-min .btn { flex: 1; min-width: 80px; font-size: 1.05rem; }

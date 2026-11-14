@@ -23,6 +23,8 @@ export type AoVivo = {
   chegando: boolean;
   /** No carro, mas o entregador está fazendo outra entrega antes desta. */
   naFila: boolean;
+  /** Imprevisto avisado pelo entregador (só enquanto o pedido está no carro). */
+  imprevisto: { motivo: string; minutos: number; em: string; lat: number | null; lng: number | null } | null;
 };
 
 // Guarda a última posição vista para calcular a direção do carro.
@@ -58,6 +60,9 @@ export async function situacaoAoVivo(p: Pedido): Promise<AoVivo> {
 
   // A posição do entregador só aparece enquanto o pedido está a caminho, e se for recente.
   const naFila = p.status === "saiu" && (await entregaAtual()) !== p.numero;
+  const imprevisto = p.status === "saiu" && p.atraso && Date.now() - new Date(p.atraso.em).getTime() < 90 * 60000 ? p.atraso : null;
+  // Os minutos a mais vão sendo "gastos" com o tempo: passados 10 min de um atraso de 10, a conta volta a ser só pela distância.
+  const extra = imprevisto ? Math.max(0, imprevisto.minutos - (Date.now() - new Date(imprevisto.em).getTime()) / 60000) : 0;
   if (p.status === "saiu" && !naFila) {
     const local = await lerLocal();
     if (local && Date.now() - new Date(local.atualizadoEm).getTime() < 10 * 60 * 1000) {
@@ -69,12 +74,14 @@ export async function situacaoAoVivo(p: Pedido): Promise<AoVivo> {
       if (destino) {
         distancia = Math.round(distanciaMetros(local, destino));
         minutos = minutosAte(distancia, vel);
-        previsao = new Date(Date.now() + Math.max(1, minutos) * 60000).toISOString();
+        previsao = new Date(Date.now() + Math.max(1, minutos + extra) * 60000).toISOString();
       }
     } else if (p.saiuEm) {
-      previsao = new Date(new Date(p.saiuEm).getTime() + trajeto * 60000).toISOString();
+      previsao = new Date(new Date(p.saiuEm).getTime() + (trajeto + (imprevisto?.minutos ?? 0)) * 60000).toISOString();
     }
   }
+
+  if (naFila) previsao = null;
 
   return {
     status: p.status,
@@ -94,5 +101,6 @@ export async function situacaoAoVivo(p: Pedido): Promise<AoVivo> {
     minutos,
     chegando: !naFila && (p.avisadoChegando || (distancia != null && distancia <= a.entrega.avisoChegandoMetros)),
     naFila,
+    imprevisto,
   };
 }

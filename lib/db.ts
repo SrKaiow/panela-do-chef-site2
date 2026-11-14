@@ -33,6 +33,7 @@ async function preparar(c: Client) {
     "avisado_loja INTEGER NOT NULL DEFAULT 0",
     "square_pedido TEXT", "link_pagamento TEXT",
     "a_caminho_em TEXT",
+    "atraso_min INTEGER NOT NULL DEFAULT 0", "atraso_motivo TEXT", "atraso_em TEXT", "atraso_lat REAL", "atraso_lng REAL",
   ]) {
     try { await c.execute(`ALTER TABLE pedidos ADD COLUMN ${col}`); } catch {}
   }
@@ -133,6 +134,8 @@ export type Pedido = {
   entregueEm: string | null;
   /** Quando o entregador tocou "Ir para este cliente" (a entrega que está sendo feita agora). */
   aCaminhoEm: string | null;
+  /** Imprevisto avisado pelo entregador (trânsito, acidente...): minutos a mais, motivo e onde foi. */
+  atraso: { minutos: number; motivo: string; em: string; lat: number | null; lng: number | null } | null;
 };
 
 const numOuNull = (v: unknown) => (v == null ? null : Number(v));
@@ -170,10 +173,13 @@ function linhaParaPedido(r: Record<string, unknown>): Pedido {
     saiuEm: (r.saiu_em as string) ?? null,
     entregueEm: (r.entregue_em as string) ?? null,
     aCaminhoEm: (r.a_caminho_em as string) ?? null,
+    atraso: r.atraso_em
+      ? { minutos: Number(r.atraso_min) || 0, motivo: String(r.atraso_motivo ?? "transito"), em: String(r.atraso_em), lat: numOuNull(r.atraso_lat), lng: numOuNull(r.atraso_lng) }
+      : null,
   };
 }
 
-type NovoPedido = Omit<Pedido, "numero" | "token" | "criadoEm" | "stripeSessao" | "squarePedido" | "linkPagamento" | "statusEm" | "avisadoSaiu" | "avisadoChegando" | "aceitoEm" | "preparoEm" | "saiuEm" | "entregueEm" | "aCaminhoEm">;
+type NovoPedido = Omit<Pedido, "numero" | "token" | "criadoEm" | "stripeSessao" | "squarePedido" | "linkPagamento" | "statusEm" | "avisadoSaiu" | "avisadoChegando" | "aceitoEm" | "preparoEm" | "saiuEm" | "entregueEm" | "aCaminhoEm" | "atraso">;
 
 export async function criarPedido(p: NovoPedido) {
   const token = randomBytes(12).toString("base64url");
@@ -297,6 +303,18 @@ export async function entregaAtual(): Promise<number | null> {
   const iniciada = noCarro.filter((p) => p.aCaminhoEm).sort((a, b) => b.aCaminhoEm!.localeCompare(a.aCaminhoEm!))[0];
   if (iniciada) return iniciada.numero;
   return noCarro.length === 1 ? noCarro[0].numero : null;
+}
+
+/** Imprevisto no caminho: soma minutos em todos os pedidos que estão no carro (todos vão atrasar). */
+export async function registrarAtraso(minutos: number, motivo: string, onde: { lat: number; lng: number } | null) {
+  await exec(
+    `UPDATE pedidos SET atraso_min = MIN(60, atraso_min + ?), atraso_motivo = ?, atraso_em = ?, atraso_lat = ?, atraso_lng = ? WHERE status = 'saiu'`,
+    [minutos, motivo, new Date().toISOString(), onde?.lat ?? null, onde?.lng ?? null],
+  );
+}
+
+export async function limparAtraso() {
+  await exec(`UPDATE pedidos SET atraso_min = 0, atraso_motivo = NULL, atraso_em = NULL, atraso_lat = NULL, atraso_lng = NULL WHERE status = 'saiu'`);
 }
 
 export async function marcarAviso(numero: number, qual: "saiu" | "chegando") {

@@ -39,6 +39,7 @@ export async function GET(req: Request) {
         avisadoChegando: p.avisadoChegando,
         temCoordenadas: p.lat != null,
         atual: p.numero === atual,
+        atraso: p.atraso,
         waSaiu: linkWhatsapp(p.telefone, mensagens.saiu(nome(p.nome), `${siteUrl(req)}/pedido/${p.token}`)),
         waChegando: linkWhatsapp(p.telefone, mensagens.chegando(nome(p.nome))),
         // Waze: vai direto para as coordenadas do postcode; sem coordenadas, busca pelo endereço.

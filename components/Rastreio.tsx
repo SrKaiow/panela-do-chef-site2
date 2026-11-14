@@ -36,6 +36,9 @@ function manchete(ao: AoVivo): { titulo: string; texto: string } {
   }
 }
 
+const NOME_IMPREVISTO: Record<string, string> = { transito: "Muito trânsito no caminho", acidente: "Acidente no caminho", obras: "Obras / desvio no caminho" };
+const ICONE_IMPREVISTO: Record<string, string> = { transito: "🚦", acidente: "💥", obras: "🚧" };
+
 export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: string; inicial: AoVivo; nome: string; jaAvaliado: boolean }) {
   const [ao, setAo] = useState<AoVivo>(inicial);
   const [notificar, setNotificar] = useState(false);
@@ -121,6 +124,17 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
         </div>
       )}
 
+      {ao.status === "saiu" && ao.imprevisto && (
+        <div className="imprevisto-cliente" role="status">
+          <strong>
+            {ICONE_IMPREVISTO[ao.imprevisto.motivo] ?? "⚠️"} Atrasou ~{ao.imprevisto.minutos} min · {NOME_IMPREVISTO[ao.imprevisto.motivo] ?? "Imprevisto no caminho"}
+          </strong>
+          <span>
+            O entregador avisou às {hora(ao.imprevisto.em)}.{ao.imprevisto.lat != null ? " O ponto vermelho no mapa mostra onde está o problema." : ""} Desculpe a demora, já já chega!
+          </span>
+        </div>
+      )}
+
       <div className={`manchete etapa-${ao.status}`} aria-live="polite">
         <div>
           <h2>{m.titulo}</h2>
@@ -185,7 +199,7 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
                   : "Aguardando a localização do entregador..."}
             </strong>
           </div>
-          <Mapa entregador={ao.entregador} destino={ao.destino} cozinha={ao.cozinha} />
+          <Mapa entregador={ao.entregador} destino={ao.destino} cozinha={ao.cozinha} alerta={ao.imprevisto?.lat != null ? { lat: ao.imprevisto.lat, lng: ao.imprevisto.lng!, icone: ICONE_IMPREVISTO[ao.imprevisto.motivo] ?? "⚠️" } : null} />
           {podeNotificar && !notificar && (
             <button type="button" className="secundario" onClick={pedirNotificacao}>
               Me avise aqui também quando estiver chegando
