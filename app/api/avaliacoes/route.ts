@@ -31,8 +31,8 @@ export async function POST(req: Request) {
     }
   }
 
-  // Foto só vale em avaliação de pedido entregue e só se for uma foto enviada para o nosso site.
-  const foto = pedidoNumero && typeof b.foto === "string" && /^\/api\/fotos\/[A-Za-z0-9_-]{6,40}$/.test(b.foto) ? b.foto : null;
+  // Só aceita foto enviada para o nosso próprio site (e ela só aparece depois da sua aprovação).
+  const foto = typeof b.foto === "string" && /^\/api\/fotos\/[A-Za-z0-9_-]{6,40}$/.test(b.foto) ? b.foto : null;
   await criarAvaliacao({ nome, local, nota, texto: corpo, pedidoNumero, foto });
   return NextResponse.json({ ok: true });
 }

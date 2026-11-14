@@ -23,14 +23,14 @@ export default function Avaliar({ token, nomeInicial = "", onFechar }: { token?:
   const input = useRef<HTMLInputElement>(null);
 
   async function escolherFoto(arquivo?: File | null) {
-    if (!arquivo || !token) return;
+    if (!arquivo) return;
     if (!arquivo.type.startsWith("image/")) return setErro("Escolha uma foto.");
     setErro("");
     setSubindo(true);
     try {
       const blob = await reduzirFoto(arquivo, 1400);
       const form = new FormData();
-      form.append("token", token);
+      if (token) form.append("token", token);
       form.append("foto", blob, blob.type === "image/webp" ? "foto.webp" : "foto.jpg");
       const r = await fetch("/api/avaliacoes/foto", { method: "POST", body: form });
       const d = await r.json().catch(() => ({}));
@@ -97,7 +97,7 @@ export default function Avaliar({ token, nomeInicial = "", onFechar }: { token?:
         </span>
       </div>
 
-      {token && (
+      {(
         <div className="foto-avaliacao">
           <span className="rotulo">Foto de como chegou <span className="dica">(opcional)</span></span>
           {foto ? (

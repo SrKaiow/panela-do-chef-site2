@@ -5,7 +5,7 @@ import { permitir, tipoRealDaImagem } from "@/lib/seguranca";
 export const dynamic = "force-dynamic";
 
 /**
- * Foto de como o pedido chegou. Só para quem tem o link de um pedido entregue e ainda não avaliado.
+ * Foto de como o pedido chegou. Vem da página do pedido (com o link dele) ou do quadro de avaliações.
  * A foto só aparece no site depois que a avaliação é aprovada no painel.
  */
 export async function POST(req: Request) {
@@ -13,11 +13,14 @@ export async function POST(req: Request) {
   const form = await req.formData().catch(() => null);
   const token = form?.get("token");
   const arquivo = form?.get("foto");
-  if (typeof token !== "string" || !(arquivo instanceof File)) return NextResponse.json({ erro: "Envie uma foto." }, { status: 400 });
+  if (!(arquivo instanceof File)) return NextResponse.json({ erro: "Envie uma foto." }, { status: 400 });
 
-  const p = await buscarPorToken(token);
-  if (!p || p.status !== "entregue") return NextResponse.json({ erro: "Só dá para mandar foto de um pedido entregue." }, { status: 400 });
-  if (await pedidoJaAvaliado(p.numero)) return NextResponse.json({ erro: "Este pedido já foi avaliado. Obrigado!" }, { status: 400 });
+  // Pela página do pedido: o pedido precisa estar entregue e sem avaliação.
+  if (typeof token === "string" && token) {
+    const p = await buscarPorToken(token);
+    if (!p || p.status !== "entregue") return NextResponse.json({ erro: "Só dá para mandar foto de um pedido entregue." }, { status: 400 });
+    if (await pedidoJaAvaliado(p.numero)) return NextResponse.json({ erro: "Este pedido já foi avaliado. Obrigado!" }, { status: 400 });
+  }
   if (arquivo.size > 2_000_000) return NextResponse.json({ erro: "Foto muito grande." }, { status: 400 });
 
   const bytes = new Uint8Array(await arquivo.arrayBuffer());
