@@ -90,9 +90,10 @@ html, body { background: #fff !important; color: #000 !important; margin: 0; col
 :root { color-scheme: light only; --bg: #fff; }
 body::before { display: none !important; }
 body * { box-shadow: none !important; text-shadow: none !important; }
-/* Letra de máquina, como nas lanchonetes. Margem maior na esquerda: a SP742 corta um pouco desse lado. */
-.recibo { width: 100%; max-width: 63mm; box-sizing: border-box; margin: 0; padding: 1mm 2mm 4mm 5mm;
-  font-family: "Courier New", Courier, "Lucida Console", monospace; font-size: 9.5pt; line-height: 1.3; font-weight: 400; color: #000; background: #fff; }
+/* Letra de máquina, como nas lanchonetes. Lucida Console tem o traço mais grosso que a Courier: na matricial não falha.
+   Margens dos dois lados para não cortar na SP742. */
+.recibo { width: 100%; max-width: 63mm; box-sizing: border-box; margin: 0; padding: 1mm 4mm 4mm 6mm;
+  font-family: "Lucida Console", Consolas, "Courier New", monospace; font-size: 9pt; line-height: 1.3; font-weight: 400; color: #000; background: #fff; }
 .r-c { text-align: center; }
 .r-b { font-weight: 700; }
 .r-normal { font-weight: 400; }
