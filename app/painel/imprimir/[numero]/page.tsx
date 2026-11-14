@@ -83,7 +83,7 @@ export default async function Recibo(props: { params: Promise<{ numero: string }
         Tel: <b>{p.telefone}</b><br />
         {p.endereco}<br />
         <b className="r-postcode">{p.postcode}</b>
-        {p.distanciaM != null && <> · {(p.distanciaM / 1609.344).toFixed(1)} milhas</>}
+        {p.distanciaM != null && p.distanciaM >= 160 && <> · {(p.distanciaM / 1609.344).toFixed(1)} milhas</>}
       </div>
       {p.observacao && <div className="r-obs-geral">OBSERVAÇÃO:<br />{p.observacao}</div>}
 
