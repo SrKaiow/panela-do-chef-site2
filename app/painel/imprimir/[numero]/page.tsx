@@ -32,7 +32,7 @@ export default async function Recibo(props: { params: Promise<{ numero: string }
       <ImprimirAuto auto={auto === "1"} />
 
       <header className="r-topo">
-        <img src="/fotos/logo-ticket.png" alt="Panela do Chef" className="r-logo" />
+        <div className="r-marca">Panela do Chef</div>
         <div className="r-loja">COZINHA · DELIVERY</div>
       </header>
 
@@ -95,6 +95,7 @@ body * { box-shadow: none !important; text-shadow: none !important; }
    Margem maior na esquerda porque a SP742 corta um pouco desse lado. */
 .recibo { width: 100%; max-width: 63mm; box-sizing: border-box; margin: 0; padding: 1mm 2mm 5mm 5mm; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; line-height: 1.25; color: #000; background: #fff; }
 .r-topo { text-align: center; }
+.r-marca { font-size: 13pt; font-weight: 700; letter-spacing: 0.5px; }
 .r-logo { width: 26mm; height: auto; display: block; margin: 0 auto; image-rendering: pixelated; }
 .r-loja { display: none; }
 .r-numero { font-size: 16pt; font-weight: 700; text-align: center; margin: 1.5mm 0 0; }
