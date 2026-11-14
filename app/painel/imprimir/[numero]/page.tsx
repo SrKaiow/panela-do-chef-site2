@@ -96,12 +96,12 @@ export default async function Recibo(props: { params: Promise<{ numero: string }
 }
 
 const CSS = `
-@page { size: 76mm auto; margin: 0; }
+@page { margin: 0; }
 html, body { background: #fff !important; color: #000 !important; margin: 0; color-scheme: light only; }
 :root { color-scheme: light only; --bg: #fff; }
 body::before { display: none !important; }
 body * { box-shadow: none !important; text-shadow: none !important; }
-.recibo { width: 64mm; box-sizing: border-box; margin: 0; padding: 2mm 2mm 8mm; font-family: Arial, Helvetica, sans-serif; font-size: 12pt; line-height: 1.25; color: #000; background: #fff; }
+.recibo { width: 100%; max-width: 63mm; box-sizing: border-box; margin: 0; padding: 2mm 2mm 8mm; font-family: Arial, Helvetica, sans-serif; font-size: 12pt; line-height: 1.25; color: #000; background: #fff; }
 .r-topo { text-align: center; }
 .r-logo { width: 40mm; height: auto; display: block; margin: 0 auto 1mm; image-rendering: pixelated; }
 .r-loja { font-size: 10pt; font-weight: 700; letter-spacing: 1px; }
