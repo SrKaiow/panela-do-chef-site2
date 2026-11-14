@@ -95,7 +95,7 @@ body * { box-shadow: none !important; text-shadow: none !important; }
    Margem maior na esquerda porque a SP742 corta um pouco desse lado. */
 .recibo { width: 100%; max-width: 63mm; box-sizing: border-box; margin: 0; padding: 1mm 2mm 5mm 5mm; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; line-height: 1.25; color: #000; background: #fff; }
 .r-topo { text-align: center; }
-.r-logo { width: 22mm; height: auto; display: block; margin: 0 auto; image-rendering: pixelated; }
+.r-logo { width: 26mm; height: auto; display: block; margin: 0 auto; image-rendering: pixelated; }
 .r-loja { display: none; }
 .r-numero { font-size: 16pt; font-weight: 700; text-align: center; margin: 1.5mm 0 0; }
 .r-centro { text-align: center; font-size: 9pt; }
@@ -106,7 +106,7 @@ body * { box-shadow: none !important; text-shadow: none !important; }
 .r-pago { margin: 2mm 0; text-align: center; font-size: 10pt; }
 .r-sep { margin: 2mm 0 0.5mm; font-size: 9pt; border-bottom: 1px solid #000; letter-spacing: 1px; }
 .r-itens { list-style: none; margin: 0; padding: 0; }
-.r-itens li { padding: 0.8mm 0; }
+.r-itens li { padding: 0.8mm 0; break-inside: avoid; }
 .r-item { display: flex; gap: 1.5mm; font-size: 10.5pt; }
 .r-item b { font-weight: 700; }
 .r-item b + b { font-weight: 400; }
