@@ -257,7 +257,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .foto img { width: 100%; height: 100%; object-fit: cover; }
 .item .info { min-width: 0; display: grid; gap: 4px; align-content: start; padding-right: 34px; }
 .item h3 { margin: 0; font-size: 1.04rem; font-weight: 800; line-height: 1.25; }
-.item p { margin: 0; color: var(--texto-2); font-size: 0.88rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.item p { margin: 0; color: var(--texto-2); font-size: 0.88rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-height: 2.75em; }
 .item .valores { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; margin-top: auto; padding-top: 4px; }
 .item .preco { font-weight: 800; font-size: 1.08rem; color: var(--ouro); }
 .item .antigo { color: var(--texto-2); text-decoration: line-through; font-size: 0.86rem; font-weight: 600; }
@@ -670,7 +670,7 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .mp-foto img { width: 100%; height: 100%; object-fit: cover; }
 .mp-foto svg { width: 50%; height: auto; }
 .mp-foto .tag { position: absolute; left: 8px; bottom: 8px; }
-.mp-card strong { font-size: .95rem; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mp-card strong { font-size: .95rem; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-height: 2.75em; }
 .mp-card .preco { font-weight: 800; color: var(--ouro); }
 
 /* Adicionais com foto: cartões em grade (estilo app de delivery) */
@@ -695,6 +695,8 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
   --c1: #5b1a8c; --c2: #1b0630; --brilho: rgba(190, 120, 255, .55);
   background: radial-gradient(120% 90% at 50% 0%, var(--c1), var(--c2) 62%, #050207); }
 .vitrine.tom-rosa { --c1: #b23a64; --c2: #2c0716; --brilho: rgba(255, 150, 190, .55); }
+.vitrine.tom-massa { --c1: #b8471c; --c2: #2a0c04; --brilho: rgba(255, 140, 80, .45); }
+.vitrine-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; -webkit-mask-image: linear-gradient(#000 75%, transparent); mask-image: linear-gradient(#000 75%, transparent); }
 .vitrine.tom-caramelo { --c1: #a8622a; --c2: #2b1406; --brilho: rgba(255, 190, 120, .5); }
 
 
@@ -747,7 +749,7 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 
 .vitrine-tag { justify-self: start; padding: 4px 10px; font-size: .7rem !important; border-radius: 999px; background: var(--ouro); color: #000; font-weight: 900; font-size: .78rem; letter-spacing: 1.5px; text-transform: uppercase; }
 .vitrine h2 { margin: 0; font-family: var(--fonte-titulo); font-size: clamp(1.5rem, 6vw, 1.9rem); line-height: 1; text-transform: uppercase; }
-.vitrine p { margin: 0; color: rgba(255,255,255,.8); font-size: .86rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.vitrine p { margin: 0; color: rgba(255,255,255,.8); font-size: .86rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-height: 2.75em; }
 .vitrine-acoes { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
 .vitrine-preco { font-family: var(--fonte-titulo); font-size: 1.8rem; color: var(--ouro); line-height: 1; }
 .vitrine-btn { margin-left: auto; padding: 11px 18px; border-radius: 999px; border: 0; background: linear-gradient(180deg, #ffe45c, var(--ouro)); color: #000; font-weight: 900; font-size: 1.02rem; box-shadow: 0 8px 22px rgba(255, 216, 20, .3); }

@@ -153,6 +153,80 @@ function banoffeV1(c: Cardapio): Cardapio {
   return { ...c, itens };
 }
 
+/** Massa Show: monte sua bowl (£10). */
+function massaShowV1(c: Cardapio): Cardapio {
+  if (c.itens.some((i) => i.id === "massa-show")) return c;
+  const F = "/fotos/cardapio/";
+  const op = (nomes: string[]) => nomes.map((nome) => ({ nome }));
+  const adicionais = {
+    ...c.adicionais,
+    "massa-tipo": {
+      nome: "1. Escolha sua massa", nomeInterno: "Massa Show - massa",
+      opcoes: [
+        { nome: "Penne", imagem: F + "massa-penne.jpg" },
+        { nome: "Spaghetti", imagem: F + "massa-spaghetti.jpg" },
+        { nome: "Fusilli" },
+        { nome: "Tagliatelle", imagem: F + "massa-show.jpg" },
+      ],
+      regras: { obrigatorio: true, varios: false, max: 1, repetir: false },
+    },
+    "massa-ingredientes": {
+      nome: "2. Escolha seus ingredientes", nomeInterno: "Massa Show - ingredientes",
+      opcoes: op(["Cebola branca", "Cebola roxa", "Tomate seco", "Pimentão", "Cogumelos", "Milho", "Ervilha", "Azeitonas", "Brócolis", "Tomate", "Presunto", "Bacon", "Calabresa", "Alho-poró"]),
+      regras: { obrigatorio: false, varios: true, max: 6, repetir: false },
+    },
+    "massa-molho": {
+      nome: "3. Escolha seu molho", nomeInterno: "Massa Show - molho",
+      opcoes: op(["Molho branco", "Molho vermelho"]),
+      regras: { obrigatorio: true, varios: false, max: 1, repetir: false },
+    },
+    "massa-proteina": {
+      nome: "4. Adicionais", nomeInterno: "Massa Show - proteínas (+£4)",
+      opcoes: ["Frango", "Carne moída", "Camarão"].map((nome) => ({ nome, preco: 4 })),
+      regras: { obrigatorio: false, varios: true, max: 3, repetir: false },
+    },
+    "massa-temperos": {
+      nome: "5. Temperos", nomeInterno: "Massa Show - temperos",
+      opcoes: op(["Alho", "Sal", "Pimenta-do-reino", "Orégano", "Páprica", "Manjericão", "Salsinha", "Óleo", "Azeite"]),
+      regras: { obrigatorio: false, varios: true, max: 9, repetir: false },
+    },
+    "massa-finalizacao": {
+      nome: "6. Finalização", nomeInterno: "Massa Show - finalização",
+      opcoes: op(["Queijo parmesão", "Queijo muçarela", "Catupiry", "Cream cheese"]),
+      regras: { obrigatorio: false, varios: true, max: 2, repetir: false },
+    },
+  };
+  const categorias = c.categorias.some((x) => x.id === "massas")
+    ? c.categorias
+    : (() => {
+        const i = c.categorias.findIndex((x) => x.id === "acai");
+        const lista = [...c.categorias];
+        lista.splice(i >= 0 ? i + 1 : 0, 0, { id: "massas", nome: "Massas" });
+        return lista;
+      })();
+  const item = {
+    id: "massa-show",
+    nome: "Massa Show",
+    categoria: "massas",
+    descricao: "Monte sua bowl do seu jeito: escolha a massa, os ingredientes, o molho, os temperos e a finalização.",
+    preco: 10,
+    disponivel: true,
+    destaque: true,
+    novidade: true,
+    video: "/videos/massa-show",
+    imagem: F + "massa-show.jpg",
+    escolhas: [
+      { grupo: "massa-tipo", min: 1, max: 1 },
+      { grupo: "massa-ingredientes", min: 0, max: 6 },
+      { grupo: "massa-molho", min: 1, max: 1 },
+      { grupo: "massa-proteina", min: 0, max: 3 },
+      { grupo: "massa-temperos", min: 0, max: 9 },
+      { grupo: "massa-finalizacao", min: 0, max: 2 },
+    ],
+  };
+  return { ...c, categorias, adicionais, itens: [...c.itens, item] };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
@@ -160,6 +234,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["novidades-promo-v1", novidadesPromoV1],
   ["novidades-promo-v2", novidadesPromoV2],
   ["banoffe-v1", banoffeV1],
+  ["massa-show-v1", massaShowV1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */

@@ -118,10 +118,15 @@ function Vitrine({ item, abrir }: { item: Item; abrir: (i: Item) => void }) {
 
   const n = cfg?.camadas.length ?? 0;
   return (
-    <section ref={raiz} className={"vitrine tom-" + (cfg?.tom ?? "roxo")} aria-labelledby={"nov-" + item.id}>
+    <section ref={raiz} className={"vitrine tom-" + (item.video ? "massa" : cfg?.tom ?? "roxo")} aria-labelledby={"nov-" + item.id}>
       <div className={"vitrine-palco" + (rodada ? " montando" : "") + (saindo ? " saindo" : "")} key={rodada}>
         <span className="vitrine-luz" aria-hidden="true" />
-        {cfg ? (
+        {item.video ? (
+          <video className="vitrine-video" autoPlay muted loop playsInline preload="metadata" poster={item.video + "-capa.jpg"} aria-hidden="true">
+            <source src={item.video + ".webm"} type="video/webm" />
+            <source src={item.video + ".mp4"} type="video/mp4" />
+          </video>
+        ) : cfg ? (
           <div className="palco-duplo" aria-hidden="true">
             <div className="torre" style={{ aspectRatio: String(cfg.proporcaoPilha) }}>
               {/* de baixo para cima: a base entra primeiro e a tampa por último (fica por cima) */}
