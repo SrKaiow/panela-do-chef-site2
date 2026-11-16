@@ -135,7 +135,12 @@ export default function Loja({
                 {itens.map((item) => (
                   <button key={item.id} className="item" disabled={!item.disponivel} onClick={() => setAberto(item)}>
                     <div className="foto">
-                      {item.imagem ? <img src={item.imagem} alt="" loading="lazy" /> : <IconeCategoria categoria={item.categoria} />}
+                      {item.video ? (
+                        <video autoPlay muted loop playsInline preload="metadata" poster={item.video + "-capa.jpg"} aria-hidden="true">
+                          <source src={item.video + ".webm"} type="video/webm" />
+                          <source src={item.video + ".mp4"} type="video/mp4" />
+                        </video>
+                      ) : item.imagem ? <img src={item.imagem} alt="" loading="lazy" /> : <IconeCategoria categoria={item.categoria} />}
                     </div>
                     <div className="info">
                       <h3>{item.nome}</h3>
@@ -267,7 +272,14 @@ function FolhaItem({ cardapio, item, onFechar, onAdicionar }: { cardapio: Cardap
 
   return (
     <Fundo onFechar={onFechar} titulo={item.nome}>
-      {item.imagem && <img className="folha-foto" src={item.imagem} alt={item.nome} />}
+      {item.video ? (
+        <video className="folha-foto folha-video" autoPlay muted loop playsInline poster={item.video + "-capa.jpg"} aria-label={item.nome}>
+          <source src={item.video + ".webm"} type="video/webm" />
+          <source src={item.video + ".mp4"} type="video/mp4" />
+        </video>
+      ) : (
+        item.imagem && <img className="folha-foto" src={item.imagem} alt={item.nome} />
+      )}
       <header>
         <div>
           <h2>{item.nome}</h2>
