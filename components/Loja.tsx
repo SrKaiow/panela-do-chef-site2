@@ -122,7 +122,8 @@ export default function Loja({
           const itens = cardapio.itens.filter((i) => i.categoria === cat.id);
           if (!itens.length) return null;
           // Disponíveis primeiro, esgotados no fim da seção.
-          itens.sort((a, b) => Number(b.disponivel) - Number(a.disponivel));
+          // Disponíveis primeiro; dentro deles, do mais caro para o mais barato.
+          itens.sort((a, b) => Number(b.disponivel) - Number(a.disponivel) || b.preco - a.preco || a.nome.localeCompare(b.nome));
           const disponiveis = itens.filter((i) => i.disponivel).length;
           return (
             <section key={cat.id} id={cat.id} className="secao">
@@ -375,10 +376,12 @@ function FolhaItem({ cardapio, item, onFechar, onAdicionar }: { cardapio: Cardap
         );
       })}
 
-      <label className="campo" htmlFor="obs-item">
-        Alguma observação?
-        <input id="obs-item" maxLength={150} value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Ex.: sem cebola, bem passado" />
-      </label>
+      {item.categoria !== "bebidas" && (
+        <label className="campo" htmlFor="obs-item">
+          Alguma observação?
+          <input id="obs-item" maxLength={150} value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Ex.: sem cebola, bem passado" />
+        </label>
+      )}
 
       <div className="rodape-folha">
         <div className="contador">
