@@ -55,7 +55,50 @@ function adicionaisAcaiV1(c: Cardapio): Cardapio {
   return { ...c, adicionais, itens };
 }
 
-const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [["adicionais-acai-v1", adicionaisAcaiV1]];
+/** Preços reais passados pelo Kaio em 16/11/2026 (tira o "preço antigo" de promoção desses itens). */
+function precosReaisV1(c: Cardapio): Cardapio {
+  const precos: Record<string, number> = {
+    "caldo-de-cana": 3, "j2o-orange-passion": 1.5, "j2o-apple-raspberry": 1.5, "j2o-apple-mango": 1.5,
+    "fanta-laranja": 1.5, "coca-zero": 1.5, "batidinha-acai": 12,
+    "pastel-banana-queijo": 7.5, "pastel-coco": 7, "pastel-nutella-morango": 8, "pastel-brigadeiro": 9,
+    "pastel-doce-de-leite": 8, "pastel-ninho-morango": 8, "pastel-calabresa-queijo": 8, "pastel-queijo": 7,
+    "pastel-presunto-queijo": 8, "pastel-pizza": 8, "pastel-carne-queijo": 8, "pastel-4-queijos": 7, "pastel-carne": 9,
+    "pastel-frango": 8, "pastel-frango-catupiry": 9, "pastel-x-tudo": 13, "pastel-carne-gueroba": 10, "pastel-frango-pequi": 10,
+    "batata-4-queijos": 8, "batata-strogonoff": 9, "batata-casadinho": 9, "batata-doritos": 8, "batata-calabacon": 9,
+  };
+  let itens = c.itens.map((i) => {
+    if (!(i.id in precos)) return i;
+    const { precoAntigo: _, ...resto } = i;
+    return {
+      ...resto,
+      preco: precos[i.id],
+      ...(i.id === "pastel-doce-de-leite" ? { nome: "Pastel Doce de Leite com Canela e Açúcar" } : {}),
+    };
+  });
+  // Fanta Uva e Fanta Limão, iguais à Fanta Laranja.
+  const base = itens.find((i) => i.id === "fanta-laranja");
+  if (base) {
+    const pos = itens.indexOf(base) + 1;
+    const novas = [
+      { id: "fanta-uva", nome: "Fanta Uva (lata 330ml)" },
+      { id: "fanta-limao", nome: "Fanta Limão (lata 330ml)" },
+    ]
+      .filter((n) => !itens.some((i) => i.id === n.id))
+      .map((n) => ({ ...base, ...n, imagem: undefined, destaque: undefined, preco: 1.5, disponivel: true }));
+    itens = [...itens.slice(0, pos), ...novas, ...itens.slice(pos)];
+  }
+  // Strogonoff: frango no preço, camarão +£2.
+  const g = c.adicionais["proteina-strogonoff"];
+  const adicionais = g
+    ? { ...c.adicionais, "proteina-strogonoff": { ...g, opcoes: g.opcoes.map((o) => (/camar/i.test(o.nome) ? { ...o, preco: 2 } : { ...o, preco: undefined })) } }
+    : c.adicionais;
+  return { ...c, itens, adicionais };
+}
+
+const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
+  ["adicionais-acai-v1", adicionaisAcaiV1],
+  ["precos-reais-v1", precosReaisV1],
+];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */
 let tudoFeito = false;
