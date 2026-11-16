@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { gerarId, type Cardapio, type Escolha, type Item } from "@/lib/cardapio";
+import { amanhaLondres, gerarId, type Cardapio, type Escolha, type Item } from "@/lib/cardapio";
 import { ALERGENICOS } from "@/lib/alergenicos";
 import { reduzirFoto } from "@/lib/reduzirFoto";
 import type { Salvar } from "./Admin";
@@ -44,8 +44,13 @@ function Biblioteca({ cardapio, salvar, ir }: { cardapio: Cardapio; salvar: Salv
     return !b || i.nome.toLowerCase().includes(b) || i.descricao?.toLowerCase().includes(b);
   });
 
+  /** Um toque: Disponível → Esgotado (volta amanhã sozinho) → Esgotado (até ligar de novo) → Disponível. */
   function alternar(item: Item) {
-    salvar({ ...cardapio, itens: cardapio.itens.map((i) => (i.id === item.id ? { ...i, disponivel: !i.disponivel } : i)) });
+    const proximo = (i: Item): Item =>
+      i.disponivel ? { ...i, disponivel: false, voltaEm: amanhaLondres() }
+      : i.voltaEm ? { ...i, disponivel: false, voltaEm: undefined }
+      : { ...i, disponivel: true, voltaEm: undefined };
+    salvar({ ...cardapio, itens: cardapio.itens.map((i) => (i.id === item.id ? proximo(i) : i)) });
   }
 
   return (
@@ -99,7 +104,7 @@ function Biblioteca({ cardapio, salvar, ir }: { cardapio: Cardapio; salvar: Salv
                   <a className="sq-item" href={`#itens/${encodeURIComponent(i.id)}`}>
                     {i.imagem ? <img src={i.imagem} alt="" loading="lazy" /> : <span className="sq-sem-foto" aria-hidden="true">{i.nome.slice(0, 2)}</span>}
                     <span>
-                      <strong>{i.nome}</strong>
+                      <strong>{i.destaque ? "⭐ " : ""}{i.nome}</strong>
                       {!i.imagem && <span className="sq-sub sq-alerta">Sem foto</span>}
                       {i.alergenicos == null && <span className="sq-sub sq-alerta">Sem alergênicos</span>}
                     </span>
@@ -108,7 +113,7 @@ function Biblioteca({ cardapio, salvar, ir }: { cardapio: Cardapio; salvar: Salv
                 <td className="so-largo sq-sub">{nomeCat[i.categoria] ?? "—"}</td>
                 <td>
                   <button className={"sq-pilula " + (i.disponivel ? "ok" : "off")} onClick={() => alternar(i)} title="Clique para mudar">
-                    {i.disponivel ? "Disponível" : "Esgotado"}
+                    {i.disponivel ? "Disponível" : i.voltaEm ? "Esgotado · volta amanhã" : "Esgotado"}
                   </button>
                 </td>
                 <td className="direita num">
@@ -310,9 +315,19 @@ function EditorItem({ cardapio, item, salvar, voltar, avisar }: { cardapio: Card
           <section className="sq-cartao">
             <h2>Disponibilidade</h2>
             <label className="sq-interruptor">
-              <input type="checkbox" checked={f.disponivel} onChange={(e) => mudar("disponivel", e.target.checked)} />
+              <input type="checkbox" checked={f.disponivel} onChange={(e) => { mudar("disponivel", e.target.checked); mudar("voltaEm", e.target.checked ? undefined : amanhaLondres()); }} />
               <span className="trilho" aria-hidden="true" />
               <span>{f.disponivel ? "Disponível no site" : "Esgotado (aparece, mas não dá para pedir)"}</span>
+            </label>
+            {!f.disponivel && (
+              <label className="sq-check">
+                <input type="checkbox" checked={!!f.voltaEm} onChange={(e) => mudar("voltaEm", e.target.checked ? amanhaLondres() : undefined)} />
+                <span><strong>Volta amanhã sozinho</strong><span className="sq-sub">O site mostra "Esgotado · volta amanhã" e libera o item de novo amanhã cedo. Desmarque se não tiver data para voltar.</span></span>
+              </label>
+            )}
+            <label className="sq-check">
+              <input type="checkbox" checked={!!f.destaque} onChange={(e) => mudar("destaque", e.target.checked || undefined)} />
+              <span><strong>⭐ Destaque: "Mais pedidos"</strong><span className="sq-sub">Aparece na faixa de mais pedidos, no topo do cardápio. Fica mais bonito com foto.</span></span>
             </label>
           </section>
 

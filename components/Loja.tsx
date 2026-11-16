@@ -115,6 +115,7 @@ export default function Loja({
           <strong>Tem alguma alergia?</strong> Toque no item para ver os alergênicos. Na dúvida, fale com a gente no WhatsApp antes de pedir.
           Tudo é preparado na mesma cozinha, então pode haver traços.
         </p>
+        <MaisPedidos itens={cardapio.itens} abrir={setAberto} />
         {cardapio.categorias.map((cat) => {
           const itens = cardapio.itens.filter((i) => i.categoria === cat.id);
           if (!itens.length) return null;
@@ -143,7 +144,7 @@ export default function Loja({
                           <span className="antigo preco">{formatar(emPence(item.precoAntigo))}</span>
                         )}
                         {!item.disponivel ? (
-                          <span className="tag esgotado">Esgotado</span>
+                          <span className="tag esgotado">{item.voltaEm ? "Esgotado · volta amanhã" : "Esgotado"}</span>
                         ) : item.precoAntigo && item.precoAntigo > item.preco ? (
                           <span className="tag promo">Promoção</span>
                         ) : null}
@@ -659,5 +660,31 @@ function Totais({ subtotal, taxa, total }: { subtotal: number; taxa: number | nu
       <div><span>Entrega</span><span>{taxa == null ? "pelo postcode" : taxa ? formatar(taxa) : "Grátis"}</span></div>
       <div className="total"><span>Total</span><span>{formatar(total)}</span></div>
     </div>
+  );
+}
+
+/** Faixa "Mais pedidos": os itens marcados como destaque no painel, com foto grande. */
+function MaisPedidos({ itens, abrir }: { itens: Item[]; abrir: (i: Item) => void }) {
+  const destaques = itens.filter((i) => i.destaque).sort((a, b) => Number(b.disponivel) - Number(a.disponivel));
+  if (!destaques.length) return null;
+  return (
+    <section className="secao mais-pedidos" aria-labelledby="mais-pedidos-titulo">
+      <div className="secao-topo">
+        <h2 id="mais-pedidos-titulo">Mais pedidos</h2>
+        <span className="risco" aria-hidden="true" />
+      </div>
+      <div className="mp-trilho">
+        {destaques.map((item) => (
+          <button key={item.id} className="mp-card" disabled={!item.disponivel} onClick={() => abrir(item)}>
+            <div className="mp-foto">
+              {item.imagem ? <img src={item.imagem} alt="" loading="lazy" /> : <IconeCategoria categoria={item.categoria} />}
+              {!item.disponivel && <span className="tag esgotado">{item.voltaEm ? "Volta amanhã" : "Esgotado"}</span>}
+            </div>
+            <strong>{item.nome}</strong>
+            <span className="preco">{formatar(emPence(item.preco))}</span>
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }

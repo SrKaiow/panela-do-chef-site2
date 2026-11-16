@@ -36,6 +36,10 @@ export type Item = {
   escolhas?: Escolha[];
   /** Alergênicos do item (ids de lib/alergenicos). undefined = ainda não informado. */
   alergenicos?: string[];
+  /** Aparece em "Mais pedidos", no topo do cardápio. */
+  destaque?: boolean;
+  /** Esgotado só por hoje: no dia indicado (AAAA-MM-DD, horário de Londres) volta sozinho. */
+  voltaEm?: string;
 };
 export type Categoria = { id: string; nome: string };
 export type Cardapio = {
@@ -43,6 +47,17 @@ export type Cardapio = {
   adicionais: Record<string, GrupoAdicional>;
   itens: Item[];
 };
+
+/** Hoje em Londres no formato AAAA-MM-DD. */
+export const hojeLondres = (d = new Date()) => d.toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+export const amanhaLondres = () => hojeLondres(new Date(Date.now() + 24 * 3600_000));
+
+/** Itens marcados "volta amanhã" voltam sozinhos quando o dia chega. */
+export function aplicarVoltas(c: Cardapio): Cardapio {
+  const hoje = hojeLondres();
+  if (!c.itens.some((i) => !i.disponivel && i.voltaEm && i.voltaEm <= hoje)) return c;
+  return { ...c, itens: c.itens.map((i) => (!i.disponivel && i.voltaEm && i.voltaEm <= hoje ? { ...i, disponivel: true, voltaEm: undefined } : i)) };
+}
 
 /** Libras (8.5) para pence (850). Todo cálculo é feito em pence para não errar centavos. */
 export const emPence = (libras: number) => Math.round(libras * 100);
