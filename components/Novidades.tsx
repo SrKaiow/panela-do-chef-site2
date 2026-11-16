@@ -32,6 +32,23 @@ const MONTAGENS: Record<string, Config> = {
       { src: L + "s-camada-10.webp", top: 81.06, alt: 18.94 },
     ],
   },
+  "acai-banoffe-750": {
+    tom: "caramelo",
+    copo: L + "b-copo.webp",
+    proporcaoPilha: 0.3787,
+    proporcaoCopo: 0.6544,
+    camadas: [
+      { src: L + "b-camada-00.webp", top: 0.0, alt: 11.38 },
+      { src: L + "b-camada-01.webp", top: 9.88, alt: 14.62 },
+      { src: L + "b-camada-02.webp", top: 23.0, alt: 9.62 },
+      { src: L + "b-camada-03.webp", top: 31.13, alt: 11.5 },
+      { src: L + "b-camada-04.webp", top: 41.12, alt: 10.25 },
+      { src: L + "b-camada-05.webp", top: 49.88, alt: 12.12 },
+      { src: L + "b-camada-06.webp", top: 60.5, alt: 10.25 },
+      { src: L + "b-camada-07.webp", top: 69.25, alt: 10.88 },
+      { src: L + "b-camada-08.webp", top: 78.62, alt: 21.38 },
+    ],
+  },
   "acai-choquito-750": {
     tom: "roxo",
     copo: L + "c-copo.webp?v=2",
@@ -56,7 +73,7 @@ export default function Novidades({ itens, abrir }: { itens: Item[]; abrir: (i: 
   const novidades = itens.filter((i) => i.novidade && i.disponivel);
   if (!novidades.length) return null;
   return (
-    <div className="novidades">
+    <div className="novidades" aria-label="Novidades da casa">
       {novidades.map((item) => (
         <Vitrine key={item.id} item={item} abrir={abrir} />
       ))}

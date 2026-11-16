@@ -130,12 +130,36 @@ function novidadesPromoV2(c: Cardapio): Cardapio {
   return { ...c, itens: c.itens.map((i) => (ids.includes(i.id) ? { ...i, preco: 17.9, precoAntigo: 19.99 } : i)) };
 }
 
+/** Novidade: Banoffe (copão 750g). */
+function banoffeV1(c: Cardapio): Cardapio {
+  if (c.itens.some((i) => i.id === "acai-banoffe-750")) return c;
+  const base = c.itens.find((i) => i.id === "acai-choquito-750") ?? c.itens.find((i) => i.id === "acai-500");
+  const novo = {
+    id: "acai-banoffe-750",
+    nome: "Banoffe",
+    categoria: base?.categoria ?? "acai",
+    descricao: "Copão de 750g com base de biscoito e paçoca, doce de leite, chantilly, creme de banoffee, banana em rodelas e paçoca triturada por cima.",
+    preco: 17.9,
+    precoAntigo: 19.99,
+    disponivel: true,
+    novidade: true,
+    destaque: true,
+    selo: "Copão de 750g",
+    escolhas: [],
+  };
+  const pos = c.itens.findIndex((i) => i.id === "acai-sensacao-maltine") + 1;
+  const itens = [...c.itens];
+  itens.splice(pos > 0 ? pos : 0, 0, novo);
+  return { ...c, itens };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
   ["novidades-v1", novidadesV1],
   ["novidades-promo-v1", novidadesPromoV1],
   ["novidades-promo-v2", novidadesPromoV2],
+  ["banoffe-v1", banoffeV1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */
