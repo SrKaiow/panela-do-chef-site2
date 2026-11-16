@@ -317,9 +317,28 @@ function FolhaItem({ cardapio, item, onFechar, onAdicionar }: { cardapio: Cardap
                 })}
               </div>
             ) : (
-              <div className="opcoes">
-                {grupo.opcoes.map((op) => {
+              <div className={"opcoes" + (grupo.opcoes.some((o) => o.imagem) ? " grade" : "")}>
+                {[...grupo.opcoes].sort((x, y) => Number(!!x.esgotado) - Number(!!y.esgotado)).map((op) => {
                   const marcado = escolhidos.includes(op.nome);
+                  if (grupo.opcoes.some((o) => o.imagem))
+                    return (
+                      <button
+                        key={op.nome}
+                        type="button"
+                        className={"opcao-card" + (op.esgotado ? " riscado" : "")}
+                        aria-pressed={marcado}
+                        disabled={op.esgotado || (cheio && !marcado)}
+                        onClick={() => alternar(e.grupo, op.nome, e.max)}
+                      >
+                        <span className="oc-foto">
+                          {op.imagem ? <img src={op.imagem} alt="" loading="lazy" /> : <span aria-hidden="true">{op.nome.charAt(0)}</span>}
+                          {marcado && <span className="oc-check" aria-hidden="true">✓</span>}
+                          {op.esgotado && <span className="oc-esgotado">Esgotado</span>}
+                        </span>
+                        <span className="oc-nome">{op.nome}</span>
+                        <span className="oc-preco">{op.preco ? `+${formatar(emPence(op.preco))}` : "Grátis"}</span>
+                      </button>
+                    );
                   return (
                     <button
                       key={op.nome}

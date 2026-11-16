@@ -672,3 +672,17 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .mp-foto .tag { position: absolute; left: 8px; bottom: 8px; }
 .mp-card strong { font-size: .95rem; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .mp-card .preco { font-weight: 800; color: var(--ouro); }
+
+/* Adicionais com foto: cartões em grade (estilo app de delivery) */
+.opcoes.grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
+.opcao-card { display: grid; gap: 4px; padding: 6px 6px 8px; border-radius: 14px; border: 1.5px solid var(--linha); background: var(--superficie); text-align: center; color: var(--texto); transition: border-color .15s ease, transform .15s ease; }
+.opcao-card:not(:disabled):hover { border-color: var(--ouro); }
+.opcao-card[aria-pressed="true"] { border-color: var(--ouro); background: rgba(255, 216, 20, .1); }
+.opcao-card:disabled { opacity: .45; cursor: not-allowed; }
+.oc-foto { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; display: grid; place-items: center; background: var(--superficie-2); color: var(--ouro); font-family: var(--fonte-titulo); font-size: 1.8rem; }
+.oc-foto img { width: 100%; height: 100%; object-fit: cover; }
+.oc-check { position: absolute; top: 5px; right: 5px; width: 24px; height: 24px; border-radius: 50%; background: var(--ouro); color: #000; font-weight: 900; font-size: .85rem; display: grid; place-items: center; font-family: inherit; }
+.oc-esgotado { position: absolute; inset: auto 0 0 0; background: rgba(0,0,0,.75); color: #fff; font-size: .7rem; font-weight: 800; padding: 3px 0; font-family: inherit; text-transform: uppercase; letter-spacing: .5px; }
+.oc-nome { font-size: .82rem; font-weight: 700; line-height: 1.2; }
+.oc-preco { font-size: .78rem; font-weight: 800; color: var(--texto-2); }
+.opcao-card[aria-pressed="true"] .oc-preco { color: var(--ouro); }
