@@ -95,9 +95,33 @@ function precosReaisV1(c: Cardapio): Cardapio {
   return { ...c, itens, adicionais };
 }
 
+/** Novidades da casa: Açaí de Choquito com Bis de Oreo (copão 750g) e Sensação Maltine. */
+function novidadesV1(c: Cardapio): Cardapio {
+  const base = c.itens.find((i) => i.id === "acai-500");
+  const novos = [
+    {
+      id: "acai-choquito-750",
+      nome: "Açaí de Choquito com Bis de Oreo",
+      descricao: "Copão de 750g com creme de Oreo, Leite Ninho e leite condensado, finalizado com Choquito, Bis de Oreo e biscoito Oreo.",
+      preco: 17.49,
+      selo: "Copão de 750g",
+    },
+    {
+      id: "acai-sensacao-maltine",
+      nome: "Sensação Maltine",
+      descricao: "Uma explosão de cremosidade: camadas de açaí, mousse de morango, creme de chocolate maltine, Ovomaltine, morango e leite condensado. Com tampa em domo.",
+      preco: 17.49,
+    },
+  ]
+    .filter((n) => !c.itens.some((i) => i.id === n.id))
+    .map((n) => ({ categoria: base?.categoria ?? "acai", disponivel: true, novidade: true, destaque: true, escolhas: [], ...n }));
+  return { ...c, itens: [...novos, ...c.itens] };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
+  ["novidades-v1", novidadesV1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */

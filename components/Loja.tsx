@@ -8,6 +8,7 @@ import { estadoLoja, type Estado, type Horario } from "@/lib/horario";
 import Hero, { Faixa } from "./Hero";
 import QuantoPedir from "./QuantoPedir";
 import { IconeCategoria } from "./Icones";
+import Novidades from "./Novidades";
 
 type Linha = LinhaCarrinho & { chave: string };
 type Pagamentos = { dinheiro: boolean; cartao: boolean };
@@ -105,6 +106,7 @@ export default function Loja({
       </nav>
 
       <main className="miolo cardapio">
+        <Novidades itens={cardapio.itens} abrir={setAberto} />
         {!estado.aberto && (
           <p className="aviso-agendar">
             <strong>Cozinha fechada agora.</strong> Monte seu pedido e escolha o horário de entrega
@@ -115,7 +117,7 @@ export default function Loja({
           <strong>Tem alguma alergia?</strong> Toque no item para ver os alergênicos. Na dúvida, fale com a gente no WhatsApp antes de pedir.
           Tudo é preparado na mesma cozinha, então pode haver traços.
         </p>
-        <MaisPedidos itens={cardapio.itens} abrir={setAberto} />
+        <MaisPedidos itens={cardapio.itens.filter((i) => !i.novidade)} abrir={setAberto} />
         {cardapio.categorias.map((cat) => {
           const itens = cardapio.itens.filter((i) => i.categoria === cat.id);
           if (!itens.length) return null;

@@ -38,6 +38,10 @@ export type Item = {
   alergenicos?: string[];
   /** Aparece em "Mais pedidos", no topo do cardápio. */
   destaque?: boolean;
+  /** Novidade: aparece sozinho, em destaque, no topo do cardápio (com a animação de montagem, se tiver). */
+  novidade?: boolean;
+  /** Ex.: "Copão de 750g" (selo no destaque da novidade). */
+  selo?: string;
   /** Esgotado só por hoje: no dia indicado (AAAA-MM-DD, horário de Londres) volta sozinho. */
   voltaEm?: string;
 };

@@ -686,3 +686,66 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .oc-nome { font-size: .82rem; font-weight: 700; line-height: 1.2; }
 .oc-preco { font-size: .78rem; font-weight: 800; color: var(--texto-2); }
 .opcao-card[aria-pressed="true"] .oc-preco { color: var(--ouro); }
+
+/* ---------- Novidades: vitrine com o copo sendo montado ---------- */
+.novidades { display: grid; gap: 18px; margin: 6px 0 26px; }
+.vitrine { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr); border-radius: 26px; border: 1px solid rgba(255,255,255,.08);
+  --c1: #5b1a8c; --c2: #1b0630; --brilho: rgba(190, 120, 255, .55);
+  background: radial-gradient(120% 90% at 50% 0%, var(--c1), var(--c2) 62%, #050207); }
+.vitrine.tom-rosa { --c1: #b23a64; --c2: #2c0716; --brilho: rgba(255, 150, 190, .55); }
+@media (min-width: 760px) { .vitrine { grid-template-columns: 1.05fr 1fr; align-items: center; } }
+
+.vitrine-palco { position: relative; height: clamp(360px, 62vw, 480px); display: grid; place-items: center; }
+.vitrine-luz { position: absolute; inset: 8% 15% auto; height: 70%; border-radius: 50%; background: radial-gradient(closest-side, var(--brilho), transparent); filter: blur(10px); }
+.vitrine-chao { position: absolute; left: 50%; bottom: 7%; width: 46%; height: 26px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.65), transparent); }
+.vitrine-foto { position: relative; max-height: 88%; max-width: 86%; object-fit: contain; }
+
+.montagem { position: relative; height: 90%; aspect-ratio: 560 / 900; }
+.montagem img { position: absolute; user-select: none; -webkit-user-drag: none; }
+.montagem { filter: drop-shadow(0 18px 22px rgba(0,0,0,.55)); }
+.montagem .pronto, .montagem-copo img { inset: 0; width: 100%; height: 100%; object-fit: contain; }
+
+/* Sensação: as camadas caem uma a uma, empilham e viram o copo pronto */
+.montagem-pilha .pilha { position: absolute; left: 50%; top: -2%; height: 104%; aspect-ratio: 255 / 680; transform: translateX(-50%); opacity: 0; }
+.montagem-pilha .camada { left: 0; width: 100%; object-fit: contain; }
+.montando .montagem-pilha .pilha { opacity: 1; animation: pilha-vira-copo .7s cubic-bezier(.6,0,.4,1) 3.55s both; }
+.montando .montagem-pilha .camada { animation: camada-cai .75s cubic-bezier(.2,1.25,.4,1) calc(var(--n) * .58s + .15s) both; }
+.montando .montagem-pilha .pronto { animation: copo-aparece .9s cubic-bezier(.2,1.1,.3,1) 3.75s both, copo-flutua 5s ease-in-out 4.8s infinite; }
+@keyframes camada-cai { from { transform: translateY(-150%) rotate(-4deg); opacity: 0; } 60% { opacity: 1; } to { transform: none; opacity: 1; } }
+@keyframes pilha-vira-copo { to { transform: translateX(-50%) scale(.55, .35) translateY(60%); opacity: 0; filter: blur(4px); } }
+@keyframes copo-aparece { from { transform: scale(.6) translateY(12%); opacity: 0; filter: blur(6px) brightness(1.6); } to { transform: none; opacity: 1; filter: none; } }
+@keyframes copo-flutua { 50% { transform: translateY(-2.5%); } }
+
+/* Choquito: o copo enche de baixo para cima e a cobertura cai por cima */
+.montando .montagem-copo .copo-recheio { animation: copo-enche 1.7s cubic-bezier(.45,0,.2,1) .2s both, copo-fecha .01s linear 3.1s forwards; }
+.montagem-copo .copo-topo { -webkit-mask-image: linear-gradient(#000 26%, transparent 33%); mask-image: linear-gradient(#000 26%, transparent 33%); }
+.montando .montagem-copo .copo-topo { animation: cobertura-cai .9s cubic-bezier(.2,1.3,.4,1) 1.9s both, some .01s linear 3.1s forwards; }
+@keyframes some { to { opacity: 0; visibility: hidden; } }
+.montando .montagem-copo { animation: copo-flutua 5s ease-in-out 3.4s infinite; }
+@keyframes copo-enche { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(27% 0 0 0); } }
+@keyframes copo-fecha { to { clip-path: inset(0 0 0 0); } }
+@keyframes cobertura-cai { from { transform: translateY(-45%) scale(1.04); opacity: 0; } 50% { opacity: 1; } to { transform: none; opacity: 1; } }
+
+.vitrine-selo { position: absolute; right: 6%; bottom: 10%; display: grid; justify-items: center; padding: 10px 16px 8px; border-radius: 999px; background: #3b0a63; border: 2px solid var(--ouro); color: #fff; font-weight: 800; font-size: .85rem; line-height: 1.05; box-shadow: 0 10px 24px rgba(0,0,0,.45); transform: rotate(-6deg); }
+.vitrine-selo span { position: absolute; top: -16px; font-size: 1.2rem; }
+.vitrine-selo strong { font-family: var(--fonte-titulo); color: var(--ouro); font-size: 1.9rem; letter-spacing: .5px; }
+.montando .vitrine-selo { animation: selo-pula .6s cubic-bezier(.2,1.6,.4,1) 3.2s both; }
+@keyframes selo-pula { from { transform: rotate(-6deg) scale(0); } to { transform: rotate(-6deg) scale(1); } }
+
+.vitrine-texto { position: relative; display: grid; gap: 10px; padding: 4px 22px 24px; }
+@media (min-width: 760px) { .vitrine-texto { padding: 28px 32px 28px 8px; } }
+.vitrine-tag { justify-self: start; padding: 6px 12px; border-radius: 999px; background: var(--ouro); color: #000; font-weight: 900; font-size: .78rem; letter-spacing: 1.5px; text-transform: uppercase; }
+.vitrine h2 { margin: 0; font-family: var(--fonte-titulo); font-size: clamp(2rem, 7vw, 3rem); line-height: 1; text-transform: uppercase; }
+.vitrine p { margin: 0; color: rgba(255,255,255,.82); font-size: .98rem; line-height: 1.45; }
+.vitrine-acoes { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
+.vitrine-preco { font-family: var(--fonte-titulo); font-size: 2.3rem; color: var(--ouro); line-height: 1; }
+.vitrine-btn { padding: 14px 24px; border-radius: 999px; border: 0; background: linear-gradient(180deg, #ffe45c, var(--ouro)); color: #000; font-weight: 900; font-size: 1.02rem; box-shadow: 0 8px 22px rgba(255, 216, 20, .3); }
+.vitrine-btn:hover { transform: translateY(-1px); }
+.vitrine-repetir { justify-self: start; border: 0; background: none; color: rgba(255,255,255,.6); font-size: .85rem; padding: 4px 0; text-decoration: underline; }
+
+@media (prefers-reduced-motion: reduce) {
+  .montando .montagem *, .montando .montagem, .montando .vitrine-selo { animation: none !important; }
+  .montagem-pilha .pilha { display: none; }
+  .montagem-copo .copo-topo { display: none; }
+  .montagem .copo-recheio { clip-path: none !important; }
+}

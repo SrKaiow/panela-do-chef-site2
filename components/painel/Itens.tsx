@@ -329,6 +329,16 @@ function EditorItem({ cardapio, item, salvar, voltar, avisar }: { cardapio: Card
               <input type="checkbox" checked={!!f.destaque} onChange={(e) => mudar("destaque", e.target.checked)} />
               <span><strong>⭐ Destaque: "Mais pedidos"</strong><span className="sq-sub">Aparece na faixa de mais pedidos, no topo do cardápio. Fica mais bonito com foto.</span></span>
             </label>
+            <label className="sq-check">
+              <input type="checkbox" checked={!!f.novidade} onChange={(e) => mudar("novidade", e.target.checked)} />
+              <span><strong>🆕 Novidade na casa</strong><span className="sq-sub">Aparece sozinho, grande, no topo do cardápio, com o botão "Quero o meu".</span></span>
+            </label>
+            {f.novidade && (
+              <label className="sq-campo">
+                <span>Selo da novidade (opcional)</span>
+                <input value={f.selo ?? ""} maxLength={30} placeholder="Ex.: Copão de 750g" onChange={(e) => mudar("selo", e.target.value || undefined)} />
+              </label>
+            )}
           </section>
 
           {!novo && (
