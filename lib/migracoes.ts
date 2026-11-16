@@ -118,10 +118,17 @@ function novidadesV1(c: Cardapio): Cardapio {
   return { ...c, itens: [...novos, ...c.itens] };
 }
 
+/** Novidades em promoção: de £17.49 por £15.99. */
+function novidadesPromoV1(c: Cardapio): Cardapio {
+  const ids = ["acai-choquito-750", "acai-sensacao-maltine"];
+  return { ...c, itens: c.itens.map((i) => (ids.includes(i.id) ? { ...i, preco: 15.99, precoAntigo: 17.49 } : i)) };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
   ["novidades-v1", novidadesV1],
+  ["novidades-promo-v1", novidadesPromoV1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */

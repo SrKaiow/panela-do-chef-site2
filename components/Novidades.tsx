@@ -13,7 +13,7 @@ const L = "/fotos/lancamentos/";
 /** Montagem camada por camada (posições tiradas da foto original, de cima para baixo em %). */
 const CAMADAS: Record<string, { final: string; tom: string; camadas?: { src: string; top: number; alt: number }[] }> = {
   "acai-sensacao-maltine": {
-    final: L + "sensacao-inteiro.webp?v=2",
+    final: L + "sensacao-inteiro.webp?v=3",
     tom: "rosa",
     camadas: [
       { src: L + "sensacao-s1.webp", top: 77.35, alt: 22.65 },
@@ -23,7 +23,7 @@ const CAMADAS: Record<string, { final: string; tom: string; camadas?: { src: str
       { src: L + "sensacao-s5.webp", top: 0, alt: 20 },
     ],
   },
-  "acai-choquito-750": { final: L + "choquito-inteiro.webp?v=2", tom: "roxo" },
+  "acai-choquito-750": { final: L + "choquito-inteiro.webp?v=3", tom: "roxo" },
 };
 
 export default function Novidades({ itens, abrir }: { itens: Item[]; abrir: (i: Item) => void }) {
@@ -39,30 +39,49 @@ export default function Novidades({ itens, abrir }: { itens: Item[]; abrir: (i: 
 }
 
 function Vitrine({ item, abrir }: { item: Item; abrir: (i: Item) => void }) {
-  const palco = useRef<HTMLDivElement>(null);
+  const palco = useRef<HTMLElement>(null);
   const [rodada, setRodada] = useState(0);
   const cfg = CAMADAS[item.id];
 
-  // Começa a montar quando o cartão aparece na tela.
+  const [saindo, setSaindo] = useState(false);
+  const visivel = useRef(false);
+
+  // Monta quando o cartão aparece na tela e repete sem parar enquanto ele estiver visível.
   useEffect(() => {
     const el = palco.current;
     if (!el) return;
     const io = new IntersectionObserver(
       ([e]) => {
-        if (e.isIntersecting) {
-          setRodada((r) => (r === 0 ? 1 : r));
-          io.disconnect();
-        }
+        visivel.current = e.isIntersecting;
+        if (e.isIntersecting) setRodada((r) => (r === 0 ? 1 : r));
       },
-      { threshold: 0.35 },
+      { threshold: 0.3 },
     );
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (!rodada || !cfg) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const ciclo = cfg.camadas ? 8200 : 6800; // montagem + um tempinho com o copo pronto
+    const t1 = setTimeout(() => setSaindo(true), ciclo - 450);
+    const t2 = setTimeout(() => {
+      setSaindo(false);
+      // fora da tela, espera voltar para não gastar bateria
+      if (visivel.current) setRodada((r) => r + 1);
+      else {
+        const espera = setInterval(() => {
+          if (visivel.current) { clearInterval(espera); setRodada((r) => r + 1); }
+        }, 500);
+      }
+    }, ciclo);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [rodada, cfg]);
+
   return (
-    <section className={"vitrine tom-" + (cfg?.tom ?? "ouro")} aria-labelledby={"nov-" + item.id}>
-      <div ref={palco} className={"vitrine-palco" + (rodada ? " montando" : "")} key={rodada}>
+    <section ref={palco} className={"vitrine tom-" + (cfg?.tom ?? "ouro")} aria-labelledby={"nov-" + item.id}>
+      <div className={"vitrine-palco" + (rodada ? " montando" : "") + (saindo ? " saindo" : "")} key={rodada}>
         <span className="vitrine-luz" aria-hidden="true" />
         <span className="vitrine-chao" aria-hidden="true" />
         {cfg?.camadas ? (
@@ -96,16 +115,19 @@ function Vitrine({ item, abrir }: { item: Item; abrir: (i: Item) => void }) {
         <h2 id={"nov-" + item.id}>{item.nome}</h2>
         {item.descricao && <p>{item.descricao}</p>}
         <div className="vitrine-acoes">
-          <span className="vitrine-preco">{formatar(emPence(item.preco))}</span>
+          <span className="vitrine-precos">
+            {item.precoAntigo && item.precoAntigo > item.preco && (
+              <s className="vitrine-de">De {formatar(emPence(item.precoAntigo))}</s>
+            )}
+            <span className="vitrine-preco">
+              {item.precoAntigo && item.precoAntigo > item.preco && <small>por apenas </small>}
+              {formatar(emPence(item.preco))}
+            </span>
+          </span>
           <button type="button" className="vitrine-btn" onClick={() => abrir(item)}>
             Quero o meu
           </button>
         </div>
-        {cfg && (
-          <button type="button" className="vitrine-repetir" onClick={() => setRodada((r) => r + 1)}>
-            ↻ Ver a montagem de novo
-          </button>
-        )}
       </div>
     </section>
   );

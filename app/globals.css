@@ -741,7 +741,11 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .vitrine-preco { font-family: var(--fonte-titulo); font-size: 2.3rem; color: var(--ouro); line-height: 1; }
 .vitrine-btn { padding: 14px 24px; border-radius: 999px; border: 0; background: linear-gradient(180deg, #ffe45c, var(--ouro)); color: #000; font-weight: 900; font-size: 1.02rem; box-shadow: 0 8px 22px rgba(255, 216, 20, .3); }
 .vitrine-btn:hover { transform: translateY(-1px); }
-.vitrine-repetir { justify-self: start; border: 0; background: none; color: rgba(255,255,255,.6); font-size: .85rem; padding: 4px 0; text-decoration: underline; }
+.vitrine-precos { display: grid; gap: 2px; }
+.vitrine-de { color: rgba(255,255,255,.6); font-size: 1rem; font-weight: 700; }
+.vitrine-preco small { font-family: var(--fonte-texto, inherit); font-size: .9rem; color: #fff; font-weight: 700; margin-right: 4px; letter-spacing: 0; }
+.vitrine-palco .montagem, .vitrine-palco .vitrine-selo { transition: opacity .4s ease, transform .4s ease; }
+.vitrine-palco.saindo .montagem { opacity: 0; transform: scale(.96); }
 
 @media (prefers-reduced-motion: reduce) {
   .montando .montagem *, .montando .montagem, .montando .vitrine-selo { animation: none !important; }
