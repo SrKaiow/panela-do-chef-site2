@@ -1,5 +1,6 @@
 import { aplicarVoltas } from "./cardapio";
 import { aplicarFotosPadrao } from "./fotosPadrao";
+import { migrarCardapio } from "./migracoes";
 import cardapioInicial from "@/data/cardapio.json";
 import lojaInicial from "@/data/loja.json";
 import type { Cardapio } from "./cardapio";
@@ -14,11 +15,11 @@ import { lerConfig, salvarConfig } from "./db";
 export async function getCardapio(): Promise<Cardapio> {
   try {
     const c = await lerConfig<Cardapio>("cardapio");
-    if (c && Array.isArray(c.itens)) return aplicarFotosPadrao(aplicarVoltas(c));
+    if (c && Array.isArray(c.itens)) return aplicarFotosPadrao(aplicarVoltas(await migrarCardapio(c, true)));
   } catch (e) {
     console.error("[dados] cardápio", e);
   }
-  return aplicarFotosPadrao(cardapioInicial as Cardapio);
+  return aplicarFotosPadrao(await migrarCardapio(cardapioInicial as Cardapio, false));
 }
 
 export async function salvarCardapio(c: Cardapio) {
