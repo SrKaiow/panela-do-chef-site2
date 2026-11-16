@@ -227,6 +227,26 @@ function massaShowV1(c: Cardapio): Cardapio {
   return { ...c, categorias, adicionais, itens: [...c.itens, item] };
 }
 
+/** Massa Show: pode escolher os 2 molhos, até 10 ingredientes; frango e carne moída +£2, camarão +£4. */
+function massaShowV2(c: Cardapio): Cardapio {
+  const a = { ...c.adicionais };
+  if (a["massa-molho"]) a["massa-molho"] = { ...a["massa-molho"], nome: "3. Escolha seu molho (pode os 2)", regras: { obrigatorio: true, varios: true, max: 2, repetir: false } };
+  if (a["massa-proteina"])
+    a["massa-proteina"] = { ...a["massa-proteina"], nomeInterno: "Massa Show - proteínas", opcoes: a["massa-proteina"].opcoes.map((o) => ({ ...o, preco: /camar/i.test(o.nome) ? 4 : 2 })) };
+  if (a["massa-ingredientes"]) a["massa-ingredientes"] = { ...a["massa-ingredientes"], regras: { obrigatorio: false, varios: true, max: 10, repetir: false } };
+  const itens = c.itens.map((i) =>
+    i.id === "massa-show"
+      ? {
+          ...i,
+          escolhas: (i.escolhas ?? []).map((e) =>
+            e.grupo === "massa-molho" ? { ...e, min: 1, max: 2 } : e.grupo === "massa-ingredientes" ? { ...e, max: 10 } : e,
+          ),
+        }
+      : i,
+  );
+  return { ...c, adicionais: a, itens };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
@@ -235,6 +255,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["novidades-promo-v2", novidadesPromoV2],
   ["banoffe-v1", banoffeV1],
   ["massa-show-v1", massaShowV1],
+  ["massa-show-v2", massaShowV2],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */
