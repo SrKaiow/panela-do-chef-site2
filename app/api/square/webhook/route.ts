@@ -13,8 +13,18 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const corpo = await req.text();
   // A Square assina usando exatamente a URL cadastrada no webhook.
-  const url = process.env.SQUARE_WEBHOOK_URL || `${siteUrl(req)}/api/square/webhook`;
-  if (!(await assinaturaSquareValida(url, corpo, req.headers.get("x-square-hmacsha256-signature")))) {
+  // Aceita a URL cadastrada, a do SITE_URL ou a do endereço que recebeu o aviso
+  // (assim a troca de domínio não derruba as confirmações). A assinatura continua exigindo a chave secreta.
+  const assinatura = req.headers.get("x-square-hmacsha256-signature");
+  const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+  const candidatas = [
+    process.env.SQUARE_WEBHOOK_URL,
+    `${siteUrl(req)}/api/square/webhook`,
+    host ? `https://${host}/api/square/webhook` : null,
+  ].filter((u, i, l): u is string => !!u && l.indexOf(u) === i);
+  let valida = false;
+  for (const u of candidatas) if (await assinaturaSquareValida(u, corpo, assinatura)) { valida = true; break; }
+  if (!valida) {
     return NextResponse.json({ erro: "assinatura inválida" }, { status: 401 });
   }
 
