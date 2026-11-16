@@ -25,7 +25,7 @@ function fotoAdicional(nome: string) {
 }
 
 /** Fotos trocadas depois de publicadas: o "?v=" faz o navegador baixar de novo. */
-const VERSAO: Record<string, number> = { "acai-choquito-750": 4, "acai-sensacao-maltine": 4 };
+const VERSAO: Record<string, number> = { "acai-choquito-750": 5, "acai-sensacao-maltine": 5 };
 const comVersao = (url: string | undefined) => {
   const m = url?.match(/^\/fotos\/cardapio\/([a-z0-9-]+)\.jpg$/);
   return m && VERSAO[m[1]] ? `${url}?v=${VERSAO[m[1]]}` : url;
