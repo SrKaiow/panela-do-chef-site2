@@ -24,6 +24,13 @@ function fotoAdicional(nome: string) {
   return k && ADICIONAIS.has(k) ? `/fotos/adicionais/${k}.jpg` : undefined;
 }
 
+/** Fotos trocadas depois de publicadas: o "?v=" faz o navegador baixar de novo. */
+const VERSAO: Record<string, number> = { "acai-choquito-750": 2, "acai-sensacao-maltine": 2 };
+const comVersao = (url: string | undefined) => {
+  const m = url?.match(/^\/fotos\/cardapio\/([a-z0-9-]+)\.jpg$/);
+  return m && VERSAO[m[1]] ? `${url}?v=${VERSAO[m[1]]}` : url;
+};
+
 export function aplicarFotosPadrao(c: Cardapio): Cardapio {
   const semEscolha = !c.itens.some((i) => typeof i.destaque === "boolean");
   const adicionais = Object.fromEntries(
@@ -36,7 +43,7 @@ export function aplicarFotosPadrao(c: Cardapio): Cardapio {
       const id = COM_FOTO.has(i.id) ? i.id : COM_FOTO.has(normal(i.nome)) ? normal(i.nome) : null;
       return {
         ...i,
-        imagem: i.imagem || (id ? `/fotos/cardapio/${id}.jpg` : undefined),
+        imagem: comVersao(i.imagem || (id ? `/fotos/cardapio/${id}.jpg` : undefined)),
         destaque: semEscolha ? DESTAQUES_INICIAIS.includes(i.id) || undefined : i.destaque,
       };
     }),

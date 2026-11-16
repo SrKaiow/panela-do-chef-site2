@@ -13,7 +13,7 @@ const L = "/fotos/lancamentos/";
 /** Montagem camada por camada (posições tiradas da foto original, de cima para baixo em %). */
 const CAMADAS: Record<string, { final: string; tom: string; camadas?: { src: string; top: number; alt: number }[] }> = {
   "acai-sensacao-maltine": {
-    final: L + "sensacao-inteiro.webp",
+    final: L + "sensacao-inteiro.webp?v=2",
     tom: "rosa",
     camadas: [
       { src: L + "sensacao-s1.webp", top: 77.35, alt: 22.65 },
@@ -23,7 +23,7 @@ const CAMADAS: Record<string, { final: string; tom: string; camadas?: { src: str
       { src: L + "sensacao-s5.webp", top: 0, alt: 20 },
     ],
   },
-  "acai-choquito-750": { final: L + "choquito-inteiro.webp", tom: "roxo" },
+  "acai-choquito-750": { final: L + "choquito-inteiro.webp?v=2", tom: "roxo" },
 };
 
 export default function Novidades({ itens, abrir }: { itens: Item[]; abrir: (i: Item) => void }) {
