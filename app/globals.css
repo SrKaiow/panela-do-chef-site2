@@ -540,7 +540,7 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .dica-entrega { font-size: 0.85rem; color: var(--texto-2); margin: 0; }
 .erro-texto { color: var(--pimenta); font-weight: 700; }
 .select { width: 100%; min-height: 48px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--linha); background: var(--superficie-2); color: var(--texto); font: inherit; font-size: 1rem; }
-.folha-foto { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 14px; display: block; margin-bottom: 12px; }
+.folha-foto { width: 100%; aspect-ratio: 1; max-height: 52vh; object-fit: cover; border-radius: 14px; display: block; margin-bottom: 12px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
 /* ---------- Rastreio: manchete, fila, moto ---------- */

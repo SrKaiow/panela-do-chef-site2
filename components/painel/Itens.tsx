@@ -4,12 +4,14 @@ import { useMemo, useRef, useState } from "react";
 import { amanhaLondres, gerarId, type Cardapio, type Escolha, type Item } from "@/lib/cardapio";
 import { ALERGENICOS } from "@/lib/alergenicos";
 import { reduzirFoto } from "@/lib/reduzirFoto";
+import RecortarFoto from "./RecortarFoto";
 import type { Salvar } from "./Admin";
 
 type Aviso = (a: { tipo: "ok" | "erro"; texto: string }) => void;
 
-export async function enviarFoto(arquivo: File): Promise<string> {
-  const blob = await reduzirFoto(arquivo);
+export async function enviarFoto(arquivo: File | Blob): Promise<string> {
+  // Já enquadrada (quadrada e leve): manda direto; senão reduz antes.
+  const blob = arquivo instanceof File ? await reduzirFoto(arquivo) : arquivo;
   const form = new FormData();
   form.append("foto", blob, blob.type === "image/webp" ? "foto.webp" : "foto.jpg");
   const r = await fetch("/api/painel/fotos", { method: "POST", body: form });
@@ -144,12 +146,18 @@ function EditorItem({ cardapio, item, salvar, voltar, avisar }: { cardapio: Card
 
   const mudar = <K extends keyof Item>(k: K, v: Item[K]) => setF((x) => ({ ...x, [k]: v }));
 
-  async function escolherFoto(arquivo?: File | null) {
+  const [recortar, setRecortar] = useState<string | null>(null);
+  function escolherFoto(arquivo?: File | null) {
     if (!arquivo) return;
-    if (!arquivo.type.startsWith("image/")) { avisar({ tipo: "erro", texto: "Escolha um arquivo de imagem." }); return; }
+    if (!arquivo.type.startsWith("image/") && !/\.(heic|heif|jpe?g|png|webp)$/i.test(arquivo.name)) { avisar({ tipo: "erro", texto: "Escolha um arquivo de imagem." }); return; }
+    setRecortar(URL.createObjectURL(arquivo));
+  }
+  async function enviarRecorte(b: Blob) {
+    if (recortar?.startsWith("blob:")) URL.revokeObjectURL(recortar);
+    setRecortar(null);
     setEnviando(true);
     try {
-      const url = await enviarFoto(arquivo);
+      const url = await enviarFoto(b);
       mudar("imagem", url);
     } catch (e: any) {
       avisar({ tipo: "erro", texto: e.message });
@@ -283,9 +291,11 @@ function EditorItem({ cardapio, item, salvar, voltar, avisar }: { cardapio: Card
             <input ref={input} type="file" accept="image/*" hidden onChange={(e) => { escolherFoto(e.target.files?.[0]); e.target.value = ""; }} />
             <div className="sq-foto-acoes">
               <button type="button" className="sq-btn" onClick={() => input.current?.click()} disabled={enviando}>{f.imagem ? "Trocar foto" : "Escolher foto"}</button>
+              {f.imagem && <button type="button" className="sq-btn" onClick={() => setRecortar(f.imagem!)}>Ajustar enquadramento</button>}
               {f.imagem && <button type="button" className="sq-btn" onClick={() => mudar("imagem", undefined)}>Remover</button>}
             </div>
-            <p className="sq-sub">Pode mandar direto do celular. A foto é ajustada sozinha para carregar rápido no site.</p>
+            <p className="sq-sub">Pode mandar direto do celular: antes de enviar, você arrasta e aproxima para deixar o prato bem no centro.</p>
+            {recortar && <RecortarFoto fonte={recortar} cancelar={() => { if (recortar.startsWith("blob:")) URL.revokeObjectURL(recortar); setRecortar(null); }} pronto={enviarRecorte} />}
           </section>
 
           <section className="sq-cartao">
