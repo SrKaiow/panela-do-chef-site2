@@ -326,3 +326,5 @@ a.btn.principal-p { color: #fff; justify-content: center; }
 .imprevisto-motivos, .imprevisto-min { display: flex; flex-wrap: wrap; gap: 8px; }
 .imprevisto-motivos .btn.ativo { background: #D92B2B; border-color: #D92B2B; color: #fff; }
 .imprevisto-min .btn { flex: 1; min-width: 80px; font-size: 1.05rem; }
+.sq-acoes-cabeca { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; }
+.sq-importar-estado { flex-basis: 100%; text-align: right; margin: 0; }

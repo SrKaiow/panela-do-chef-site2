@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { gerarId, type Cardapio, type GrupoAdicional, type Opcao, type RegrasGrupo } from "@/lib/cardapio";
 import { enviarFoto } from "./Itens";
+import { reduzirFoto } from "@/lib/reduzirFoto";
 import type { Salvar } from "./Admin";
 
 /* ---------------- Modificadores (grupos de opções), no estilo da Square ---------------- */
@@ -32,7 +33,10 @@ export function Modificadores({ cardapio, salvar }: { cardapio: Cardapio; salvar
           <h1>Modificadores</h1>
           <p className="sq-sub">Opções que o cliente escolhe no item: toppings, sabores, adicionais pagos, bebida do combo.</p>
         </div>
-        <button className="sq-btn sq-btn-primario" onClick={() => setEditando("novo")}>Criar modificador</button>
+        <div className="sq-acoes-cabeca">
+          <ImportarSquare cardapio={cardapio} salvar={salvar} />
+          <button className="sq-btn sq-btn-primario" onClick={() => setEditando("novo")}>Criar modificador</button>
+        </div>
       </div>
       <div className="sq-filtros">
         <label className="sq-busca">
@@ -402,5 +406,105 @@ export function Categorias({ cardapio, salvar }: { cardapio: Cardapio; salvar: S
         </table>
       </div>
     </div>
+  );
+}
+
+/* ---------------- Importar adicionais da Square (nomes, preços, esgotados e fotos) ---------------- */
+
+type OpcaoSq = { nome: string; preco: number; esgotado: boolean; imagemId: string | null };
+type ListaSq = { id: string; nome: string; varios: boolean; opcoes: OpcaoSq[] };
+const chave = (s: string) => gerarId(s).replace(/s$/, "");
+
+function ImportarSquare({ cardapio, salvar }: { cardapio: Cardapio; salvar: Salvar<Cardapio> }) {
+  const [estado, setEstado] = useState<string | null>(null);
+  const [ocupado, setOcupado] = useState(false);
+
+  async function importar() {
+    if (!confirm("Puxar da Square os adicionais (nomes, preços, esgotados e fotos)? O que já está aqui é mantido; só atualiza e completa.")) return;
+    setOcupado(true);
+    try {
+      setEstado("Lendo os adicionais da Square...");
+      const r = await fetch("/api/painel/square-adicionais", { cache: "no-store" });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.erro || "Não consegui ler a Square.");
+      const listas: ListaSq[] = d.listas ?? [];
+      if (!listas.length) throw new Error("Não achei adicionais cadastrados na Square.");
+
+      // Fotos: baixa pela Square, reduz aqui no navegador e salva no site.
+      const ids = [...new Set(listas.flatMap((l) => l.opcoes.map((o) => o.imagemId)).filter(Boolean) as string[])];
+      const fotoDe = new Map<string, string>();
+      let n = 0;
+      for (const id of ids) {
+        setEstado(`Salvando as fotos... ${++n} de ${ids.length}`);
+        try {
+          const f = await fetch(`/api/painel/square-adicionais/imagem/${encodeURIComponent(id)}`);
+          if (!f.ok) continue;
+          const blob = await f.blob();
+          const pequena = await reduzirFoto(new File([blob], "foto", { type: blob.type }), 480);
+          const form = new FormData();
+          form.append("foto", pequena, "foto");
+          const up = await fetch("/api/painel/fotos", { method: "POST", body: form });
+          const u = await up.json().catch(() => ({}));
+          if (up.ok && u.url) fotoDe.set(id, u.url);
+        } catch {
+          /* uma foto que falhar não para a importação */
+        }
+      }
+
+      setEstado("Organizando os adicionais...");
+      const adicionais: Record<string, GrupoAdicional> = JSON.parse(JSON.stringify(cardapio.adicionais));
+      const fotoPorNome = new Map<string, string>();
+      let novasOpcoes = 0;
+      let novosGrupos = 0;
+      for (const l of listas) {
+        for (const o of l.opcoes) if (o.imagemId && fotoDe.has(o.imagemId)) fotoPorNome.set(chave(o.nome), fotoDe.get(o.imagemId)!);
+        const existente = Object.entries(adicionais).find(([, g]) => chave(g.nomeInterno ?? "") === chave(l.nome) || chave(g.nome) === chave(l.nome));
+        const opcoes: Opcao[] = l.opcoes.map((o) => ({
+          nome: o.nome,
+          ...(o.preco ? { preco: o.preco } : {}),
+          ...(o.esgotado ? { esgotado: true } : {}),
+          ...(o.imagemId && fotoDe.has(o.imagemId) ? { imagem: fotoDe.get(o.imagemId) } : {}),
+        }));
+        if (existente) {
+          const g = existente[1];
+          for (const o of opcoes) {
+            const atual = g.opcoes.find((x) => chave(x.nome) === chave(o.nome));
+            if (atual) {
+              atual.preco = o.preco;
+              atual.esgotado = o.esgotado;
+              if (o.imagem) atual.imagem = o.imagem;
+            } else {
+              g.opcoes.push(o);
+              novasOpcoes++;
+            }
+          }
+        } else {
+          let id = gerarId(l.nome) || "adicionais";
+          while (adicionais[id]) id += "-2";
+          adicionais[id] = { nome: l.nome, nomeInterno: `${l.nome} (Square)`, opcoes, regras: { obrigatorio: false, varios: l.varios, max: l.varios ? Math.min(5, opcoes.length) : 1, repetir: false } };
+          novosGrupos++;
+        }
+      }
+      // A mesma opção em outros conjuntos (ex.: Nutella nos toppings e nos cremes) ganha a mesma foto.
+      let fotosColocadas = 0;
+      for (const g of Object.values(adicionais))
+        for (const o of g.opcoes)
+          if (!o.imagem && fotoPorNome.has(chave(o.nome))) { o.imagem = fotoPorNome.get(chave(o.nome)); fotosColocadas++; }
+
+      const ok = await salvar({ ...cardapio, adicionais });
+      if (!ok) throw new Error("Não consegui salvar.");
+      setEstado(`Pronto: ${fotoDe.size} fotos da Square, ${novosGrupos} conjunto(s) novo(s), ${novasOpcoes} opção(ões) nova(s), ${fotosColocadas} foto(s) repetidas em outros conjuntos.`);
+    } catch (e: any) {
+      setEstado(e.message || "Deu erro na importação.");
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  return (
+    <>
+      <button className="sq-btn" onClick={importar} disabled={ocupado}>{ocupado ? "Importando..." : "Puxar da Square"}</button>
+      {estado && <p className="sq-sub sq-importar-estado" role="status">{estado}</p>}
+    </>
   );
 }
