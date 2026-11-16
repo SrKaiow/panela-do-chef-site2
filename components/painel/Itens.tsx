@@ -326,7 +326,7 @@ function EditorItem({ cardapio, item, salvar, voltar, avisar }: { cardapio: Card
               </label>
             )}
             <label className="sq-check">
-              <input type="checkbox" checked={!!f.destaque} onChange={(e) => mudar("destaque", e.target.checked || undefined)} />
+              <input type="checkbox" checked={!!f.destaque} onChange={(e) => mudar("destaque", e.target.checked)} />
               <span><strong>⭐ Destaque: "Mais pedidos"</strong><span className="sq-sub">Aparece na faixa de mais pedidos, no topo do cardápio. Fica mais bonito com foto.</span></span>
             </label>
           </section>
