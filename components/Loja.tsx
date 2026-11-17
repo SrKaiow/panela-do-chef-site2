@@ -152,7 +152,7 @@ export default function Loja({
                           <span className="antigo preco">{formatar(emPence(item.precoAntigo))}</span>
                         )}
                         {!item.disponivel ? (
-                          <span className="tag esgotado">{item.voltaEm ? "Esgotado · volta amanhã" : "Esgotado"}</span>
+                          <span className={"tag " + (item.emBreve ? "em-breve" : "esgotado")}>{item.emBreve ? "Em breve" : item.voltaEm ? "Esgotado · volta amanhã" : "Esgotado"}</span>
                         ) : item.precoAntigo && item.precoAntigo > item.preco ? (
                           <span className="tag promo">Promoção</span>
                         ) : null}
@@ -714,7 +714,7 @@ function MaisPedidos({ itens, abrir }: { itens: Item[]; abrir: (i: Item) => void
           <button key={item.id} className="mp-card" disabled={!item.disponivel} onClick={() => abrir(item)}>
             <div className="mp-foto">
               {item.imagem ? <img src={item.imagem} alt="" loading="lazy" /> : <IconeCategoria categoria={item.categoria} />}
-              {!item.disponivel && <span className="tag esgotado">{item.voltaEm ? "Volta amanhã" : "Esgotado"}</span>}
+              {!item.disponivel && <span className={"tag " + (item.emBreve ? "em-breve" : "esgotado")}>{item.emBreve ? "Em breve" : item.voltaEm ? "Volta amanhã" : "Esgotado"}</span>}
             </div>
             <strong>{item.nome}</strong>
             <span className="preco">{formatar(emPence(item.preco))}</span>

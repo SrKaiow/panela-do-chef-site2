@@ -70,7 +70,7 @@ const MONTAGENS: Record<string, Config> = {
 };
 
 export default function Novidades({ itens, abrir }: { itens: Item[]; abrir: (i: Item) => void }) {
-  const novidades = itens.filter((i) => i.novidade && i.disponivel);
+  const novidades = itens.filter((i) => i.novidade && (i.disponivel || i.emBreve)).sort((a, b) => Number(!!a.emBreve) - Number(!!b.emBreve));
   if (!novidades.length) return null;
   return (
     <div className="novidades" aria-label="Novidades da casa">
@@ -154,7 +154,7 @@ function Vitrine({ item, abrir }: { item: Item; abrir: (i: Item) => void }) {
       </div>
 
       <div className="vitrine-texto">
-        <span className="vitrine-tag">Novidade na casa</span>
+        <span className={"vitrine-tag" + (item.emBreve ? " breve" : "")}>{item.emBreve ? "Em breve" : "Novidade na casa"}</span>
         <h2 id={"nov-" + item.id}>{item.nome}</h2>
         {item.descricao && <p>{item.descricao}</p>}
         <div className="vitrine-acoes">
@@ -165,9 +165,13 @@ function Vitrine({ item, abrir }: { item: Item; abrir: (i: Item) => void }) {
               {formatar(emPence(item.preco))}
             </span>
           </span>
-          <button type="button" className="vitrine-btn" onClick={() => abrir(item)}>
-            Quero o meu
-          </button>
+          {item.emBreve ? (
+            <span className="vitrine-btn vitrine-btn-breve" aria-disabled="true">Em breve</span>
+          ) : (
+            <button type="button" className="vitrine-btn" onClick={() => abrir(item)}>
+              Quero o meu
+            </button>
+          )}
         </div>
       </div>
     </section>

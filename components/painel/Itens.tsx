@@ -49,7 +49,8 @@ function Biblioteca({ cardapio, salvar, ir }: { cardapio: Cardapio; salvar: Salv
   /** Um toque: Disponível → Esgotado (volta amanhã sozinho) → Esgotado (até ligar de novo) → Disponível. */
   function alternar(item: Item) {
     const proximo = (i: Item): Item =>
-      i.disponivel ? { ...i, disponivel: false, voltaEm: amanhaLondres() }
+      i.emBreve ? { ...i, disponivel: true, emBreve: undefined, voltaEm: undefined }
+      : i.disponivel ? { ...i, disponivel: false, voltaEm: amanhaLondres() }
       : i.voltaEm ? { ...i, disponivel: false, voltaEm: undefined }
       : { ...i, disponivel: true, voltaEm: undefined };
     salvar({ ...cardapio, itens: cardapio.itens.map((i) => (i.id === item.id ? proximo(i) : i)) });
@@ -115,7 +116,7 @@ function Biblioteca({ cardapio, salvar, ir }: { cardapio: Cardapio; salvar: Salv
                 <td className="so-largo sq-sub">{nomeCat[i.categoria] ?? "—"}</td>
                 <td>
                   <button className={"sq-pilula " + (i.disponivel ? "ok" : "off")} onClick={() => alternar(i)} title="Clique para mudar">
-                    {i.disponivel ? "Disponível" : i.voltaEm ? "Esgotado · volta amanhã" : "Esgotado"}
+                    {i.disponivel ? "Disponível" : i.emBreve ? "Em breve" : i.voltaEm ? "Esgotado · volta amanhã" : "Esgotado"}
                   </button>
                 </td>
                 <td className="direita num">
@@ -325,11 +326,15 @@ function EditorItem({ cardapio, item, salvar, voltar, avisar }: { cardapio: Card
           <section className="sq-cartao">
             <h2>Disponibilidade</h2>
             <label className="sq-interruptor">
-              <input type="checkbox" checked={f.disponivel} onChange={(e) => { mudar("disponivel", e.target.checked); mudar("voltaEm", e.target.checked ? undefined : amanhaLondres()); }} />
+              <input type="checkbox" checked={f.disponivel} onChange={(e) => { mudar("disponivel", e.target.checked); mudar("voltaEm", e.target.checked || f.emBreve ? undefined : amanhaLondres()); if (e.target.checked) mudar("emBreve", undefined); }} />
               <span className="trilho" aria-hidden="true" />
-              <span>{f.disponivel ? "Disponível no site" : "Esgotado (aparece, mas não dá para pedir)"}</span>
+              <span>{f.disponivel ? "Disponível no site" : f.emBreve ? "Em breve (aparece, mas não dá para pedir)" : "Esgotado (aparece, mas não dá para pedir)"}</span>
             </label>
-            {!f.disponivel && (
+            <label className="sq-check">
+              <input type="checkbox" checked={!!f.emBreve} onChange={(e) => { mudar("emBreve", e.target.checked || undefined); if (e.target.checked) { mudar("disponivel", false); mudar("voltaEm", undefined); } }} />
+              <span><strong>⏳ Em breve</strong><span className="sq-sub">O item aparece no site com a etiqueta "Em breve", mas ninguém consegue pedir. Quando começar a vender, ligue "Disponível no site".</span></span>
+            </label>
+            {!f.disponivel && !f.emBreve && (
               <label className="sq-check">
                 <input type="checkbox" checked={!!f.voltaEm} onChange={(e) => mudar("voltaEm", e.target.checked ? amanhaLondres() : undefined)} />
                 <span><strong>Volta amanhã sozinho</strong><span className="sq-sub">O site mostra "Esgotado · volta amanhã" e libera o item de novo amanhã cedo. Desmarque se não tiver data para voltar.</span></span>

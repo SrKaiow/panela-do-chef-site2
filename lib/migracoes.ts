@@ -247,6 +247,12 @@ function massaShowV2(c: Cardapio): Cardapio {
   return { ...c, adicionais: a, itens };
 }
 
+/** Copões de 750g ainda sem ingredientes: aparecem como "Em breve". */
+function copoesEmBreveV1(c: Cardapio): Cardapio {
+  const ids = ["acai-choquito-750", "acai-sensacao-maltine", "acai-banoffe-750"];
+  return { ...c, itens: c.itens.map((i) => (ids.includes(i.id) ? { ...i, disponivel: false, emBreve: true, voltaEm: undefined, destaque: false } : i)) };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
@@ -256,6 +262,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["banoffe-v1", banoffeV1],
   ["massa-show-v1", massaShowV1],
   ["massa-show-v2", massaShowV2],
+  ["copoes-em-breve-v1", copoesEmBreveV1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */

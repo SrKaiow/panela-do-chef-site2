@@ -764,3 +764,8 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 }
 
 .folha-video { display: block; width: 100%; aspect-ratio: 4 / 5; max-height: 62vh; object-fit: cover; background: #000; }
+
+/* Em breve */
+.tag.em-breve { background: rgba(255, 216, 20, .14); color: var(--ouro); border: 1px solid rgba(255, 216, 20, .45); }
+.vitrine-tag.breve { background: #fff; }
+.vitrine-btn-breve { display: inline-block; background: rgba(255,255,255,.12); color: #fff; box-shadow: none; border: 1px dashed rgba(255,255,255,.45); cursor: default; }

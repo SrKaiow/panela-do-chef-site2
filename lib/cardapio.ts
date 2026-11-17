@@ -40,6 +40,8 @@ export type Item = {
   destaque?: boolean;
   /** Novidade: aparece sozinho, em destaque, no topo do cardápio (com a animação de montagem, se tiver). */
   novidade?: boolean;
+  /** Em breve: aparece no site (e nas novidades) mas ainda não dá para pedir. Usar junto com disponivel: false. */
+  emBreve?: boolean;
   /** Vídeo curto (sem som) mostrado no destaque da novidade, no lugar da montagem. */
   video?: string;
   /** Ex.: "Copão de 750g" (selo no destaque da novidade). */
