@@ -1,4 +1,5 @@
 import Loja from "@/components/Loja";
+import ContarVisita from "@/components/ContarVisita";
 import { NaCozinha, SobreChef } from "@/components/Historia";
 import { getAjustes, getCardapio, provedorCartao } from "@/lib/dados";
 import { publicos, telefoneBonito, whatsappInternacional } from "@/lib/ajustes";
@@ -33,6 +34,7 @@ export default async function Home() {
 
   return (
     <>
+      <ContarVisita />
       <Loja cardapio={cardapio} loja={loja} estadoInicial={estado} horariosIniciais={horarios} pausado={ajustes.pausado} />
       <NaCozinha />
       <SobreChef />

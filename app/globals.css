@@ -769,3 +769,18 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .tag.em-breve { background: rgba(255, 216, 20, .14); color: var(--ouro); border: 1px solid rgba(255, 216, 20, .45); }
 .vitrine-tag.breve { background: #fff; }
 .vitrine-btn-breve { display: inline-block; background: rgba(255,255,255,.12); color: #fff; box-shadow: none; border: 1px dashed rgba(255,255,255,.45); cursor: default; }
+
+/* Pedir de novo */
+.de-novo { position: relative; display: grid; gap: 8px; margin: 4px 0 20px; padding: 18px 18px 16px; border-radius: 22px; border: 1px solid rgba(255, 216, 20, .45); background: linear-gradient(135deg, rgba(255, 216, 20, .14), rgba(255, 216, 20, .03)); }
+.de-novo-tag { color: var(--ouro); font-weight: 800; font-size: .85rem; }
+.de-novo h2 { margin: 0; font-family: var(--fonte-titulo); font-size: 1.7rem; text-transform: uppercase; line-height: 1; }
+.de-novo p { margin: 0; color: rgba(255,255,255,.82); font-size: .95rem; }
+.de-novo p small { color: rgba(255,255,255,.55); }
+.de-novo .principal { margin-top: 4px; }
+.de-novo-fechar { position: absolute; top: 8px; right: 10px; width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(255,255,255,.08); color: #fff; font-size: 1.3rem; line-height: 1; }
+/* Salvar meus dados */
+.salvar-dados { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); cursor: pointer; margin: 10px 0 4px; }
+.salvar-dados input { width: 22px; height: 22px; margin-top: 2px; accent-color: var(--ouro); flex: none; }
+.salvar-dados span { display: grid; gap: 2px; }
+.salvar-dados small { color: rgba(255,255,255,.62); font-size: .82rem; line-height: 1.35; }
+.btn-contagem { margin-left: 6px; padding: 4px 12px; border-radius: 999px; border: 1px solid currentColor; background: transparent; color: inherit; font: inherit; font-weight: 700; cursor: pointer; }

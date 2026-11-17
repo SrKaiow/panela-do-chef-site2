@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getAjustes } from "@/lib/dados";
 import { telefoneBonito } from "@/lib/ajustes";
+import DesligarContagem from "@/components/DesligarContagem";
 
 export const metadata: Metadata = {
   title: "Política de privacidade | Panela do Chef",
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-const ATUALIZADA = "11 de novembro de 2026";
+const ATUALIZADA = "17 de novembro de 2026";
 
 export default async function Privacidade() {
   const a = await getAjustes();
@@ -30,10 +31,12 @@ export default async function Privacidade() {
       <h2>Quais dados usamos</h2>
       <ul>
         <li><strong>Para entregar o seu pedido:</strong> nome, telefone, endereço, postcode, observações e o que você pediu.</li>
-        <li><strong>Pagamento:</strong> se você pagar no site, o cartão é digitado na página da Stripe. Nós nunca vemos nem guardamos o número do cartão; recebemos só a confirmação de que o pagamento entrou.</li>
+        <li><strong>Pagamento:</strong> se você pagar no site, o cartão é digitado na página da Square. Nós nunca vemos nem guardamos o número do cartão; recebemos só a confirmação de que o pagamento entrou.</li>
         <li><strong>Avaliações:</strong> se você avaliar um pedido, o primeiro nome, a nota e o texto aparecem no site depois da nossa aprovação.</li>
         <li><strong>Segurança:</strong> o endereço de internet (IP) é usado por pouco tempo para barrar tentativas de abuso, como pedidos falsos em massa, e é apagado automaticamente.</li>
-        <li><strong>No seu aparelho:</strong> o carrinho fica guardado só no seu navegador até você finalizar o pedido.</li>
+        <li><strong>No seu aparelho:</strong> o carrinho fica guardado só no seu navegador até você finalizar o pedido. Se você marcar &quot;Salvar meus dados&quot;, seu nome, telefone, endereço e o último pedido ficam guardados só neste aparelho, para preencher sozinho da próxima vez. Desmarcando, eles são apagados.</li>
+        <li><strong>Contagem de visitas:</strong> para sabermos quantas pessoas visitam o site e quantas voltam, o navegador guarda um número aleatório (sem nome, telefone ou IP) e avisa a cada visita. Não é usado para propaganda nem compartilhado. Você pode desligar quando quiser: <DesligarContagem /></li>
+        <li><strong>Histórico de pedidos:</strong> usamos os pedidos feitos com o mesmo telefone para o cartão fidelidade (contar quantos pedidos você fez e liberar brindes).</li>
       </ul>
 
       <h2>Para que usamos</h2>
@@ -53,7 +56,7 @@ export default async function Privacidade() {
       <ul>
         <li><strong>Cloudflare:</strong> hospedagem do site.</li>
         <li><strong>Turso:</strong> banco de dados onde ficam os pedidos.</li>
-        <li><strong>Stripe:</strong> pagamentos online.</li>
+        <li><strong>Square:</strong> pagamentos online.</li>
         <li><strong>postcodes.io:</strong> recebe só o postcode, para calcular a distância e a taxa de entrega.</li>
         <li><strong>WhatsApp:</strong> mensagens sobre o pedido para você e para a nossa cozinha.</li>
         <li><strong>OpenStreetMap:</strong> mapa da entrega na página do pedido.</li>
@@ -75,7 +78,7 @@ export default async function Privacidade() {
 
       <h2>Cookies</h2>
       <p>
-        O site não usa cookies para clientes. O carrinho fica guardado no próprio navegador. Só a equipe usa um cookie de login, necessário
+        O site não usa cookies para clientes. O carrinho, os dados salvos (se você escolher) e o número da contagem de visitas ficam no armazenamento do próprio navegador. Só a equipe usa um cookie de login, necessário
         para entrar no painel da loja.
       </p>
 
@@ -93,10 +96,12 @@ export default async function Privacidade() {
         <h2>What we collect and why</h2>
         <ul>
           <li><strong>To deliver your order:</strong> name, phone, address, postcode, notes and the items ordered.</li>
-          <li><strong>Payments:</strong> card details are entered on Stripe&apos;s page. We never see or store your card number.</li>
+          <li><strong>Payments:</strong> card details are entered on Square&apos;s page. We never see or store your card number.</li>
           <li><strong>Reviews:</strong> first name, rating and text, shown on the site after approval.</li>
           <li><strong>Security:</strong> your IP address is used briefly to stop abuse (such as fake orders) and deleted automatically.</li>
-          <li><strong>On your device:</strong> your basket is kept in your own browser until you place the order.</li>
+          <li><strong>On your device:</strong> your basket is kept in your own browser until you place the order. If you tick &quot;Save my details&quot;, your name, phone, address and last order are kept on this device only, to fill in next time.</li>
+          <li><strong>Visit count:</strong> your browser keeps a random number (no name, phone or IP) so we can count visits and returning visitors. You can turn it off on this page.</li>
+          <li><strong>Loyalty card:</strong> orders placed with the same phone number are counted towards free treats.</li>
         </ul>
         <p>
           Lawful bases: performance of a contract, legal obligations and our legitimate interest in keeping the site secure. We do not sell your
@@ -104,7 +109,7 @@ export default async function Privacidade() {
         </p>
         <h2>Who we share it with</h2>
         <p>
-          Only the services that run the site: Cloudflare (hosting), Turso (database), Stripe (payments), postcodes.io (postcode only, to work out
+          Only the services that run the site: Cloudflare (hosting), Turso (database), Square (payments), postcodes.io (postcode only, to work out
           the delivery fee), WhatsApp (order messages) and OpenStreetMap (delivery map). Some of them store data outside the UK, with the
           safeguards required by law.
         </p>
@@ -117,7 +122,7 @@ export default async function Privacidade() {
           <a href="https://ico.org.uk/make-a-complaint/" target="_blank" rel="noreferrer">ico.org.uk</a>.
         </p>
         <h2>Cookies</h2>
-        <p>Customers get no cookies. Your basket is stored in your browser. Staff use one login cookie, strictly necessary for the shop panel.</p>
+        <p>Customers get no cookies. Your basket, saved details (if you choose) and the visit-count number are kept in your browser's storage. Staff use one login cookie, strictly necessary for the shop panel.</p>
       </section>
 
       <hr />

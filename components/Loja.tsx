@@ -15,6 +15,8 @@ type Pagamentos = { dinheiro: boolean; cartao: boolean };
 type Cotacao = { ok: true; milhas: number; taxa: number; gratisAcima: number | null; gratis: boolean } | { ok: false; motivo: string };
 
 const CHAVE_STORAGE = "panela-carrinho-v1";
+const CHAVE_ULTIMO = "panela-ultimo-pedido";
+const CHAVE_CLIENTE = "panela-cliente";
 
 function detalhes(item: Item, selecoes: Record<string, string[]>) {
   return (item.escolhas ?? [])
@@ -106,6 +108,7 @@ export default function Loja({
       </nav>
 
       <main className="miolo cardapio">
+        <PedirDeNovo cardapio={cardapio} carrinhoVazio={carrinho.length === 0} onAdicionar={adicionarVarios} />
         <Novidades itens={cardapio.itens} abrir={setAberto} />
         {!estado.aberto && (
           <p className="aviso-agendar">
@@ -432,9 +435,14 @@ function FolhaCarrinho({
     if (!estado.aberto && !quando && horarios[0]) setQuando(horarios[0].valor);
   }, [estado.aberto, quando, horarios]);
 
-  // Lembra nome/endereço do cliente para o próximo pedido.
+  // Lembra nome/endereço do cliente para o próximo pedido (se ele deixou salvar).
+  const [salvarDados, setSalvarDados] = useState(true);
+  const [jaSalvo, setJaSalvo] = useState(false);
   useEffect(() => {
-    try { const d = JSON.parse(localStorage.getItem("panela-cliente") || "{}"); setForm((f) => ({ ...f, ...d, observacao: "", troco: "" })); } catch {}
+    try {
+      const d = JSON.parse(localStorage.getItem(CHAVE_CLIENTE) || "null");
+      if (d && d.nome) { setForm((f) => ({ ...f, ...d, observacao: "", troco: "" })); setJaSalvo(true); }
+    } catch {}
   }, []);
 
   // Taxa de entrega pela distância: calcula quando o postcode está completo.
@@ -483,7 +491,16 @@ function FolhaCarrinho({
     }
     setEnviando(true);
     try {
-      try { localStorage.setItem("panela-cliente", JSON.stringify({ nome: form.nome, telefone: form.telefone, endereco: form.endereco, postcode: form.postcode })); } catch {}
+      try {
+        if (salvarDados) {
+          localStorage.setItem(CHAVE_CLIENTE, JSON.stringify({ nome: form.nome, telefone: form.telefone, endereco: form.endereco, postcode: form.postcode }));
+          const linhas = carrinho.map(({ itemId, qtd, selecoes, obs }) => ({ itemId, qtd, selecoes, obs }));
+          localStorage.setItem(CHAVE_ULTIMO, JSON.stringify({ em: new Date().toISOString(), linhas }));
+        } else {
+          localStorage.removeItem(CHAVE_CLIENTE);
+          localStorage.removeItem(CHAVE_ULTIMO);
+        }
+      } catch {}
       const r = await fetch("/api/pedidos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -665,6 +682,13 @@ function FolhaCarrinho({
           )}
 
           <Totais subtotal={subtotal} taxa={taxa} total={total} />
+          <label className="salvar-dados">
+            <input type="checkbox" checked={salvarDados} onChange={(e) => setSalvarDados(e.target.checked)} />
+            <span>
+              <strong>{jaSalvo ? "Manter meus dados salvos" : "Salvar meus dados para a próxima vez"}</strong>
+              <small>Fica só neste celular: da próxima vez seu endereço já vem preenchido e dá para repetir este pedido com um toque.</small>
+            </span>
+          </label>
           <p className="dica">Usamos seus dados só para preparar e entregar o pedido. <a href="/privacidade" target="_blank">Política de privacidade</a>.</p>
           {erro && <p className="erro" role="alert">{erro}</p>}
           <button className="principal" type="submit" disabled={enviando || nenhumPagamento || foraDaArea || (!estado.aberto && !quando) || (pagamento === "dinheiro" && !troco)}>
@@ -721,6 +745,50 @@ function MaisPedidos({ itens, abrir }: { itens: Item[]; abrir: (i: Item) => void
           </button>
         ))}
       </div>
+    </section>
+  );
+}
+
+/** "Pedir de novo": o último pedido feito neste aparelho, pronto para ir ao carrinho com um toque. */
+function PedirDeNovo({ cardapio, carrinhoVazio, onAdicionar }: { cardapio: Cardapio; carrinhoVazio: boolean; onAdicionar: (l: LinhaCarrinho[]) => void }) {
+  const [salvo, setSalvo] = useState<{ nome: string; linhas: LinhaCarrinho[]; faltou: number } | null>(null);
+  const [fechado, setFechado] = useState(false);
+
+  useEffect(() => {
+    try {
+      const u = JSON.parse(localStorage.getItem(CHAVE_ULTIMO) || "null") as { linhas: LinhaCarrinho[] } | null;
+      if (!u?.linhas?.length) return;
+      const cli = JSON.parse(localStorage.getItem(CHAVE_CLIENTE) || "{}");
+      // Só o que ainda existe e está disponível hoje (com as mesmas opções).
+      const validas = u.linhas.filter((l) => {
+        const item = cardapio.itens.find((i) => i.id === l.itemId);
+        if (!item?.disponivel) return false;
+        return Object.entries(l.selecoes ?? {}).every(([g, nomes]) =>
+          nomes.every((n) => cardapio.adicionais[g]?.opcoes.some((o) => o.nome === n && !o.esgotado)),
+        );
+      });
+      if (validas.length) setSalvo({ nome: String(cli.nome || "").trim().split(/\s+/)[0] || "", linhas: validas, faltou: u.linhas.length - validas.length });
+    } catch {}
+  }, [cardapio]);
+
+  if (!salvo || fechado || !carrinhoVazio) return null;
+  const total = salvo.linhas.reduce((s, l) => {
+    const item = cardapio.itens.find((i) => i.id === l.itemId)!;
+    return s + precoUnitario(cardapio, item, l.selecoes) * l.qtd;
+  }, 0);
+  const resumo = salvo.linhas.map((l) => `${l.qtd}x ${cardapio.itens.find((i) => i.id === l.itemId)!.nome}`).join(", ");
+  const nome = salvo.nome ? salvo.nome.charAt(0).toUpperCase() + salvo.nome.slice(1).toLowerCase() : "";
+
+  return (
+    <section className="de-novo" aria-labelledby="de-novo-titulo">
+      <button className="de-novo-fechar" onClick={() => setFechado(true)} aria-label="Fechar">×</button>
+      <span className="de-novo-tag">{nome ? `Que bom te ver de novo, ${nome}!` : "Bem-vindo de volta!"}</span>
+      <h2 id="de-novo-titulo">Pedir de novo?</h2>
+      <p>{resumo}{salvo.faltou > 0 && <small> · {salvo.faltou === 1 ? "1 item do último pedido não está disponível hoje" : `${salvo.faltou} itens do último pedido não estão disponíveis hoje`}</small>}</p>
+      <button className="principal" onClick={() => onAdicionar(salvo.linhas)}>
+        <span>Colocar no carrinho</span>
+        <span className="preco">{formatar(total)}</span>
+      </button>
     </section>
   );
 }

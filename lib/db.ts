@@ -75,6 +75,21 @@ async function preparar(c: Client) {
     expira INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (chave, janela)
   )`);
+  // Visitas ao site: um registro por visitante (id anônimo do navegador) por dia.
+  await c.execute(`CREATE TABLE IF NOT EXISTS visitas (
+    dia TEXT NOT NULL,
+    visitante TEXT NOT NULL,
+    vezes INTEGER NOT NULL DEFAULT 1,
+    primeira TEXT NOT NULL,
+    ultima TEXT NOT NULL,
+    PRIMARY KEY (dia, visitante)
+  )`);
+  // Cartão fidelidade: quantos brindes o cliente (pelo telefone) já resgatou.
+  await c.execute(`CREATE TABLE IF NOT EXISTS fidelidade (
+    telefone TEXT PRIMARY KEY,
+    resgatados INTEGER NOT NULL DEFAULT 0,
+    atualizado_em TEXT NOT NULL
+  )`);
 }
 
 function db() {
@@ -439,4 +454,130 @@ export async function mudarStatusAvaliacao(id: number, status: Avaliacao["status
 export async function pedidoJaAvaliado(numero: number) {
   const r = await exec("SELECT 1 FROM avaliacoes WHERE pedido_numero = ? LIMIT 1", [numero]);
   return r.rows.length > 0;
+}
+
+/* ------------------------- Visitas e clientes ------------------------- */
+
+const diaLondres = (d = new Date()) => d.toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+const diasAtras = (n: number) => diaLondres(new Date(Date.now() - n * 86400_000));
+
+export async function registrarVisita(visitante: string) {
+  const agora = new Date().toISOString();
+  await exec(
+    `INSERT INTO visitas (dia, visitante, vezes, primeira, ultima) VALUES (?, ?, 1, ?, ?)
+     ON CONFLICT(dia, visitante) DO UPDATE SET vezes = vezes + 1, ultima = excluded.ultima`,
+    [diaLondres(), visitante, agora, agora],
+  );
+  if (Math.random() < 0.01) await exec("DELETE FROM visitas WHERE dia < ?", [diasAtras(400)]).catch(() => {});
+}
+
+export type EstatisticasVisitas = {
+  dias: number;
+  acessos: number;
+  visitantes: number;
+  voltaram: number;
+  novos: number;
+  pedidos: number;
+  porDia: { dia: string; acessos: number; visitantes: number; pedidos: number }[];
+};
+
+/** Resumo dos últimos `dias` dias (contando hoje). */
+export async function estatisticasVisitas(dias: number): Promise<EstatisticasVisitas> {
+  const desde = diasAtras(dias - 1);
+  const [tot, volta, novos, porDia, peds] = await Promise.all([
+    exec("SELECT COALESCE(SUM(vezes),0) AS acessos, COUNT(DISTINCT visitante) AS visitantes FROM visitas WHERE dia >= ?", [desde]),
+    // Voltaram: vieram em mais de um dia no período, ou abriram o site mais de uma vez no mesmo dia (com intervalo).
+    exec(
+      `SELECT COUNT(*) AS n FROM (SELECT visitante FROM visitas WHERE dia >= ? GROUP BY visitante HAVING COUNT(*) > 1 OR SUM(vezes) > 1)`,
+      [desde],
+    ),
+    // Novos: a primeira visita de todas caiu dentro do período.
+    exec("SELECT COUNT(*) AS n FROM (SELECT MIN(dia) AS m FROM visitas GROUP BY visitante) WHERE m >= ?", [desde]),
+    exec("SELECT dia, SUM(vezes) AS acessos, COUNT(*) AS visitantes FROM visitas WHERE dia >= ? GROUP BY dia ORDER BY dia", [desde]),
+    exec(
+      `SELECT substr(criado_em, 1, 10) AS dia, COUNT(*) AS n FROM pedidos
+       WHERE criado_em >= ? AND status NOT IN ('cancelado', 'aguardando_pagamento') GROUP BY dia`,
+      [desde],
+    ),
+  ]);
+  const pedPorDia = new Map(peds.rows.map((r) => [String(r.dia), Number(r.n)]));
+  const visPorDia = new Map(porDia.rows.map((r) => [String(r.dia), r]));
+  const lista: EstatisticasVisitas["porDia"] = [];
+  for (let i = dias - 1; i >= 0; i--) {
+    const d = diasAtras(i);
+    const v = visPorDia.get(d);
+    lista.push({ dia: d, acessos: Number(v?.acessos ?? 0), visitantes: Number(v?.visitantes ?? 0), pedidos: pedPorDia.get(d) ?? 0 });
+  }
+  return {
+    dias,
+    acessos: Number(tot.rows[0]?.acessos ?? 0),
+    visitantes: Number(tot.rows[0]?.visitantes ?? 0),
+    voltaram: Number(volta.rows[0]?.n ?? 0),
+    novos: Number(novos.rows[0]?.n ?? 0),
+    pedidos: lista.reduce((s, d) => s + d.pedidos, 0),
+    porDia: lista,
+  };
+}
+
+/** Telefone só com números, no formato do Reino Unido (07...). */
+export function telefoneChave(tel: string) {
+  let n = tel.replace(/\D/g, "");
+  if (n.startsWith("0044")) n = n.slice(4);
+  if (n.startsWith("44") && n.length >= 12) n = n.slice(2);
+  if (n.length === 10 && n.startsWith("7")) n = "0" + n;
+  return n;
+}
+
+export type Cliente = {
+  telefone: string;
+  nome: string;
+  postcode: string;
+  pedidos: number;
+  pedidosSemana: number;
+  pedidosMes: number;
+  gasto: number;
+  primeiro: string;
+  ultimo: string;
+  resgatados: number;
+};
+
+/** Clientes a partir dos pedidos (não conta cancelados nem cartão não pago). */
+export async function listarClientes(): Promise<Cliente[]> {
+  const [r, f] = await Promise.all([
+    exec(
+      `SELECT telefone, nome, postcode, total, criado_em FROM pedidos
+       WHERE status NOT IN ('cancelado', 'aguardando_pagamento') ORDER BY criado_em DESC LIMIT 20000`,
+    ),
+    exec("SELECT telefone, resgatados FROM fidelidade"),
+  ]);
+  const resg = new Map(f.rows.map((x) => [String(x.telefone), Number(x.resgatados)]));
+  const semana = Date.now() - 7 * 86400_000;
+  const mes = Date.now() - 30 * 86400_000;
+  const mapa = new Map<string, Cliente>();
+  for (const x of r.rows) {
+    const tel = telefoneChave(String(x.telefone));
+    if (!tel) continue;
+    const quando = String(x.criado_em);
+    const t = new Date(quando).getTime();
+    let c = mapa.get(tel);
+    if (!c) {
+      // Pedidos vêm do mais novo para o mais antigo: o primeiro visto tem o nome e o postcode mais recentes.
+      c = { telefone: tel, nome: String(x.nome), postcode: String(x.postcode), pedidos: 0, pedidosSemana: 0, pedidosMes: 0, gasto: 0, primeiro: quando, ultimo: quando, resgatados: resg.get(tel) ?? 0 };
+      mapa.set(tel, c);
+    }
+    c.pedidos++;
+    c.gasto += Number(x.total);
+    if (t >= semana) c.pedidosSemana++;
+    if (t >= mes) c.pedidosMes++;
+    c.primeiro = quando;
+  }
+  return [...mapa.values()];
+}
+
+export async function registrarResgate(telefone: string, delta: 1 | -1) {
+  await exec(
+    `INSERT INTO fidelidade (telefone, resgatados, atualizado_em) VALUES (?, MAX(0, ?), ?)
+     ON CONFLICT(telefone) DO UPDATE SET resgatados = MAX(0, resgatados + ?), atualizado_em = excluded.atualizado_em`,
+    [telefoneChave(telefone), delta, new Date().toISOString(), delta],
+  );
 }
