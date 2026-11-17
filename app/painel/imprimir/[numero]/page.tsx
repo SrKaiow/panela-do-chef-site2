@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { logado } from "@/lib/auth";
-import { buscarPorNumero } from "@/lib/db";
+import { buscarPorNumero, carimbosDoPedido } from "@/lib/db";
+import { lerFidelidade } from "@/lib/fidelidade";
 import { getAjustes } from "@/lib/dados";
 import { telefoneBonito } from "@/lib/ajustes";
 import { rotuloAgendado } from "@/lib/horario";
@@ -27,6 +28,10 @@ export default async function Recibo(props: { params: Promise<{ numero: string }
   if (!p) notFound();
   const loja = await getAjustes();
   const troco = p.pagamento === "dinheiro" && p.trocoPara ? p.trocoPara - p.total : 0;
+  // Cartão de agradecimento: vai junto com o pedido (destaca pelo tracejado e coloca na sacola).
+  const primeiro = (p.nome.trim().split(/\s+/)[0] || "").toLowerCase();
+  const nomeCliente = primeiro.charAt(0).toUpperCase() + primeiro.slice(1);
+  const cartao = await lerFidelidade().then((f) => carimbosDoPedido(p, f.meta, Math.round(f.minimo * 100))).catch(() => null);
 
   const linhaDupla = <div className="r-linha r-dupla" />;
   const linha = <div className="r-linha" />;
@@ -81,6 +86,31 @@ export default async function Recibo(props: { params: Promise<{ numero: string }
 
       <div className="r-c">OBRIGADO E BOM APETITE!</div>
       <div className="r-c">@OCHEFKAIO</div>
+
+      {/* ---------- cartão de agradecimento para o cliente ---------- */}
+      <div className="r-corte"><span>✂ destaque e coloque na sacola</span></div>
+      <section className="r-obrigado">
+        <div className="r-ob-marca">PANELA DO CHEF</div>
+        <div className="r-ob-sub">SABORES DO BRASIL EM LONDRES</div>
+        <div className="r-ob-linha" />
+        <div className="r-ob-titulo">Obrigado</div>
+        <div className="r-ob-pelo">pelo seu pedido,</div>
+        {nomeCliente && <div className="r-ob-nome">{nomeCliente}!</div>}
+        <p className="r-ob-texto">Foi um prazer cozinhar pra você. Cada pedido é feito na hora, com o tempero de casa.</p>
+        {cartao && cartao.ganhou && cartao.carimbos > 0 && (
+          <div className="r-ob-fid">
+            <div className="r-ob-fid-tit">SEU CARTÃO FIDELIDADE</div>
+            <div className="r-ob-carimbos">
+              {Array.from({ length: cartao.meta }, (_, i) => <span key={i} className={i < cartao.carimbos ? "x" : ""}>{i < cartao.carimbos ? "✔" : i + 1}</span>)}
+            </div>
+            <div className="r-ob-fid-txt">{cartao.carimbos >= cartao.meta ? "Cartão completo! Seu brinde está te esperando." : `Mais ${cartao.meta - cartao.carimbos} pedido${cartao.meta - cartao.carimbos > 1 ? "s" : ""} pelo site e você ganha um brinde.`}</div>
+          </div>
+        )}
+        <div className="r-ob-linha" />
+        <div className="r-ob-assina">Chef Kaio</div>
+        <div className="r-ob-cargo">FUNDADOR &amp; CHEF</div>
+        <div className="r-ob-site">paneladochef.co.uk</div>
+      </section>
     </div>
   );
 }
@@ -113,5 +143,25 @@ body * { box-shadow: none !important; text-shadow: none !important; }
 .r-det { padding-left: 5.5mm; font-size: 9pt; }
 .r-tot { font-size: 11pt; }
 .r-troco { font-size: 12pt; }
+/* Cartão de agradecimento: letras grandes e finas (pouca fita), sem foto. */
+.r-corte { margin: 6mm 0 3mm; border-top: 1px dashed #000; text-align: center; }
+.r-corte span { position: relative; top: -0.75em; background: #fff; padding: 0 2mm; font-size: 7.5pt; }
+.r-obrigado { text-align: center; padding: 1mm 1mm 2mm; }
+.r-ob-marca { font-family: Georgia, "Times New Roman", serif; font-size: 13pt; letter-spacing: 3px; }
+.r-ob-sub { font-size: 6.5pt; letter-spacing: 1.5px; margin-top: .5mm; }
+.r-ob-linha { width: 14mm; margin: 2.5mm auto; border-top: 1px solid #000; }
+.r-ob-titulo { font-family: Georgia, "Times New Roman", serif; font-size: 26pt; line-height: 1; }
+.r-ob-pelo { font-family: Georgia, "Times New Roman", serif; font-style: italic; font-size: 13pt; margin-top: 1mm; }
+.r-ob-nome { font-family: "Brush Script MT", "Segoe Script", "Lucida Handwriting", cursive; font-size: 24pt; margin: 2mm 0 1mm; }
+.r-ob-texto { font-family: Georgia, "Times New Roman", serif; font-size: 9pt; line-height: 1.35; margin: 1mm 2mm 0; }
+.r-ob-fid { margin: 3mm 0 0; padding: 2mm 1mm; border: 1px solid #000; border-radius: 3mm; }
+.r-ob-fid-tit { font-size: 7.5pt; font-weight: 700; letter-spacing: 1px; }
+.r-ob-carimbos { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.2mm; margin: 1.5mm 0; }
+.r-ob-carimbos span { width: 7.5mm; height: 7.5mm; border-radius: 50%; border: 1px dashed #000; display: grid; place-items: center; font-size: 7pt; }
+.r-ob-carimbos span.x { border: 1.5px solid #000; font-size: 10pt; font-weight: 700; }
+.r-ob-fid-txt { font-size: 8pt; }
+.r-ob-assina { font-family: "Brush Script MT", "Segoe Script", "Lucida Handwriting", cursive; font-size: 20pt; line-height: 1; }
+.r-ob-cargo { font-size: 6.5pt; letter-spacing: 1.5px; margin-top: 1mm; }
+.r-ob-site { font-size: 8pt; margin-top: 2mm; font-weight: 700; }
 @media screen { body { background: #ddd !important; } .recibo { background: #fff; margin: 10px auto; box-shadow: 0 2px 10px rgba(0,0,0,.3) !important; } }
 `;
