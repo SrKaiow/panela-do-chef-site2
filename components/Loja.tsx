@@ -99,7 +99,9 @@ export default function Loja({
       <Faixa />
       <QuantoPedir cardapio={cardapio} falaDoChef={loja.falaDoChef} onAdicionar={adicionarVarios} />
 
-      <nav className="abas" aria-label="Categorias" id="cardapio">
+      {/* Âncora fora da barra fixa: rolar até a barra (que fica grudada no topo) não movia a página. */}
+      <div id="cardapio" className="ancora-cardapio" aria-hidden="true" />
+      <nav className="abas" aria-label="Categorias">
         <div className="miolo">
           {cardapio.categorias.map((c) => (
             <a key={c.id} href={"#" + c.id}>{c.nome}</a>

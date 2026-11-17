@@ -823,3 +823,4 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
   .fid-casa.nova .tinta { animation: none; opacity: .92; }
   .fid-casa.nova::after, .fidelidade:has(.fid-casa.nova) { animation: none; }
 }
+.ancora-cardapio { height: 0; scroll-margin-top: 0; }
