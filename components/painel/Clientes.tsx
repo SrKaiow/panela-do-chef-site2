@@ -92,7 +92,7 @@ export function Clientes({ avisar }: { avisar: (a: { tipo: "ok" | "erro"; texto:
   const [busca, setBusca] = useState("");
   const [ordem, setOrdem] = useState<"semana" | "total" | "recente" | "gasto">("semana");
   const [editando, setEditando] = useState(false);
-  const [rascunho, setRascunho] = useState({ meta: "10", brinde: "" });
+  const [rascunho, setRascunho] = useState({ meta: "10", brinde: "", minimo: "10", voucher: "" });
 
   const carregar = useCallback(async () => {
     try {
@@ -127,7 +127,7 @@ export function Clientes({ avisar }: { avisar: (a: { tipo: "ok" | "erro"; texto:
   }
 
   async function salvarRegra() {
-    const r = await fetch("/api/painel/clientes", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ meta: Number(rascunho.meta), brinde: rascunho.brinde }) });
+    const r = await fetch("/api/painel/clientes", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ meta: Number(rascunho.meta), brinde: rascunho.brinde, minimo: Number(rascunho.minimo.replace(",", ".")), voucher: rascunho.voucher }) });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) return avisar({ tipo: "erro", texto: d.erro || "Não consegui salvar." });
     setFid(d);
@@ -139,7 +139,7 @@ export function Clientes({ avisar }: { avisar: (a: { tipo: "ok" | "erro"; texto:
   const total = lista?.length ?? 0;
   const semana = (lista ?? []).filter((c) => c.pedidosSemana > 0).length;
   const voltaram = (lista ?? []).filter((c) => c.pedidos > 1).length;
-  const prontos = (lista ?? []).filter((c) => c.pedidos - c.resgatados * meta >= meta).length;
+  const prontos = (lista ?? []).filter((c) => c.carimbos - c.resgatados * meta >= meta).length;
 
   return (
     <div className="sq-pagina">
@@ -163,12 +163,18 @@ export function Clientes({ avisar }: { avisar: (a: { tipo: "ok" | "erro"; texto:
           {editando ? (
             <div className="sq-fid-form">
               <label className="sq-campo">A cada quantos pedidos?<input type="number" min={2} max={50} value={rascunho.meta} onChange={(e) => setRascunho((r) => ({ ...r, meta: e.target.value }))} /></label>
-              <label className="sq-campo">Qual o brinde?<input maxLength={80} value={rascunho.brinde} onChange={(e) => setRascunho((r) => ({ ...r, brinde: e.target.value }))} /></label>
+              <label className="sq-campo">Qual o brinde? (só você vê)<input maxLength={80} value={rascunho.brinde} onChange={(e) => setRascunho((r) => ({ ...r, brinde: e.target.value }))} /></label>
+              <label className="sq-campo">Pedido mínimo para ganhar carimbo (£)<input inputMode="decimal" value={rascunho.minimo} onChange={(e) => setRascunho((r) => ({ ...r, minimo: e.target.value }))} /></label>
+              <label className="sq-campo">Voucher na mensagem do WhatsApp<input maxLength={80} placeholder="Ex.: £10 de desconto no próximo pedido" value={rascunho.voucher} onChange={(e) => setRascunho((r) => ({ ...r, voucher: e.target.value }))} /></label>
             </div>
           ) : (
-            <strong>A cada {meta} pedidos: {fid?.brinde}</strong>
+            <strong>A cada {meta} pedidos de £{(fid?.minimo ?? 0).toFixed(2)} ou mais: {fid?.brinde}</strong>
           )}
-          <span className="sq-sub">Quando o cliente completar, aparece "Brinde liberado". Dê o brinde no próximo pedido e toque em "Entregar brinde" para zerar o cartão.</span>
+          <span className="sq-sub">
+            Pedidos abaixo do mínimo não ganham carimbo (o cliente não vê essa regra). Quando completar, aparece &quot;Brinde liberado&quot;: toque em
+            &quot;Enviar voucher&quot; para mandar a mensagem no WhatsApp e, depois de dar o brinde, em &quot;Entregar brinde&quot; para zerar o cartão.
+            {!fid?.voucher && " Defina o valor do voucher em Mudar regra."}
+          </span>
         </div>
         {editando ? (
           <div className="sq-acoes-cabeca">
@@ -176,7 +182,7 @@ export function Clientes({ avisar }: { avisar: (a: { tipo: "ok" | "erro"; texto:
             <button className="sq-btn sq-btn-primario" onClick={salvarRegra}>Salvar</button>
           </div>
         ) : (
-          <button className="sq-btn" onClick={() => { setRascunho({ meta: String(meta), brinde: fid?.brinde ?? "" }); setEditando(true); }}>Mudar regra</button>
+          <button className="sq-btn" onClick={() => { setRascunho({ meta: String(meta), brinde: fid?.brinde ?? "", minimo: String(fid?.minimo ?? 10), voucher: fid?.voucher ?? "" }); setEditando(true); }}>Mudar regra</button>
         )}
       </section>
 
@@ -198,9 +204,15 @@ export function Clientes({ avisar }: { avisar: (a: { tipo: "ok" | "erro"; texto:
       ) : (
         <div className="sq-clientes">
           {filtrados.map((c) => {
-            const carimbos = c.pedidos - c.resgatados * meta;
+            const carimbos = Math.max(0, c.carimbos - c.resgatados * meta);
             const liberado = carimbos >= meta;
-            const zap = "https://wa.me/44" + c.telefone.replace(/^0/, "");
+            const primeiro = c.nome.trim().split(/\s+/)[0] ?? "";
+            const nome = primeiro.charAt(0).toUpperCase() + primeiro.slice(1).toLowerCase();
+            const msgVoucher =
+              `Oi, ${nome}! Parabéns, você completou o nosso *cartão fidelidade* da *Panela do Chef*!\n\n` +
+              `Aqui está o seu voucher: *${fid?.voucher || "um brinde da nossa cozinha"}*.\n\n` +
+              `É só fazer o seu próximo pedido pelo site (paneladochef.co.uk) e responder esta mensagem que a gente aplica. Obrigado por pedir sempre com a gente!`;
+            const zap = "https://wa.me/44" + c.telefone.replace(/^0/, "") + (liberado ? "?text=" + encodeURIComponent(msgVoucher) : "");
             return (
               <article key={c.telefone} className={"sq-cartao sq-cliente" + (liberado ? " liberado" : "")}>
                 <header>
@@ -208,7 +220,7 @@ export function Clientes({ avisar }: { avisar: (a: { tipo: "ok" | "erro"; texto:
                     <strong>{c.nome}</strong>
                     <span className="sq-sub">{c.telefone} · {c.postcode}</span>
                   </div>
-                  <a className="sq-btn btn-zap" href={zap} target="_blank" rel="noreferrer" aria-label={`WhatsApp de ${c.nome}`}>WhatsApp</a>
+                  <a className="sq-btn btn-zap" href={zap} target="_blank" rel="noreferrer" aria-label={liberado ? `Enviar voucher para ${c.nome} no WhatsApp` : `WhatsApp de ${c.nome}`}>{liberado ? "Enviar voucher" : "WhatsApp"}</a>
                 </header>
                 <dl className="sq-cliente-nums">
                   <div><dt>Semana</dt><dd className="num">{c.pedidosSemana}</dd></div>
@@ -221,7 +233,7 @@ export function Clientes({ avisar }: { avisar: (a: { tipo: "ok" | "erro"; texto:
                 </div>
                 <footer>
                   <span className="sq-sub">
-                    {liberado ? <b className="sq-liberado">🎁 Brinde liberado!</b> : `Faltam ${meta - carimbos} para o brinde`}
+                    {liberado ? <b className="sq-liberado">🎁 Brinde liberado!</b> : `Faltam ${meta - carimbos} carimbos para o brinde`}
                     {" · "}cliente desde {dataCurta(c.primeiro)} · último {dataCurta(c.ultimo)}
                     {c.resgatados > 0 && ` · ${c.resgatados} brinde${c.resgatados > 1 ? "s" : ""} entregue${c.resgatados > 1 ? "s" : ""}`}
                   </span>

@@ -539,13 +539,15 @@ export type Cliente = {
   primeiro: string;
   ultimo: string;
   resgatados: number;
+  /** Pedidos que valem carimbo (subtotal a partir do mínimo). */
+  carimbos: number;
 };
 
 /** Clientes a partir dos pedidos (não conta cancelados nem cartão não pago). */
-export async function listarClientes(): Promise<Cliente[]> {
+export async function listarClientes(minimoPence = 0): Promise<Cliente[]> {
   const [r, f] = await Promise.all([
     exec(
-      `SELECT telefone, nome, postcode, total, criado_em FROM pedidos
+      `SELECT telefone, nome, postcode, total, subtotal, criado_em FROM pedidos
        WHERE status NOT IN ('cancelado', 'aguardando_pagamento') ORDER BY criado_em DESC LIMIT 20000`,
     ),
     exec("SELECT telefone, resgatados FROM fidelidade"),
@@ -562,10 +564,11 @@ export async function listarClientes(): Promise<Cliente[]> {
     let c = mapa.get(tel);
     if (!c) {
       // Pedidos vêm do mais novo para o mais antigo: o primeiro visto tem o nome e o postcode mais recentes.
-      c = { telefone: tel, nome: String(x.nome), postcode: String(x.postcode), pedidos: 0, pedidosSemana: 0, pedidosMes: 0, gasto: 0, primeiro: quando, ultimo: quando, resgatados: resg.get(tel) ?? 0 };
+      c = { telefone: tel, nome: String(x.nome), postcode: String(x.postcode), pedidos: 0, pedidosSemana: 0, pedidosMes: 0, gasto: 0, primeiro: quando, ultimo: quando, resgatados: resg.get(tel) ?? 0, carimbos: 0 };
       mapa.set(tel, c);
     }
     c.pedidos++;
+    if (Number(x.subtotal) >= minimoPence) c.carimbos++;
     c.gasto += Number(x.total);
     if (t >= semana) c.pedidosSemana++;
     if (t >= mes) c.pedidosMes++;
@@ -583,19 +586,19 @@ export async function registrarResgate(telefone: string, delta: 1 | -1) {
 }
 
 /** Cartão fidelidade de um pedido: quantos carimbos o cliente tem contando até este pedido. */
-export async function carimbosDoPedido(p: Pedido, meta: number) {
+export async function carimbosDoPedido(p: Pedido, meta: number, minimoPence = 0) {
   const tel = telefoneChave(p.telefone);
   const fim = tel.slice(-9);
   if (fim.length < 9) return null;
   const [r, f] = await Promise.all([
     exec(
-      `SELECT telefone FROM pedidos WHERE criado_em <= ? AND status NOT IN ('cancelado', 'aguardando_pagamento')
+      `SELECT telefone FROM pedidos WHERE criado_em <= ? AND subtotal >= ? AND status NOT IN ('cancelado', 'aguardando_pagamento')
        AND replace(replace(replace(telefone, ' ', ''), '-', ''), '+', '') LIKE ?`,
-      [p.criadoEm, "%" + fim],
+      [p.criadoEm, minimoPence, "%" + fim],
     ),
     exec("SELECT resgatados FROM fidelidade WHERE telefone = ?", [tel]),
   ]);
   const pedidos = r.rows.filter((x) => telefoneChave(String(x.telefone)) === tel).length;
   const resgatados = Number(f.rows[0]?.resgatados ?? 0);
-  return { carimbos: Math.max(0, pedidos - resgatados * meta), meta };
+  return { carimbos: Math.max(0, pedidos - resgatados * meta), meta, ganhou: p.subtotal >= minimoPence };
 }

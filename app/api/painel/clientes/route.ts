@@ -9,7 +9,8 @@ const sair = () => NextResponse.json({ erro: "Entre de novo." }, { status: 401 }
 
 export async function GET() {
   if (!(await logado("painel"))) return sair();
-  const [clientes, fidelidade] = await Promise.all([listarClientes(), lerFidelidade()]);
+  const fidelidade = await lerFidelidade();
+  const clientes = await listarClientes(Math.round(fidelidade.minimo * 100));
   return NextResponse.json({ clientes, fidelidade });
 }
 

@@ -356,7 +356,7 @@ a.btn.principal-p { color: #fff; justify-content: center; }
 .sq-legenda.claro { background: #f3d34a; } .sq-legenda.escuro { background: #151515; }
 .sq-fid { grid-template-columns: 1fr auto; align-items: center; display: grid; gap: 12px; }
 .sq-fid > div { display: grid; gap: 4px; }
-.sq-fid-form { display: grid; grid-template-columns: 140px 1fr; gap: 10px; margin: 6px 0; }
+.sq-fid-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 6px 0; }
 @media (max-width: 640px) { .sq-fid { grid-template-columns: 1fr; } .sq-fid-form { grid-template-columns: 1fr; } }
 .sq-clientes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 12px; }
 .sq-cliente { display: grid; gap: 10px; }

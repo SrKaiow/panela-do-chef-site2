@@ -786,15 +786,40 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .btn-contagem { margin-left: 6px; padding: 4px 12px; border-radius: 999px; border: 1px solid currentColor; background: transparent; color: inherit; font: inherit; font-weight: 700; cursor: pointer; }
 
 /* Cartão fidelidade (página do pedido) */
-.fidelidade { display: grid; gap: 14px; padding: 18px; border-radius: 22px; border: 1px solid rgba(255, 216, 20, .45); background: radial-gradient(120% 100% at 0% 0%, rgba(255, 216, 20, .18), rgba(255, 216, 20, .03) 60%), #0e0e0e; }
-.fid-cab { display: flex; gap: 12px; align-items: flex-start; }
-.fid-icone { font-size: 2rem; line-height: 1; }
-.fidelidade h2 { margin: 0; font-family: var(--fonte-titulo); text-transform: uppercase; font-size: 1.3rem; line-height: 1.05; color: var(--ouro); }
-.fidelidade p { margin: 4px 0 0; color: rgba(255,255,255,.85); font-size: .95rem; line-height: 1.4; }
-.fid-carimbos { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; max-width: 340px; }
-.fid-carimbos span { aspect-ratio: 1; border-radius: 50%; border: 2px dashed rgba(255,255,255,.28); display: grid; place-items: center; font-weight: 800; color: rgba(255,255,255,.35); font-size: .9rem; }
-.fid-carimbos span.cheio { border: 0; background: var(--ouro) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12l4 4 10-10' fill='none' stroke='%23000' stroke-width='3'/%3E%3C/svg%3E") center / 55% no-repeat; box-shadow: 0 4px 14px rgba(255, 216, 20, .3); }
-.fid-carimbos span.novo { animation: carimbo .7s cubic-bezier(.2, 1.6, .4, 1) .4s both; }
-@keyframes carimbo { from { transform: scale(2.2) rotate(-25deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.fidelidade { position: relative; display: grid; gap: 16px; padding: 20px 18px 18px; border-radius: 24px; overflow: visible;
+  border: 1px solid rgba(255, 216, 20, .4);
+  background: radial-gradient(130% 90% at 0% 0%, rgba(255, 216, 20, .16), transparent 60%), repeating-linear-gradient(135deg, rgba(255,255,255,.018) 0 6px, transparent 6px 12px), #0f0d08; }
+.fid-kicker { font-size: .72rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.55); }
+.fidelidade h2 { margin: 2px 0 0; font-family: var(--fonte-titulo); text-transform: uppercase; font-size: 1.45rem; line-height: 1.02; color: var(--ouro); }
+.fidelidade p { margin: 6px 0 0; color: rgba(255,255,255,.85); font-size: .95rem; line-height: 1.4; }
+.fid-cartela { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 14px; border-radius: 18px; background: #f5ecd6; box-shadow: inset 0 0 0 2px #e2d3ad, 0 10px 26px rgba(0,0,0,.45); }
+.fid-casa { position: relative; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; color: #a3916a; }
+.fid-casa.trancada { border: 2px dashed #cdbb8f; background: rgba(0,0,0,.025); }
+.fid-casa.trancada small { position: absolute; bottom: 9%; font-size: .62rem; font-weight: 800; color: #b5a37a; }
+.fid-casa.cheia { color: #c01f2b; }
+.fid-casa .tinta { position: absolute; inset: -4%; width: 108%; height: 108%; opacity: .92; mix-blend-mode: multiply; transform: rotate(var(--giro, 0deg)); }
+/* a mão com o carimbo */
+.mao-carimbo { position: absolute; width: 170%; left: -35%; bottom: -6%; z-index: 5; pointer-events: none; transform-origin: 50% 100%; opacity: 0; filter: drop-shadow(0 14px 14px rgba(0,0,0,.45)); }
+.fid-casa.nova .tinta { opacity: 0; animation: tinta-aparece .45s ease-out 1.65s forwards; }
+.fid-casa.nova .mao-carimbo { animation: mao-carimba 2.4s cubic-bezier(.45,0,.25,1) .5s forwards; }
+.fid-casa.nova::after { content: ""; position: absolute; inset: -18%; border-radius: 50%; border: 3px solid rgba(192, 31, 43, .55); opacity: 0; animation: onda-carimbo .6s ease-out 1.65s; }
+@keyframes mao-carimba {
+  0% { opacity: 0; transform: translate(100%, -150%) rotate(22deg); }
+  12% { opacity: 1; }
+  38% { transform: translate(0, -42%) rotate(-4deg); }
+  47% { transform: translate(0, -36%) rotate(0); }
+  52% { transform: translate(0, 0) scaleY(.95); }
+  60% { transform: translate(0, -2%) scaleY(.97); }
+  70% { transform: translate(0, -45%) rotate(-3deg); opacity: 1; }
+  100% { opacity: 0; transform: translate(130%, -170%) rotate(-16deg); }
+}
+@keyframes tinta-aparece { 0% { opacity: 0; transform: rotate(var(--giro, 0deg)) scale(1.18); } 30% { opacity: 1; } 100% { opacity: .92; transform: rotate(var(--giro, 0deg)) scale(1); } }
+@keyframes onda-carimbo { from { opacity: 1; transform: scale(.7); } to { opacity: 0; transform: scale(1.35); } }
+.fidelidade:has(.fid-casa.nova) { animation: cartela-treme .3s ease-out 1.65s; }
+@keyframes cartela-treme { 30% { transform: translateY(3px); } 60% { transform: translateY(-1px); } }
 .fid-faltam { font-weight: 800; color: #fff !important; margin: 0 !important; }
-@media (prefers-reduced-motion: reduce) { .fid-carimbos span.novo { animation: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .fid-casa.nova .mao-carimbo { display: none; }
+  .fid-casa.nova .tinta { animation: none; opacity: .92; }
+  .fid-casa.nova::after, .fidelidade:has(.fid-casa.nova) { animation: none; }
+}

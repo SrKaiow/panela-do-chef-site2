@@ -56,7 +56,7 @@ export default async function PaginaPedido(props: { params: Promise<{ token: str
   const aoVivo = await situacaoAoVivo(pedido);
   const jaAvaliado = await pedidoJaAvaliado(pedido.numero);
   const loja = await getAjustes();
-  const cartao = !aguardando && !cancelado ? await lerFidelidade().then((f) => carimbosDoPedido(pedido, f.meta)).catch(() => null) : null;
+  const cartao = !aguardando && !cancelado ? await lerFidelidade().then((f) => carimbosDoPedido(pedido, f.meta, Math.round(f.minimo * 100))).catch(() => null) : null;
 
   return (
     <>
@@ -93,7 +93,7 @@ export default async function PaginaPedido(props: { params: Promise<{ token: str
           !cancelado && <Rastreio token={pedido.token} inicial={aoVivo} nome={pedido.nome} jaAvaliado={jaAvaliado} />
         )}
 
-        {cartao && cartao.carimbos > 0 && <CartaoFidelidade carimbos={cartao.carimbos} meta={cartao.meta} />}
+        {cartao && cartao.ganhou && cartao.carimbos > 0 && <CartaoFidelidade carimbos={cartao.carimbos} meta={cartao.meta} />}
 
         <section style={{ display: "grid", gap: 6 }}>
           <h2 style={{ margin: 0, fontSize: "1.1rem" }}>Resumo</h2>
