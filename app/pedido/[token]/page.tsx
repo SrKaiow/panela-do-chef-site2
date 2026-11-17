@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Rastreio from "@/components/Rastreio";
-import { buscarPorToken, confirmarPagamentoCartao, pedidoJaAvaliado } from "@/lib/db";
+import { buscarPorToken, carimbosDoPedido, confirmarPagamentoCartao, pedidoJaAvaliado } from "@/lib/db";
+import { lerFidelidade } from "@/lib/fidelidade";
+import CartaoFidelidade from "@/components/CartaoFidelidade";
 import { situacaoAoVivo } from "@/lib/rastreio";
 import { formatar } from "@/lib/cardapio";
 import { getAjustes } from "@/lib/dados";
@@ -54,6 +56,7 @@ export default async function PaginaPedido(props: { params: Promise<{ token: str
   const aoVivo = await situacaoAoVivo(pedido);
   const jaAvaliado = await pedidoJaAvaliado(pedido.numero);
   const loja = await getAjustes();
+  const cartao = !aguardando && !cancelado ? await lerFidelidade().then((f) => carimbosDoPedido(pedido, f.meta)).catch(() => null) : null;
 
   return (
     <>
@@ -89,6 +92,8 @@ export default async function PaginaPedido(props: { params: Promise<{ token: str
         ) : (
           !cancelado && <Rastreio token={pedido.token} inicial={aoVivo} nome={pedido.nome} jaAvaliado={jaAvaliado} />
         )}
+
+        {cartao && cartao.carimbos > 0 && <CartaoFidelidade carimbos={cartao.carimbos} meta={cartao.meta} />}
 
         <section style={{ display: "grid", gap: 6 }}>
           <h2 style={{ margin: 0, fontSize: "1.1rem" }}>Resumo</h2>

@@ -581,3 +581,21 @@ export async function registrarResgate(telefone: string, delta: 1 | -1) {
     [telefoneChave(telefone), delta, new Date().toISOString(), delta],
   );
 }
+
+/** Cartão fidelidade de um pedido: quantos carimbos o cliente tem contando até este pedido. */
+export async function carimbosDoPedido(p: Pedido, meta: number) {
+  const tel = telefoneChave(p.telefone);
+  const fim = tel.slice(-9);
+  if (fim.length < 9) return null;
+  const [r, f] = await Promise.all([
+    exec(
+      `SELECT telefone FROM pedidos WHERE criado_em <= ? AND status NOT IN ('cancelado', 'aguardando_pagamento')
+       AND replace(replace(replace(telefone, ' ', ''), '-', ''), '+', '') LIKE ?`,
+      [p.criadoEm, "%" + fim],
+    ),
+    exec("SELECT resgatados FROM fidelidade WHERE telefone = ?", [tel]),
+  ]);
+  const pedidos = r.rows.filter((x) => telefoneChave(String(x.telefone)) === tel).length;
+  const resgatados = Number(f.rows[0]?.resgatados ?? 0);
+  return { carimbos: Math.max(0, pedidos - resgatados * meta), meta };
+}
