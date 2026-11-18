@@ -52,6 +52,18 @@ function telefoneE164(tel: string) {
   return "+" + n;
 }
 
+/** Itens do pedido no formato da Square (com a taxa de entrega como item). */
+function itensSquare(linhas: LinhaPedido[], taxa: number) {
+  const itens = linhas.map((l) => ({
+    name: l.nome.slice(0, 500),
+    quantity: String(l.qtd),
+    base_price_money: dinheiro(l.unitario),
+    ...(l.detalhes.length || l.obs ? { note: [...l.detalhes, l.obs ? `Obs.: ${l.obs}` : ""].filter(Boolean).join(" | ").slice(0, 2000) } : {}),
+  }));
+  if (taxa) itens.push({ name: "Taxa de entrega", quantity: "1", base_price_money: dinheiro(taxa) });
+  return itens;
+}
+
 /** Cria o pedido na Square e devolve o link da página de pagamento. */
 export async function criarPagamentoSquare(p: {
   numero: number;
@@ -64,13 +76,7 @@ export async function criarPagamentoSquare(p: {
   endereco?: string;
   postcode?: string;
 }) {
-  const itens = p.linhas.map((l) => ({
-    name: l.nome.slice(0, 500),
-    quantity: String(l.qtd),
-    base_price_money: dinheiro(l.unitario),
-    ...(l.detalhes.length || l.obs ? { note: [...l.detalhes, l.obs ? `Obs.: ${l.obs}` : ""].filter(Boolean).join(" | ").slice(0, 2000) } : {}),
-  }));
-  if (p.taxa) itens.push({ name: "Taxa de entrega", quantity: "1", base_price_money: dinheiro(p.taxa) });
+  const itens = itensSquare(p.linhas, p.taxa);
 
   const criar = (comDados: boolean) => chamar<{ payment_link: { id: string; url: string; order_id: string } }>("/v2/online-checkout/payment-links", {
     method: "POST",
@@ -225,7 +231,34 @@ export async function garantirDominioApplePay(dominio: string) {
   await salvarConfig(chave, { ...estado, [dominio]: { ok, em: Date.now() } });
 }
 
-/** Cobra o pedido com o token da carteira (Apple Pay / Google Pay) gerado no navegador. */
+/**
+ * Pedido próprio na Square para o pagamento pela carteira (o pedido do link de pagamento é da página
+ * da Square e não aceita pagamento de fora: a Square autorizava e devolvia na hora).
+ * Mesmo pedido do site = mesmo pedido na Square (idempotente).
+ */
+export async function criarPedidoCarteira(p: { numero: number; linhas: LinhaPedido[]; taxa: number }) {
+  const d = await chamar<{ order: { id: string; total_money?: { amount: number } } }>("/v2/orders", {
+    method: "POST",
+    body: {
+      idempotency_key: `panela-carteira-${p.numero}`,
+      order: {
+        location_id: process.env.SQUARE_LOCATION_ID,
+        reference_id: String(p.numero),
+        line_items: itensSquare(p.linhas, p.taxa),
+        metadata: { numero: String(p.numero) },
+      },
+    },
+  });
+  return d.order;
+}
+
+/** Guarda o último erro da Square (para conferir pelo painel sem precisar dos logs). */
+export async function registrarErroSquare(onde: string, e: unknown) {
+  const detalhes = e instanceof ErroSquare ? { status: e.status, detalhes: e.detalhes } : { erro: String(e) };
+  await salvarConfig("square-ultimo-erro", { onde, em: new Date().toISOString(), ...detalhes }).catch(() => {});
+}
+
+/** Cobra com o token da carteira (Apple Pay / Google Pay) gerado no navegador. */
 export async function pagarComCarteira(p: { sourceId: string; numero: number; total: number; orderId: string | null }) {
   const d = await chamar<{ payment?: { id: string; status: string; order_id?: string; amount_money?: { amount: number } } }>("/v2/payments", {
     method: "POST",
