@@ -29,9 +29,9 @@ export function textoPedido(p: Pedido, origem?: string) {
     if (l.obs) linhas.push(`   Obs.: ${l.obs}`);
   }
   linhas.push("");
-  linhas.push(`Entrega ${p.taxa ? libra(p.taxa) : "grátis"} · Total ${libra(p.total)}`);
+  linhas.push(p.retirada ? `Coleta · Total ${libra(p.total)}` : `Entrega ${p.taxa ? libra(p.taxa) : "grátis"} · Total ${libra(p.total)}`);
   linhas.push(`👤 ${p.nome} · ${p.telefone}`);
-  linhas.push(`📍 ${p.endereco}, ${p.postcode}`);
+  linhas.push(p.retirada ? "🏠 *COLETA NA PORTA* (sem entrega)" : `📍 ${p.endereco}, ${p.postcode}`);
   if (p.observacao) linhas.push(`📝 ${p.observacao}`);
   linhas.push("");
   linhas.push(`Painel: ${(origem || siteUrl())}/painel#pedidos`);

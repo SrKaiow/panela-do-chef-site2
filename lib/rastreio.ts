@@ -25,6 +25,10 @@ export type AoVivo = {
   naFila: boolean;
   /** Imprevisto avisado pelo entregador (só enquanto o pedido está no carro). */
   imprevisto: { motivo: string; minutos: number; em: string; lat: number | null; lng: number | null } | null;
+  /** Cliente vem buscar na porta: "saiu" = pronto para coletar, "entregue" = retirado. */
+  retirada: boolean;
+  /** Postcode da cozinha (para mostrar onde coletar). */
+  postcodeCozinha: string;
 };
 
 // Guarda a última posição vista para calcular a direção do carro.
@@ -43,7 +47,7 @@ export async function situacaoAoVivo(p: Pedido): Promise<AoVivo> {
   let naFrente: number | null = null;
   let previsao: string | null = null;
 
-  const trajeto = destino ? minutosAte(distanciaMetros(cozinha, destino), vel) : 15;
+  const trajeto = p.retirada ? 0 : destino ? minutosAte(distanciaMetros(cozinha, destino), vel) : 15;
 
   if (["novo", "confirmado", "preparando"].includes(p.status)) {
     naFrente = await pedidosNaFrente(p);
@@ -59,11 +63,11 @@ export async function situacaoAoVivo(p: Pedido): Promise<AoVivo> {
   }
 
   // A posição do entregador só aparece enquanto o pedido está a caminho, e se for recente.
-  const naFila = p.status === "saiu" && (await entregaAtual()) !== p.numero;
+  const naFila = !p.retirada && p.status === "saiu" && (await entregaAtual()) !== p.numero;
   const imprevisto = p.status === "saiu" && p.atraso && Date.now() - new Date(p.atraso.em).getTime() < 90 * 60000 ? p.atraso : null;
   // Os minutos a mais vão sendo "gastos" com o tempo: passados 10 min de um atraso de 10, a conta volta a ser só pela distância.
   const extra = imprevisto ? Math.max(0, imprevisto.minutos - (Date.now() - new Date(imprevisto.em).getTime()) / 60000) : 0;
-  if (p.status === "saiu" && !naFila) {
+  if (p.status === "saiu" && !naFila && !p.retirada) {
     const local = await lerLocal();
     if (local && Date.now() - new Date(local.atualizadoEm).getTime() < 10 * 60 * 1000) {
       let direcao: number | null = ultimaPosicao?.direcao ?? null;
@@ -81,7 +85,7 @@ export async function situacaoAoVivo(p: Pedido): Promise<AoVivo> {
     }
   }
 
-  if (naFila) previsao = null;
+  if (naFila || (p.retirada && p.status === "saiu")) previsao = null;
 
   return {
     status: p.status,
@@ -99,8 +103,10 @@ export async function situacaoAoVivo(p: Pedido): Promise<AoVivo> {
     entregador,
     distancia,
     minutos,
-    chegando: !naFila && (p.avisadoChegando || (distancia != null && distancia <= a.entrega.avisoChegandoMetros)),
+    chegando: !p.retirada && !naFila && (p.avisadoChegando || (distancia != null && distancia <= a.entrega.avisoChegandoMetros)),
     naFila,
-    imprevisto,
+    imprevisto: p.retirada ? null : imprevisto,
+    retirada: p.retirada,
+    postcodeCozinha: a.entrega.cozinha.postcode,
   };
 }

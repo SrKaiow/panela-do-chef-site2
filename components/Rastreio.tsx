@@ -14,6 +14,14 @@ const ORDEM: Status[] = ["novo", "confirmado", "preparando", "saiu", "entregue"]
 
 /** Mensagem grande do topo: o que está acontecendo agora com o pedido. */
 function manchete(ao: AoVivo): { titulo: string; texto: string } {
+  if (ao.retirada) {
+    const ag = ao.agendadoPara && new Date(ao.agendadoPara).getTime() > Date.now() + 30 * 60000;
+    if (ao.status === "novo") return ag ? { titulo: "Pedido reservado!", texto: `A cozinha deixa pronto para você coletar ${rotuloAgendado(ao.agendadoPara!)}.` } : { titulo: "Pedido enviado para a cozinha", texto: "Aguardando o Chef aceitar. Leva só um instante." };
+    if (ao.status === "confirmado") return { titulo: "Pedido aceito!", texto: ag ? `Fica pronto para coletar ${rotuloAgendado(ao.agendadoPara!)}.` : "O Chef aceitou o seu pedido. Já já a cozinha começa." };
+    if (ao.status === "preparando") return { titulo: "A cozinha começou o seu pedido", texto: "Tá na panela! Assim que ficar pronto, você recebe o aviso para vir buscar." };
+    if (ao.status === "saiu") return { titulo: "Pronto! Pode vir buscar", texto: "Seu pedido está pronto e esperando por você na porta." };
+    if (ao.status === "entregue") return { titulo: "Pedido retirado", texto: "Bom apetite! Obrigado por pedir na Panela do Chef." };
+  }
   const agendado = ao.agendadoPara && new Date(ao.agendadoPara).getTime() > Date.now() + 30 * 60000;
   switch (ao.status) {
     case "novo":
@@ -111,8 +119,8 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
     { id: "novo", nome: "Pedido enviado", em: ao.criadoEm },
     { id: "confirmado", nome: "Pedido aceito", em: ao.aceitoEm },
     { id: "preparando", nome: "A cozinha começou", em: ao.preparoEm },
-    { id: "saiu", nome: "Saiu para entrega", em: ao.saiuEm },
-    { id: "entregue", nome: "Entregue", em: ao.entregueEm },
+    { id: "saiu", nome: ao.retirada ? "Pronto para coletar" : "Saiu para entrega", em: ao.saiuEm },
+    { id: "entregue", nome: ao.retirada ? "Retirado" : "Entregue", em: ao.entregueEm },
   ];
 
   return (
@@ -143,13 +151,13 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
         {ao.status !== "entregue" && minutosPrevisao != null && (
           minutosPrevisao > 90 ? (
             <div className="previsao">
-              <span>Entrega marcada</span>
+              <span>{ao.retirada ? "Coleta marcada" : "Entrega marcada"}</span>
               <strong className="num">{hora(ao.previsao)}</strong>
               <span>{rotuloAgendado(ao.previsao!).split(" às ")[0]}</span>
             </div>
           ) : (
             <div className="previsao">
-              <span>Chega em</span>
+              <span>{ao.retirada ? "Pronto em" : "Chega em"}</span>
               <strong className="num">~{minutosPrevisao} min</strong>
               <span>por volta das {hora(ao.previsao)}</span>
             </div>
@@ -185,7 +193,19 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
         })}
       </ol>
 
-      {ao.status === "saiu" && (
+      {ao.retirada && ao.status !== "entregue" && (
+        <div className="coleta-local">
+          <strong>Onde coletar</strong>
+          <span>Na porta da Panela do Chef · {ao.postcodeCozinha}</span>
+          <div className="coleta-botoes">
+            <a className="secundario" href={`https://www.google.com/maps/dir/?api=1&destination=${ao.cozinha.lat},${ao.cozinha.lng}`} target="_blank" rel="noopener">Abrir no Google Maps</a>
+            <a className="secundario" href={`https://waze.com/ul?ll=${ao.cozinha.lat},${ao.cozinha.lng}&navigate=yes`} target="_blank" rel="noopener">Abrir no Waze</a>
+          </div>
+          <span className="dica">Chegou? Manda um WhatsApp que a gente leva até a porta.</span>
+        </div>
+      )}
+
+      {ao.status === "saiu" && !ao.retirada && (
         <div className="ao-vivo">
           <div className="ao-vivo-topo">
             <span className="pulso" aria-hidden="true" />

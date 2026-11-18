@@ -35,12 +35,15 @@ export async function POST(req: Request) {
       throw new Error("A cozinha está fechada agora. Escolha um horário para receber o seu pedido.");
     }
 
+    // Coletar na porta: sem endereço e sem taxa de entrega.
+    const retirada = b.retirada === true;
     const nome = texto(b.nome, 80);
     const telefone = texto(b.telefone, 30);
-    const endereco = texto(b.endereco, 160);
-    const postcode = texto(b.postcode, 10).toUpperCase();
+    const endereco = retirada ? "Coleta na porta" : texto(b.endereco, 160);
+    const postcode = retirada ? ajustes.entrega.cozinha.postcode.toUpperCase() : texto(b.postcode, 10).toUpperCase();
     const observacao = texto(b.observacao, 300) || null;
-    if (!nome || !telefone || !endereco || !postcode) throw new Error("Preencha nome, telefone, endereço e postcode.");
+    if (!nome || !telefone) throw new Error("Preencha nome e telefone.");
+    if (!endereco || !postcode) throw new Error("Preencha nome, telefone, endereço e postcode.");
     const digitos = telefone.replace(/\D/g, "");
     if (digitos.length < 10 || digitos.length > 15) throw new Error("Confira o telefone (ex.: 07123 456789).");
 
@@ -49,16 +52,21 @@ export async function POST(req: Request) {
     if (pagamento === "dinheiro" && !ajustes.pagamentos.dinheiro) throw new Error("Pagamento em dinheiro indisponível no momento.");
 
     const { linhas, subtotal } = validarCarrinho(cardapio, b.itens);
-    const minimo = emPence(ajustes.entrega.pedidoMinimo);
-    if (minimo && subtotal < minimo) throw new Error("O pedido não atingiu o valor mínimo para entrega.");
-
-    // Taxa de entrega pela distância da cozinha até o postcode (mesma regra da Square).
-    const coords = await coordenadasDoPostcode(postcode);
-    if (!coords) throw new Error("Não encontramos esse postcode. Confira e tente de novo (ex.: KT17 1JW).");
-    const distanciaM = Math.round(distanciaMetros(ajustes.entrega.cozinha, coords));
-    const cotacao = cotarEntrega(distanciaM, subtotal, ajustes.entrega.faixas, ajustes.entrega.raioMilhas);
-    if (!cotacao.ok) throw new Error(cotacao.motivo);
-    const taxa = cotacao.taxa;
+    let coords = { lat: ajustes.entrega.cozinha.lat, lng: ajustes.entrega.cozinha.lng };
+    let distanciaM = 0;
+    let taxa = 0;
+    if (!retirada) {
+      const minimo = emPence(ajustes.entrega.pedidoMinimo);
+      if (minimo && subtotal < minimo) throw new Error("O pedido não atingiu o valor mínimo para entrega.");
+      // Taxa de entrega pela distância da cozinha até o postcode (mesma regra da Square).
+      const achou = await coordenadasDoPostcode(postcode);
+      if (!achou) throw new Error("Não encontramos esse postcode. Confira e tente de novo (ex.: KT17 1JW).");
+      coords = achou;
+      distanciaM = Math.round(distanciaMetros(ajustes.entrega.cozinha, coords));
+      const cotacao = cotarEntrega(distanciaM, subtotal, ajustes.entrega.faixas, ajustes.entrega.raioMilhas);
+      if (!cotacao.ok) throw new Error(cotacao.motivo);
+      taxa = cotacao.taxa;
+    }
     const total = subtotal + taxa;
 
     let trocoPara: number | null = null;
@@ -70,7 +78,7 @@ export async function POST(req: Request) {
 
     const { numero, token } = await criarPedido({
       nome, telefone, endereco, postcode, observacao,
-      lat: coords.lat, lng: coords.lng, agendadoPara, distanciaM,
+      lat: coords.lat, lng: coords.lng, agendadoPara, distanciaM, retirada,
       itens: linhas, subtotal, taxa, total, pagamento, trocoPara,
       pago: false,
       // Pedido em dinheiro vai direto para a cozinha; no cartão, só depois de pago.

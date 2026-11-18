@@ -74,7 +74,7 @@ export default async function PaginaPedido(props: { params: Promise<{ token: str
                 : aguardando
                 ? "Seus dados já estão com a gente. É só tocar no botão e confirmar: o pedido vai na hora para a cozinha."
                 : pedido.pagamento === "dinheiro"
-                  ? `Tenha ${formatar(pedido.trocoPara ?? pedido.total)} em dinheiro para pagar o entregador${pedido.trocoPara ? ` (troco de ${formatar(pedido.trocoPara - pedido.total)})` : ""}.`
+                  ? `Tenha ${formatar(pedido.trocoPara ?? pedido.total)} em dinheiro para pagar ${pedido.retirada ? "na coleta" : "o entregador"}${pedido.trocoPara ? ` (troco de ${formatar(pedido.trocoPara - pedido.total)})` : ""}.`
                   : "Pagamento confirmado. Obrigado!"}
           </p>
         </div>
@@ -113,14 +113,14 @@ export default async function PaginaPedido(props: { params: Promise<{ token: str
           </div>
           <div className="totais preco" style={{ marginTop: 8 }}>
             <div><span>Subtotal</span><span>{formatar(pedido.subtotal)}</span></div>
-            <div><span>Entrega</span><span>{pedido.taxa ? formatar(pedido.taxa) : "Grátis"}</span></div>
+            <div><span>{pedido.retirada ? "Coleta na porta" : "Entrega"}</span><span>{pedido.taxa ? formatar(pedido.taxa) : "Grátis"}</span></div>
             <div className="total"><span>Total</span><span>{formatar(pedido.total)}</span></div>
-            <div style={{ color: "var(--texto-2)" }}><span>Pagamento</span><span>{pedido.pagamento === "dinheiro" ? "Dinheiro na entrega" : pedido.pago ? "Pago no site" : "Pagamento pendente"}</span></div>
+            <div style={{ color: "var(--texto-2)" }}><span>Pagamento</span><span>{pedido.pagamento === "dinheiro" ? (pedido.retirada ? "Dinheiro na coleta" : "Dinheiro na entrega") : pedido.pago ? "Pago no site" : "Pagamento pendente"}</span></div>
           </div>
         </section>
 
         <section style={{ color: "var(--texto-2)" }}>
-          Entrega para <strong style={{ color: "var(--texto)" }}>{pedido.nome}</strong>, {pedido.endereco}, {pedido.postcode}
+          {pedido.retirada ? <>Coleta na porta para <strong style={{ color: "var(--texto)" }}>{pedido.nome}</strong> · {pedido.postcode}</> : <>Entrega para <strong style={{ color: "var(--texto)" }}>{pedido.nome}</strong>, {pedido.endereco}, {pedido.postcode}</>}
           {pedido.agendadoPara ? <>, <strong style={{ color: "var(--texto)" }}>{rotuloAgendado(pedido.agendadoPara)}</strong></> : null}.
           <br />Dúvidas? WhatsApp <a href={`https://wa.me/${whatsappInternacional(loja.telefone)}`} target="_blank" rel="noreferrer">{telefoneBonito(loja.telefone)}</a>.
           <br />Guarde este link: é por ele que você acompanha o pedido ao vivo.

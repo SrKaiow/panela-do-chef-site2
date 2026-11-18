@@ -33,6 +33,7 @@ async function preparar(c: Client) {
     "avisado_loja INTEGER NOT NULL DEFAULT 0",
     "square_pedido TEXT", "link_pagamento TEXT",
     "a_caminho_em TEXT",
+    "retirada INTEGER NOT NULL DEFAULT 0",
     "atraso_min INTEGER NOT NULL DEFAULT 0", "atraso_motivo TEXT", "atraso_em TEXT", "atraso_lat REAL", "atraso_lng REAL",
   ]) {
     try { await c.execute(`ALTER TABLE pedidos ADD COLUMN ${col}`); } catch {}
@@ -151,6 +152,8 @@ export type Pedido = {
   aCaminhoEm: string | null;
   /** Imprevisto avisado pelo entregador (trânsito, acidente...): minutos a mais, motivo e onde foi. */
   atraso: { minutos: number; motivo: string; em: string; lat: number | null; lng: number | null } | null;
+  /** Cliente vem buscar na porta (sem entrega e sem taxa). */
+  retirada: boolean;
 };
 
 const numOuNull = (v: unknown) => (v == null ? null : Number(v));
@@ -188,6 +191,7 @@ function linhaParaPedido(r: Record<string, unknown>): Pedido {
     saiuEm: (r.saiu_em as string) ?? null,
     entregueEm: (r.entregue_em as string) ?? null,
     aCaminhoEm: (r.a_caminho_em as string) ?? null,
+    retirada: Number(r.retirada ?? 0) === 1,
     atraso: r.atraso_em
       ? { minutos: Number(r.atraso_min) || 0, motivo: String(r.atraso_motivo ?? "transito"), em: String(r.atraso_em), lat: numOuNull(r.atraso_lat), lng: numOuNull(r.atraso_lng) }
       : null,
@@ -200,10 +204,10 @@ export async function criarPedido(p: NovoPedido) {
   const token = randomBytes(12).toString("base64url");
   const agora = new Date().toISOString();
   const r = await exec(
-    `INSERT INTO pedidos (token, criado_em, nome, telefone, endereco, postcode, observacao, itens, subtotal, taxa, total, pagamento, troco_para, pago, status, status_em, lat, lng, agendado_para, distancia_m)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING numero`,
+    `INSERT INTO pedidos (token, criado_em, nome, telefone, endereco, postcode, observacao, itens, subtotal, taxa, total, pagamento, troco_para, pago, status, status_em, lat, lng, agendado_para, distancia_m, retirada)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING numero`,
     [token, agora, p.nome, p.telefone, p.endereco, p.postcode, p.observacao, JSON.stringify(p.itens),
-      p.subtotal, p.taxa, p.total, p.pagamento, p.trocoPara, p.pago ? 1 : 0, p.status, agora, p.lat, p.lng, p.agendadoPara, p.distanciaM],
+      p.subtotal, p.taxa, p.total, p.pagamento, p.trocoPara, p.pago ? 1 : 0, p.status, agora, p.lat, p.lng, p.agendadoPara, p.distanciaM, p.retirada ? 1 : 0],
   );
   return { numero: Number(r.rows[0].numero), token };
 }

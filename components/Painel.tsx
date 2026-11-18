@@ -56,9 +56,10 @@ function msgEtapa(p: Pedido): { rotulo: string; texto: string } | null {
     case "preparando":
       return { rotulo: "Avisar: na cozinha", texto: `Oi, ${nome}! Seu pedido *#${p.numero}* já está *na cozinha*.\n\nAssim que sair para entrega, a gente te avisa. Acompanhe por aqui:\n${link}` };
     case "saiu":
+      if (p.retirada) return { rotulo: "Avisar: pronto para coletar", texto: `Oi, ${nome}! Aqui é da *Panela do Chef*.\n\nSeu pedido *#${p.numero}* está *pronto para coletar*. Pode vir buscar na porta!\n\nLocal e detalhes:\n${link}` };
       return { rotulo: "Avisar: saiu para entrega", texto: msgSaiu(p) };
     case "entregue":
-      return { rotulo: "Agradecer e pedir avaliação", texto: `Oi, ${nome}! Seu pedido *#${p.numero}* foi entregue.\n\nMuito obrigado por pedir na *Panela do Chef*! Bom apetite.\n\nSe puder, conta pra gente o que achou (dá até para mandar foto):\n${link}` };
+      return { rotulo: "Agradecer e pedir avaliação", texto: `Oi, ${nome}! Seu pedido *#${p.numero}* foi ${p.retirada ? "retirado" : "entregue"}.\n\nMuito obrigado por pedir na *Panela do Chef*! Bom apetite.\n\nSe puder, conta pra gente o que achou (dá até para mandar foto):\n${link}` };
     default:
       return null;
   }
@@ -327,7 +328,8 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
                   <h2>#{p.numero} · {p.nome}</h2>
                   <span className="sub">{dia(p.criadoEm)} às {hora(p.criadoEm)}</span>
                 </div>
-                <span className={`selo st-${p.status}`}>{NOMES[p.status]}</span>
+                {p.retirada && <span className="selo selo-coleta">COLETA</span>}
+                <span className={`selo st-${p.status}`}>{p.retirada && p.status === "saiu" ? "Pronto p/ coletar" : p.retirada && p.status === "entregue" ? "Retirado" : NOMES[p.status]}</span>
               </header>
               {p.agendadoPara && (
                 <div className="agendado">Reservado para <strong>{rotuloAgendado(p.agendadoPara)}</strong></div>
@@ -358,18 +360,18 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
               </div>
 
               <div className="entrega">
-                <div>{p.endereco}, <strong>{p.postcode}</strong></div>
+                {p.retirada ? <div><strong>Cliente vem coletar na porta</strong> · sem taxa de entrega</div> : <div>{p.endereco}, <strong>{p.postcode}</strong></div>}
                 {p.observacao && <div className="obs">{p.observacao}</div>}
                 <div className="links">
                   <a href={`https://wa.me/${whatsapp(p.telefone)}`} target="_blank" rel="noreferrer">WhatsApp {p.telefone}</a>
-                  <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco + ", " + p.postcode)}`} target="_blank" rel="noreferrer">Abrir no mapa</a>
+                  {!p.retirada && <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco + ", " + p.postcode)}`} target="_blank" rel="noreferrer">Abrir no mapa</a>}
                 </div>
               </div>
 
               <footer>
                 {PROXIMO[p.status] && (
                   <button className="btn principal-p" onClick={() => atualizar(p.numero, { status: PROXIMO[p.status]!.status })}>
-                    {PROXIMO[p.status]!.rotulo}
+                    {p.retirada && p.status === "preparando" ? "Pronto para coletar" : p.retirada && p.status === "saiu" ? "Cliente retirou" : PROXIMO[p.status]!.rotulo}
                   </button>
                 )}
                 {msgEtapa(p) && (

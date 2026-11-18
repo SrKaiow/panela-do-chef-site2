@@ -441,6 +441,9 @@ function FolhaCarrinho({
   const [quando, setQuando] = useState<string>(estado.aberto ? "" : horarios[0]?.valor ?? "");
   const [cotacao, setCotacao] = useState<Cotacao | null>(null);
   const [cotando, setCotando] = useState(false);
+  /** Entrega em casa ou o cliente vem buscar na porta (sem taxa). */
+  const [modo, setModo] = useState<"entrega" | "coleta">("entrega");
+  const coleta = modo === "coleta";
   const itemPorId = (id: string) => cardapio.itens.find((i) => i.id === id);
 
   // Fechou enquanto o cliente montava o pedido: passa a pedir um horário.
@@ -454,7 +457,7 @@ function FolhaCarrinho({
   useEffect(() => {
     try {
       const d = JSON.parse(localStorage.getItem(CHAVE_CLIENTE) || "null");
-      if (d && d.nome) { setForm((f) => ({ ...f, ...d, observacao: "", troco: "" })); setJaSalvo(true); }
+      if (d && d.nome) { const { modo: m, ...resto } = d; setForm((f) => ({ ...f, ...resto, observacao: "", troco: "" })); if (m === "coleta") setModo("coleta"); setJaSalvo(true); }
     } catch {}
   }, []);
 
@@ -479,11 +482,11 @@ function FolhaCarrinho({
   }, [postcodeLimpo, subtotal]);
 
   const primeiraFaixa = [...loja.faixas].sort((a, b) => a.ateMilhas - b.ateMilhas)[0];
-  const taxa = cotacao && cotacao.ok ? cotacao.taxa : null;
+  const taxa = coleta ? 0 : cotacao && cotacao.ok ? cotacao.taxa : null;
   const minimo = emPence(loja.pedidoMinimo);
   const total = subtotal + (taxa ?? 0);
-  const foraDaArea = !!cotacao && !cotacao.ok;
-  const abaixoMinimo = minimo > 0 && subtotal < minimo;
+  const foraDaArea = !coleta && !!cotacao && !cotacao.ok;
+  const abaixoMinimo = !coleta && minimo > 0 && subtotal < minimo;
   const nenhumPagamento = !pagamentos.dinheiro && !pagamentos.cartao;
 
   const mudar = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -506,7 +509,7 @@ function FolhaCarrinho({
     try {
       try {
         if (salvarDados) {
-          localStorage.setItem(CHAVE_CLIENTE, JSON.stringify({ nome: form.nome, telefone: form.telefone, endereco: form.endereco, postcode: form.postcode }));
+          localStorage.setItem(CHAVE_CLIENTE, JSON.stringify({ nome: form.nome, telefone: form.telefone, endereco: form.endereco, postcode: form.postcode, modo }));
           const linhas = carrinho.map(({ itemId, qtd, selecoes, obs }) => ({ itemId, qtd, selecoes, obs }));
           localStorage.setItem(CHAVE_ULTIMO, JSON.stringify({ em: new Date().toISOString(), linhas }));
         } else {
@@ -521,6 +524,7 @@ function FolhaCarrinho({
           ...form,
           trocoPara: pagamento === "dinheiro" && troco === "sim" && form.troco ? parseFloat(form.troco.replace(",", ".")) : null,
           pagamento,
+          retirada: coleta,
           agendadoPara: quando || null,
           itens: carrinho.map(({ itemId, qtd, selecoes, obs }) => ({ itemId, qtd, selecoes, obs })),
         }),
@@ -593,12 +597,23 @@ function FolhaCarrinho({
         <form onSubmit={enviar} style={{ display: "grid", gap: 14 }}>
           {/* campo-isca contra robôs: escondido de pessoas */}
           <input className="isca" tabIndex={-1} autoComplete="off" aria-hidden="true" name="site" value={form.site} onChange={mudar("site")} />
+          <div className="modo-entrega" role="radiogroup" aria-label="Entrega ou coleta">
+            <button type="button" role="radio" aria-checked={!coleta} className={!coleta ? "ligado" : ""} onClick={() => setModo("entrega")}>
+              Entrega<small>levamos até você</small>
+            </button>
+            <button type="button" role="radio" aria-checked={coleta} className={coleta ? "ligado" : ""} onClick={() => setModo("coleta")}>
+              Coletar<small>na porta · sem taxa</small>
+            </button>
+          </div>
           <label className="campo" htmlFor="f-nome">Nome
             <input id="f-nome" required maxLength={80} autoComplete="name" value={form.nome} onChange={mudar("nome")} />
           </label>
           <label className="campo" htmlFor="f-tel">WhatsApp / telefone
             <input id="f-tel" required inputMode="tel" maxLength={30} autoComplete="tel" placeholder="07..." value={form.telefone} onChange={mudar("telefone")} />
           </label>
+          {coleta ? (
+            <p className="dica coleta-aviso">Você vem buscar na porta da Panela do Chef (Epsom, KT17 1JW). Depois do pedido aparece o mapa com o local, e avisamos quando estiver pronto.</p>
+          ) : (<>
           <label className="campo" htmlFor="f-end">Endereço
             <input id="f-end" required maxLength={160} autoComplete="street-address" placeholder="Número, rua, apartamento" value={form.endereco} onChange={mudar("endereco")} />
           </label>
@@ -608,9 +623,10 @@ function FolhaCarrinho({
               {cotando ? "Calculando a entrega..." : cotacao ? (cotacao.ok ? (cotacao.gratis ? `${cotacao.milhas} milhas da cozinha: entrega grátis!` : `${cotacao.milhas} milhas da cozinha: entrega ${formatar(cotacao.taxa)}${cotacao.gratisAcima != null ? ` (grátis acima de ${formatar(cotacao.gratisAcima)})` : ""}.`) : cotacao.motivo) : ""}
             </span>
           </label>
+          </>)}
 
           <div className="grupo">
-            <div className="grupo-titulo"><h3>Quando você quer receber?</h3></div>
+            <div className="grupo-titulo"><h3>{coleta ? "Quando você vem buscar?" : "Quando você quer receber?"}</h3></div>
             {!estado.aberto && (
               <p className="dica">A cozinha está fechada agora. Escolha um horário e seu pedido fica reservado.</p>
             )}
@@ -622,7 +638,7 @@ function FolhaCarrinho({
               </select>
             </label>
           </div>
-          <label className="campo" htmlFor="f-obs">Observação <span className="dica">(entrega ou alergia, opcional)</span>
+          <label className="campo" htmlFor="f-obs">Observação <span className="dica">({coleta ? "alergia ou recado" : "entrega ou alergia"}, opcional)</span>
             <textarea id="f-obs" maxLength={300} placeholder="Ex.: tocar o interfone 3 · tenho alergia a amendoim" value={form.observacao} onChange={mudar("observacao")} />
           </label>
 
@@ -647,8 +663,8 @@ function FolhaCarrinho({
               {pagamentos.dinheiro && (
                 <label className="pagamento">
                   <input type="radio" name="pagamento" checked={pagamento === "dinheiro"} onChange={() => setPagamento("dinheiro")} />
-                  <strong>Dinheiro na entrega</strong>
-                  <span>Você paga em cash para o entregador.</span>
+                  <strong>{coleta ? "Dinheiro na coleta" : "Dinheiro na entrega"}</strong>
+                  <span>{coleta ? "Você paga em cash quando vier buscar." : "Você paga em cash para o entregador."}</span>
                 </label>
               )}
             </div>
@@ -666,7 +682,7 @@ function FolhaCarrinho({
                 <label className="pagamento">
                   <input type="radio" name="troco" checked={troco === "sim"} onChange={() => setTroco("sim")} />
                   <strong>Sim, preciso de troco</strong>
-                  <span>O entregador já leva o troco certo.</span>
+                  <span>{coleta ? "Separamos o troco certo para você." : "O entregador já leva o troco certo."}</span>
                 </label>
               </div>
               {troco === "sim" && (
@@ -694,7 +710,7 @@ function FolhaCarrinho({
             </div>
           )}
 
-          <Totais subtotal={subtotal} taxa={taxa} total={total} />
+          <Totais subtotal={subtotal} taxa={taxa} total={total} coleta={coleta} />
           <label className="salvar-dados">
             <input type="checkbox" checked={salvarDados} onChange={(e) => setSalvarDados(e.target.checked)} />
             <span>
@@ -726,11 +742,11 @@ function notasSugeridas(totalPence: number) {
   return [...v].filter((n) => n > t).sort((a, b) => a - b).slice(0, 4);
 }
 
-function Totais({ subtotal, taxa, total }: { subtotal: number; taxa: number | null; total: number }) {
+function Totais({ subtotal, taxa, total, coleta }: { subtotal: number; taxa: number | null; total: number; coleta?: boolean }) {
   return (
     <div className="totais preco">
       <div><span>Subtotal</span><span>{formatar(subtotal)}</span></div>
-      <div><span>Entrega</span><span>{taxa == null ? "pelo postcode" : taxa ? formatar(taxa) : "Grátis"}</span></div>
+      {coleta ? <div><span>Coleta na porta</span><span>Grátis</span></div> : <div><span>Entrega</span><span>{taxa == null ? "pelo postcode" : taxa ? formatar(taxa) : "Grátis"}</span></div>}
       <div className="total"><span>Total</span><span>{formatar(total)}</span></div>
     </div>
   );

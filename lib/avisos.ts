@@ -10,7 +10,7 @@ const primeiroNome = (n: string) => n.trim().split(/\s+/)[0] || n;
 export async function aoMudarStatus(numero: number, status: Status, origem?: string) {
   if (status !== "saiu") return;
   const p = await buscarPorNumero(numero);
-  if (!p || p.avisadoSaiu) return;
+  if (!p || p.avisadoSaiu || p.retirada) return;
   const ok = await enviarModelo(p.telefone, process.env.WHATSAPP_MODELO_SAIU || "", [primeiroNome(p.nome), `${origem || siteUrl()}/pedido/${p.token}`]);
   if (ok) await marcarAviso(numero, "saiu");
 }

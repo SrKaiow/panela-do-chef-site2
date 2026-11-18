@@ -12,7 +12,8 @@ export async function GET(req: Request) {
   if (!(await logado("entregador"))) return NextResponse.json({ erro: "Entre de novo." }, { status: 401 });
   const local = await lerLocal();
   const ajustes = await getAjustes();
-  const pedidos = await listarPorStatus(["confirmado", "preparando", "saiu"]);
+  // Coleta na porta não passa pelo entregador.
+  const pedidos = (await listarPorStatus(["confirmado", "preparando", "saiu"])).filter((p) => !p.retirada);
   const atual = await entregaAtual();
   const nome = (n: string) => n.trim().split(/\s+/)[0] || n;
   return NextResponse.json({

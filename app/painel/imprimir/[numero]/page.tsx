@@ -46,7 +46,7 @@ export default async function Recibo(props: { params: Promise<{ numero: string }
       <div className="r-c">TEL {telefoneBonito(loja.telefone)}</div>
       {linhaDupla}
 
-      <div className="r-lr"><span>DELIVERY</span><span>PEDIDO</span></div>
+      <div className="r-lr"><span>{p.retirada ? "COLETA" : "DELIVERY"}</span><span>PEDIDO</span></div>
       <div className="r-lr r-num"><span className="r-data">{dia(p.criadoEm)}<br />{hora(p.criadoEm)}</span><b>#{p.numero}</b></div>
       {p.agendadoPara && (<>{linha}<div className="r-c r-b">*** AGENDADO: {rotuloAgendado(p.agendadoPara).toUpperCase()} ***</div></>)}
       {linhaDupla}
@@ -63,7 +63,7 @@ export default async function Recibo(props: { params: Promise<{ numero: string }
       {linha}
 
       <div className="r-lr"><span>SUBTOTAL</span><span>{valor(p.subtotal)}</span></div>
-      <div className="r-lr"><span>ENTREGA</span><span>{p.taxa ? valor(p.taxa) : "GRATIS"}</span></div>
+      <div className="r-lr"><span>{p.retirada ? "COLETA" : "ENTREGA"}</span><span>{p.taxa ? valor(p.taxa) : "GRATIS"}</span></div>
       <div className="r-lr r-b r-tot"><span>TOTAL</span><span>{gbp(p.total)}</span></div>
       {linhaDupla}
 
@@ -79,8 +79,12 @@ export default async function Recibo(props: { params: Promise<{ numero: string }
 
       <div className="r-b">{p.nome.toUpperCase()}</div>
       <div>TEL {p.telefone}</div>
+      {p.retirada ? (
+        <div className="r-coleta">COLETA NA PORTA</div>
+      ) : (<>
       <div>{p.endereco.toUpperCase()}</div>
       <div className="r-b">{p.postcode.toUpperCase()}{p.distanciaM != null && p.distanciaM >= 160 ? <span className="r-normal"> ({(p.distanciaM / 1609.344).toFixed(1)} MI)</span> : null}</div>
+      </>)}
       {p.observacao && (<>{linha}<div>OBS: {p.observacao.toUpperCase()}</div></>)}
       {linhaDupla}
 
@@ -170,6 +174,7 @@ body * { box-shadow: none !important; text-shadow: none !important; }
 .r-det { padding-left: 5.5mm; font-size: 9pt; }
 .r-tot { font-size: 11pt; }
 .r-troco { font-size: 12pt; }
+.r-coleta { margin: 1.5mm 0; padding: 1.5mm 0; border: 1.5px solid #000; text-align: center; font-weight: 700; font-size: 13pt; letter-spacing: 1px; }
 /* Cartão de agradecimento: identidade da marca (logo, bandeira, fontes do site) só em contorno, para gastar pouca fita.
    Com ?cor=1 sai colorido (para impressora colorida comum). */
 .r-corte { margin: 6mm 0 3mm; border-top: 1px dashed #000; text-align: center; }
