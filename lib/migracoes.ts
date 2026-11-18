@@ -293,6 +293,12 @@ function extrasDocesV1(c: Cardapio): Cardapio {
   return { ...c, adicionais: { ...c.adicionais, "extras-acai": { ...g, opcoes } } };
 }
 
+/** Fotos novas do Pastel Frango, Pequi e Gueroba e do Pastel Queijo: tira a foto antiga do painel para valer a nova. */
+function fotosPasteisV1(c: Cardapio): Cardapio {
+  const ids = new Set(["pastel-frango-pequi", "pastel-queijo"]);
+  return { ...c, itens: c.itens.map((i) => (ids.has(i.id) ? { ...i, imagem: undefined } : i)) };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
@@ -305,6 +311,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["copoes-em-breve-v1", copoesEmBreveV1],
   ["mousses-acai-v1", moussesAcaiV1],
   ["extras-doces-v1", extrasDocesV1],
+  ["fotos-pasteis-v1", fotosPasteisV1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */
