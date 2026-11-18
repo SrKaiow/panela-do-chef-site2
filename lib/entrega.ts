@@ -26,6 +26,15 @@ export function direcaoGraus(a: { lat: number; lng: number }, b: { lat: number; 
   return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
 }
 
+/** Coleta na porta: o cliente precisa estar dentro do raio (localização do celular). */
+export function conferirColeta(cozinha: { lat: number; lng: number }, cliente: { lat: number; lng: number }, raioMilhas: number) {
+  const distanciaM = Math.round(distanciaMetros(cozinha, cliente));
+  const milhas = Math.round((distanciaM / METROS_POR_MILHA) * 10) / 10;
+  if (milhas > raioMilhas)
+    return { ok: false as const, milhas, distanciaM, motivo: `Você está a ${milhas} milhas da Panela do Chef (Epsom, KT17 1JW). A coleta é só para quem está a até ${raioMilhas} milhas daqui.` };
+  return { ok: true as const, milhas, distanciaM };
+}
+
 export type Cotacao =
   | { ok: true; milhas: number; taxa: number; gratisAcima: number | null; gratis: boolean }
   | { ok: false; milhas: number; motivo: string };
@@ -33,7 +42,7 @@ export type Cotacao =
 /** Taxa de entrega pela distância em linha reta, igual à regra da Square (faixas em milhas). Valores em pence. */
 export function cotarEntrega(distanciaM: number, subtotal: number, faixas: Faixa[], raioMilhas: number): Cotacao {
   const milhas = Math.round((distanciaM / METROS_POR_MILHA) * 10) / 10;
-  if (milhas > raioMilhas) return { ok: false, milhas, motivo: `Infelizmente ainda não conseguimos atender a sua localização (${milhas} milhas da cozinha). Estamos em Epsom e entregamos num raio de até ${raioMilhas} milhas, para o seu pedido chegar quentinho e com a mesma qualidade. Se preferir, escolha "Coletar" e venha buscar na porta.` };
+  if (milhas > raioMilhas) return { ok: false, milhas, motivo: `Infelizmente ainda não conseguimos atender a sua localização (${milhas} milhas da cozinha). Estamos em Epsom e entregamos num raio de até ${raioMilhas} milhas, para o seu pedido chegar quentinho e com a mesma qualidade.` };
   const ordenadas = [...faixas].sort((a, b) => a.ateMilhas - b.ateMilhas);
   const faixa = ordenadas.find((f) => distanciaM / METROS_POR_MILHA <= f.ateMilhas) ?? ordenadas[ordenadas.length - 1];
   if (!faixa) return { ok: true, milhas, taxa: 0, gratisAcima: null, gratis: true };

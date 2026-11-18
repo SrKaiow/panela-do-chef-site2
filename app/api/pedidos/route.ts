@@ -6,7 +6,7 @@ import { estadoLoja, horariosParaAgendar } from "@/lib/horario";
 import { criarPedido, salvarPagamentoSquare, salvarSessaoStripe } from "@/lib/db";
 import { stripe, siteUrl } from "@/lib/stripe";
 import { avisarLojaNovoPedido } from "@/lib/avisoLoja";
-import { coordenadasDoPostcode, cotarEntrega, distanciaMetros } from "@/lib/entrega";
+import { conferirColeta, coordenadasDoPostcode, cotarEntrega, distanciaMetros } from "@/lib/entrega";
 import { mensagemSegura, permitir, respostaLimite } from "@/lib/seguranca";
 
 export const dynamic = "force-dynamic";
@@ -55,7 +55,15 @@ export async function POST(req: Request) {
     let coords = { lat: ajustes.entrega.cozinha.lat, lng: ajustes.entrega.cozinha.lng };
     let distanciaM = 0;
     let taxa = 0;
-    if (!retirada) {
+    if (retirada) {
+      // Coleta: só com a localização do celular dentro do raio (contra pedido de quem está longe e não vem).
+      const lat = Number(b.local?.lat);
+      const lng = Number(b.local?.lng);
+      if (!(Math.abs(lat) <= 90 && Math.abs(lng) <= 180) || (lat === 0 && lng === 0)) throw new Error("Para pedir para coletar, ative a localização do celular e toque em \"Confirmar minha localização\".");
+      const perto = conferirColeta(ajustes.entrega.cozinha, { lat, lng }, ajustes.entrega.raioMilhas);
+      if (!perto.ok) throw new Error(perto.motivo);
+      distanciaM = perto.distanciaM;
+    } else {
       const minimo = emPence(ajustes.entrega.pedidoMinimo);
       if (minimo && subtotal < minimo) throw new Error("O pedido não atingiu o valor mínimo para entrega.");
       // Taxa de entrega pela distância da cozinha até o postcode (mesma regra da Square).

@@ -360,7 +360,7 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
               </div>
 
               <div className="entrega">
-                {p.retirada ? <div><strong>Cliente vem coletar na porta</strong> · sem taxa de entrega</div> : <div>{p.endereco}, <strong>{p.postcode}</strong></div>}
+                {p.retirada ? <div><strong>Cliente vem coletar na porta</strong> · sem taxa{p.distanciaM ? ` · estava a ${(p.distanciaM / 1609.344).toFixed(1)} mi ao pedir` : ""}</div> : <div>{p.endereco}, <strong>{p.postcode}</strong></div>}
                 {p.observacao && <div className="obs">{p.observacao}</div>}
                 <div className="links">
                   <a href={`https://wa.me/${whatsapp(p.telefone)}`} target="_blank" rel="noreferrer">WhatsApp {p.telefone}</a>

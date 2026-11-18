@@ -444,6 +444,37 @@ function FolhaCarrinho({
   /** Entrega em casa ou o cliente vem buscar na porta (sem taxa). */
   const [modo, setModo] = useState<"entrega" | "coleta">("entrega");
   const coleta = modo === "coleta";
+  /** Coleta: localização do celular conferida (precisa estar dentro do raio). */
+  const [local, setLocal] = useState<{ lat: number; lng: number; milhas: number } | null>(null);
+  const [localErro, setLocalErro] = useState("");
+  const [localizando, setLocalizando] = useState(false);
+  function pegarLocal() {
+    setLocalErro("");
+    if (!("geolocation" in navigator)) { setLocalErro("Este celular não deixou pegar a localização. Escolha Entrega."); return; }
+    setLocalizando(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const lat = pos.coords.latitude, lng = pos.coords.longitude;
+          const r = await fetch(`/api/entrega/perto?lat=${lat}&lng=${lng}`, { cache: "no-store" });
+          const d = await r.json();
+          if (d.ok) setLocal({ lat, lng, milhas: d.milhas });
+          else { setLocal(null); setLocalErro(d.motivo || "Não foi possível conferir a localização."); }
+        } catch {
+          setLocalErro("Não foi possível conferir a localização. Tente de novo.");
+        } finally {
+          setLocalizando(false);
+        }
+      },
+      (e) => {
+        setLocalizando(false);
+        setLocalErro(e.code === 1
+          ? "Você não deixou usar a localização. Para coletar, ative a localização (Ajustes > Safari/Chrome > Localização) e tente de novo, ou escolha Entrega."
+          : "Não conseguimos achar sua localização. Tente de novo em um lugar aberto.");
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 },
+    );
+  }
   const itemPorId = (id: string) => cardapio.itens.find((i) => i.id === id);
 
   // Fechou enquanto o cliente montava o pedido: passa a pedir um horário.
@@ -525,6 +556,7 @@ function FolhaCarrinho({
           trocoPara: pagamento === "dinheiro" && troco === "sim" && form.troco ? parseFloat(form.troco.replace(",", ".")) : null,
           pagamento,
           retirada: coleta,
+          local: coleta && local ? { lat: local.lat, lng: local.lng } : undefined,
           agendadoPara: quando || null,
           itens: carrinho.map(({ itemId, qtd, selecoes, obs }) => ({ itemId, qtd, selecoes, obs })),
         }),
@@ -612,7 +644,17 @@ function FolhaCarrinho({
             <input id="f-tel" required inputMode="tel" maxLength={30} autoComplete="tel" placeholder="07..." value={form.telefone} onChange={mudar("telefone")} />
           </label>
           {coleta ? (
-            <p className="dica coleta-aviso">Você vem buscar na porta da Panela do Chef (Epsom, KT17 1JW). Depois do pedido aparece o mapa com o local, e avisamos quando estiver pronto.</p>
+            <div className="coleta-confirma">
+              <p className="dica">Você vem buscar na porta da <strong>Panela do Chef · Epsom, KT17 1JW</strong>. Para pedir para coletar, confirme que está por perto (até {loja.raioMilhas} milhas).</p>
+              {local ? (
+                <p className="coleta-ok">✓ Você está a {local.milhas} milhas daqui. Pode pedir!</p>
+              ) : (
+                <button type="button" className="principal" onClick={pegarLocal} disabled={localizando}>
+                  <span>{localizando ? "Procurando sua localização..." : "📍 Confirmar minha localização"}</span>
+                </button>
+              )}
+              {localErro && <p className="erro" role="alert">{localErro}</p>}
+            </div>
           ) : (<>
           <label className="campo" htmlFor="f-end">Endereço
             <input id="f-end" required maxLength={160} autoComplete="street-address" placeholder="Número, rua, apartamento" value={form.endereco} onChange={mudar("endereco")} />
@@ -721,7 +763,7 @@ function FolhaCarrinho({
           <p className="dica">Usamos seus dados só para preparar e entregar o pedido. <a href="/privacidade" target="_blank">Política de privacidade</a>.</p>
           {foraDaArea && cotacao && !cotacao.ok && <p className="erro fora-area" role="alert">{cotacao.motivo}</p>}
           {erro && <p className="erro" role="alert">{erro}</p>}
-          <button className="principal" type="submit" disabled={enviando || nenhumPagamento || foraDaArea || (!estado.aberto && !quando) || (pagamento === "dinheiro" && !troco)}>
+          <button className="principal" type="submit" disabled={enviando || nenhumPagamento || foraDaArea || (coleta && !local) || (!estado.aberto && !quando) || (pagamento === "dinheiro" && !troco)}>
             <span>{enviando ? "Enviando..." : pagamento === "cartao" ? "Ir para o pagamento" : quando ? "Reservar pedido" : "Fazer pedido"}</span>
             <span className="preco">{formatar(total)}</span>
           </button>
