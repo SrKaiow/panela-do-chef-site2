@@ -299,6 +299,11 @@ function fotosPasteisV1(c: Cardapio): Cardapio {
   return { ...c, itens: c.itens.map((i) => (ids.has(i.id) ? { ...i, imagem: undefined } : i)) };
 }
 
+/** Fanta Limão sai; no lugar entra a R White's Lemonade (mesmo item, nome e foto novos). */
+function rWhitesV1(c: Cardapio): Cardapio {
+  return { ...c, itens: c.itens.map((i) => (i.id === "fanta-limao" ? { ...i, nome: "R White's Lemonade (lata 330ml)", imagem: undefined } : i)) };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
@@ -312,6 +317,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["mousses-acai-v1", moussesAcaiV1],
   ["extras-doces-v1", extrasDocesV1],
   ["fotos-pasteis-v1", fotosPasteisV1],
+  ["r-whites-v1", rWhitesV1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */
