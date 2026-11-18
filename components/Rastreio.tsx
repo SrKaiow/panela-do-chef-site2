@@ -1,5 +1,6 @@
 "use client";
 
+import { conferirVersao } from "@/lib/versao";
 import { useEffect, useRef, useState } from "react";
 import Mapa from "./Mapa";
 import Avaliar from "./Avaliar";
@@ -78,6 +79,7 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
     async function buscar() {
       try {
         const r = await fetch(`/api/pedido/${token}/status`, { cache: "no-store" });
+        if (r.ok) conferirVersao(r);
         if (r.ok && vivo) setAo(await r.json());
       } catch {}
     }

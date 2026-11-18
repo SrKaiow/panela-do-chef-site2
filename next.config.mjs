@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 /**
  * Cabeçalhos de segurança aplicados a todas as páginas.
  * - CSP: o navegador só carrega scripts, estilos, imagens e conexões das origens listadas.
@@ -37,8 +38,20 @@ const privado = [
   { key: "Cache-Control", value: "no-store" },
 ];
 
+/** Mesmo valor no servidor e no navegador: o commit publicado. */
+function versaoSite() {
+  if (process.env.WORKERS_CI_COMMIT_SHA) return process.env.WORKERS_CI_COMMIT_SHA.slice(0, 12);
+  try {
+    return execSync("git rev-parse --short=12 HEAD").toString().trim();
+  } catch {
+    return "dev";
+  }
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Muda a cada publicação; as telas abertas comparam e recarregam (lib/versao.ts).
+  env: { VERSAO_SITE: versaoSite() },
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
   async rewrites() {

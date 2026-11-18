@@ -1,5 +1,6 @@
 "use client";
 
+import { conferirVersao } from "@/lib/versao";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Avaliacao, Pedido, Status } from "@/lib/db";
 import { rotuloAgendado } from "@/lib/horario";
@@ -169,6 +170,7 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
     try {
       const r = await fetch("/api/painel/pedidos", { cache: "no-store" });
       if (r.status === 401) { window.location.href = "/painel/entrar"; return; }
+      conferirVersao(r);
       const d = await r.json();
       const lista: Pedido[] = d.pedidos;
       const novos = lista.filter((p) => p.status === "novo").map((p) => p.numero);

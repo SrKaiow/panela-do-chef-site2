@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { logado } from "@/lib/auth";
 import { entregaAtual, listarPorStatus, lerLocal } from "@/lib/db";
-import { distanciaMetros, minutosAte } from "@/lib/entrega";
+import { rotaCarro } from "@/lib/rota";
 import { getAjustes } from "@/lib/dados";
 import { linkWhatsapp, mensagens, whatsappAutomatico } from "@/lib/whatsapp";
 import { siteUrl } from "@/lib/stripe";
@@ -16,11 +16,15 @@ export async function GET(req: Request) {
   const pedidos = (await listarPorStatus(["confirmado", "preparando", "saiu"])).filter((p) => !p.retirada);
   const atual = await entregaAtual();
   const nome = (n: string) => n.trim().split(/\s+/)[0] || n;
+  // Tempo e distância pelas ruas (como o Waze), não em linha reta.
+  const rotas = await Promise.all(
+    pedidos.map((p) => (local && p.lat != null && p.lng != null && p.status === "saiu" ? rotaCarro(local, { lat: p.lat, lng: p.lng }, ajustes.entrega.velocidadeMediaKmh) : Promise.resolve(null))),
+  );
   return NextResponse.json({
     automatico: whatsappAutomatico(),
     metrosAviso: ajustes.entrega.avisoChegandoMetros,
-    pedidos: pedidos.map((p) => {
-      const distancia = local && p.lat != null && p.lng != null ? Math.round(distanciaMetros(local, { lat: p.lat, lng: p.lng })) : null;
+    pedidos: pedidos.map((p, i) => {
+      const distancia = rotas[i]?.metros ?? null;
       return {
         numero: p.numero,
         nome: p.nome,
@@ -35,7 +39,7 @@ export async function GET(req: Request) {
         trocoPara: p.trocoPara,
         itens: p.itens.map((l) => `${l.qtd}× ${l.nome}`),
         distancia,
-        minutos: distancia != null ? minutosAte(distancia, ajustes.entrega.velocidadeMediaKmh) : null,
+        minutos: rotas[i]?.minutos ?? null,
         avisadoSaiu: p.avisadoSaiu,
         avisadoChegando: p.avisadoChegando,
         temCoordenadas: p.lat != null,

@@ -1,5 +1,6 @@
 "use client";
 
+import { conferirVersao } from "@/lib/versao";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type PedidoRota = {
@@ -58,6 +59,7 @@ export default function Entregador() {
     try {
       const r = await fetch("/api/entregador/pedidos", { cache: "no-store" });
       if (r.status === 401) { window.location.href = "/entregador/entrar"; return; }
+      conferirVersao(r);
       const d = await r.json();
       setPedidos(d.pedidos);
       setAutomatico(d.automatico);

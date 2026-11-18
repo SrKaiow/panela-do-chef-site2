@@ -1,5 +1,6 @@
 import { entregaAtual, lerLocal, pedidosNaFrente, type Pedido, type Status } from "./db";
 import { distanciaMetros, direcaoGraus, minutosAte } from "./entrega";
+import { rotaCarro } from "./rota";
 import { getAjustes } from "./dados";
 
 export type AoVivo = {
@@ -76,8 +77,9 @@ export async function situacaoAoVivo(p: Pedido): Promise<AoVivo> {
       ultimaPosicao = { lat: local.lat, lng: local.lng, direcao };
       entregador = { lat: local.lat, lng: local.lng, direcao, atualizadoEm: local.atualizadoEm };
       if (destino) {
-        distancia = Math.round(distanciaMetros(local, destino));
-        minutos = minutosAte(distancia, vel);
+        const rota = await rotaCarro(local, destino, vel);
+        distancia = rota.metros;
+        minutos = rota.minutos;
         previsao = new Date(Date.now() + Math.max(1, minutos + extra) * 60000).toISOString();
       }
     } else if (p.saiuEm) {

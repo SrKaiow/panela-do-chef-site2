@@ -7,7 +7,12 @@ import { NextResponse, type NextRequest } from "next/server";
  */
 export function middleware(req: NextRequest) {
   const metodo = req.method.toUpperCase();
-  if (metodo === "GET" || metodo === "HEAD" || metodo === "OPTIONS") return NextResponse.next();
+  if (metodo === "GET" || metodo === "HEAD" || metodo === "OPTIONS") {
+    // Versão do site: as telas que ficam abertas o dia todo (painel, entregador, pedido) recarregam sozinhas quando sai atualização.
+    const r = NextResponse.next();
+    if (process.env.VERSAO_SITE) r.headers.set("x-versao-site", process.env.VERSAO_SITE);
+    return r;
+  }
   // Avisos de pagamento vêm direto da Stripe e da Square, com assinatura própria.
   if (req.nextUrl.pathname === "/api/stripe/webhook" || req.nextUrl.pathname === "/api/square/webhook") return NextResponse.next();
   // O app OwnTracks do entregador manda a posição direto (com a senha do entregador).
