@@ -97,7 +97,8 @@ export async function POST(req: Request) {
         postcode,
       });
       await salvarPagamentoSquare(numero, sq.orderId, sq.url);
-      return NextResponse.json({ numero, redirecionar: sq.url });
+      // Paga no próprio site (Apple Pay / Google Pay); o link da Square fica de reserva para outro cartão.
+      return NextResponse.json({ numero, redirecionar: `/pedido/${token}` });
     }
 
     // Foto de cada item na página da Stripe (precisa de endereço completo).

@@ -306,7 +306,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .chef-fab.sem-carrinho { bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
 
 /* ---------- Folhas (modal) ---------- */
-.fundo { position: fixed; inset: 0; z-index: 30; background: rgba(0, 0, 0, 0.7); display: grid; align-items: end; justify-items: center; backdrop-filter: blur(3px); }
+/* Sem backdrop-filter aqui: no iPhone ele desloca o cursor dos campos de texto dentro do modal. */
+.fundo { position: fixed; inset: 0; z-index: 30; background: rgba(0, 0, 0, 0.82); display: grid; align-items: end; justify-items: center; }
 @media (min-width: 720px) { .fundo { align-items: center; } }
 .folha {
   background: var(--superficie); width: 100%; max-width: 560px; max-height: 92dvh; overflow: auto;
@@ -824,3 +825,13 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
   .fid-casa.nova::after, .fidelidade:has(.fid-casa.nova) { animation: none; }
 }
 .ancora-cardapio { height: 0; scroll-margin-top: 0; }
+
+/* ---------- Pagamento no site (Apple Pay / Google Pay) ---------- */
+.pagar-carteira { display: grid; gap: 12px; }
+.apple-pay-botao { display: block; width: 100%; height: 54px; border: 0; border-radius: 12px; cursor: pointer;
+  -webkit-appearance: -apple-pay-button; -apple-pay-button-type: pay; -apple-pay-button-style: white; }
+.gpay-botao { width: 100%; height: 54px; border-radius: 12px; overflow: hidden; cursor: pointer; }
+.gpay-botao.oculto { display: none; }
+.pagar-carregando { text-align: center; color: var(--texto-2); padding: 14px 0; }
+.pagar-erro { margin: 0; color: var(--pimenta); font-weight: 700; text-align: center; }
+.pagar-outro { text-align: center; color: var(--texto-2); font-size: 0.9rem; }

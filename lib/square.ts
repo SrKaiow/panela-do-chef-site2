@@ -11,6 +11,7 @@
  */
 
 import type { LinhaPedido } from "./cardapio";
+import { lerConfig, salvarConfig } from "./db";
 
 export const squareConfigurado = () => !!(process.env.SQUARE_ACCESS_TOKEN && process.env.SQUARE_LOCATION_ID);
 
@@ -180,4 +181,64 @@ export async function assinaturaSquareValida(urlNotificacao: string, corpo: stri
   let dif = 0;
   for (let i = 0; i < esperado.length; i++) dif |= esperado.charCodeAt(i) ^ assinatura.charCodeAt(i);
   return dif === 0;
+}
+
+/* ------------------- Apple Pay / Google Pay direto no site ------------------- */
+
+/** Id do app na Square (público): a Square devolve pelo próprio token. Fica guardado no banco. */
+let appIdCache: string | null = null;
+export async function appIdSquare(): Promise<string | null> {
+  if (process.env.SQUARE_APPLICATION_ID) return process.env.SQUARE_APPLICATION_ID;
+  if (appIdCache) return appIdCache;
+  const salvo = await lerConfig<{ appId: string; token: string }>("square-app").catch(() => null);
+  const marca = (process.env.SQUARE_ACCESS_TOKEN || "").slice(-6);
+  if (salvo?.appId && salvo.token === marca) return (appIdCache = salvo.appId);
+  try {
+    const d = await chamar<{ client_id?: string }>("/oauth2/token/status", { method: "POST", body: {} });
+    if (d.client_id) {
+      appIdCache = d.client_id;
+      await salvarConfig("square-app", { appId: d.client_id, token: marca });
+    }
+  } catch (e) {
+    console.error("[square] app id", e);
+  }
+  return appIdCache;
+}
+
+/**
+ * Registra o domínio do site na Apple Pay pela Square (precisa do arquivo de verificação no ar).
+ * Feito uma vez por domínio; se falhar, tenta de novo depois de 1 hora.
+ */
+export async function garantirDominioApplePay(dominio: string) {
+  if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(dominio) || dominio.endsWith("localhost")) return;
+  const chave = "applepay-dominios";
+  const estado = (await lerConfig<Record<string, { ok?: boolean; em?: number }>>(chave).catch(() => null)) ?? {};
+  const atual = estado[dominio];
+  if (atual?.ok || (atual?.em && Date.now() - atual.em < 3600_000)) return;
+  let ok = false;
+  try {
+    const d = await chamar<{ status?: string }>("/v2/apple-pay/domains", { method: "POST", body: { domain_name: dominio } });
+    ok = d.status === "VERIFIED";
+  } catch (e) {
+    console.error("[square] apple pay domínio", dominio, e);
+  }
+  await salvarConfig(chave, { ...estado, [dominio]: { ok, em: Date.now() } });
+}
+
+/** Cobra o pedido com o token da carteira (Apple Pay / Google Pay) gerado no navegador. */
+export async function pagarComCarteira(p: { sourceId: string; numero: number; total: number; orderId: string | null }) {
+  const d = await chamar<{ payment?: { id: string; status: string; order_id?: string; amount_money?: { amount: number } } }>("/v2/payments", {
+    method: "POST",
+    body: {
+      source_id: p.sourceId,
+      idempotency_key: `panela-${p.numero}-${crypto.randomUUID()}`.slice(0, 45),
+      amount_money: dinheiro(p.total),
+      location_id: process.env.SQUARE_LOCATION_ID,
+      ...(p.orderId ? { order_id: p.orderId } : {}),
+      reference_id: String(p.numero),
+      note: `Panela do Chef - pedido #${p.numero}`,
+      autocomplete: true,
+    },
+  });
+  return d.payment;
 }

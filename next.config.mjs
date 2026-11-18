@@ -6,14 +6,15 @@
  */
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://unpkg.com",
-  "style-src 'self' 'unsafe-inline' https://unpkg.com",
-  "img-src 'self' data: blob: https://*.tile.openstreetmap.org",
-  "font-src 'self' data:",
+  // Square (Apple Pay / Google Pay no site): web.squarecdn.com, pci-connect.squareup.com e Google Pay.
+  "script-src 'self' 'unsafe-inline' https://unpkg.com https://web.squarecdn.com https://sandbox.web.squarecdn.com https://pay.google.com",
+  "style-src 'self' 'unsafe-inline' https://unpkg.com https://web.squarecdn.com https://sandbox.web.squarecdn.com",
+  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://www.gstatic.com https://*.googleusercontent.com https://pay.google.com",
+  "font-src 'self' data: https://square-fonts-production-f.squarecdn.com https://d1g145x70srn7h.cloudfront.net",
   "media-src 'self'",
-  "connect-src 'self'",
-  // Só o próprio site em quadros (o painel usa um quadro escondido para imprimir o recibo).
-  "frame-src 'self'",
+  "connect-src 'self' https://web.squarecdn.com https://sandbox.web.squarecdn.com https://pci-connect.squareup.com https://pci-connect.squareupsandbox.com https://o160250.ingest.sentry.io https://pay.google.com https://google.com",
+  // Próprio site (o painel usa um quadro escondido para imprimir o recibo) e os quadros seguros da Square/Google Pay.
+  "frame-src 'self' https://web.squarecdn.com https://sandbox.web.squarecdn.com https://pay.google.com",
   "frame-ancestors 'self'",
   "object-src 'none'",
   "base-uri 'self'",
@@ -26,7 +27,7 @@ const seguranca = [
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), payment=(), usb=(), geolocation=(self)" },
+  { key: "Permissions-Policy", value: 'camera=(), microphone=(), payment=(self "https://pay.google.com" "https://web.squarecdn.com"), usb=(), geolocation=(self)' },
   { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
 ];
@@ -40,6 +41,9 @@ const privado = [
 const nextConfig = {
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
+  async rewrites() {
+    return [{ source: "/.well-known/apple-developer-merchantid-domain-association", destination: "/api/square/apple-dominio" }];
+  },
   async headers() {
     return [
       { source: "/:path*", headers: seguranca },

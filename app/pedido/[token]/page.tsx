@@ -1,3 +1,4 @@
+import PagarCarteira from "@/components/PagarCarteira";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Rastreio from "@/components/Rastreio";
@@ -42,8 +43,7 @@ export default async function PaginaPedido(props: { params: Promise<{ token: str
       // A Square devolve o cliente com o id do pedido pago (orderId); confere esse e o original.
       const ids = [pedido.squarePedido, searchParams.orderId, searchParams.transactionId];
       if (await pedidoSquarePago(ids, pedido.numero, pedido.total, pedido.squarePedido)) {
-        await confirmarPagamentoCartao(pedido.numero);
-        await avisarLojaNovoPedido(pedido.numero);
+        if (await confirmarPagamentoCartao(pedido.numero)) await avisarLojaNovoPedido(pedido.numero);
         pedido = (await buscarPorToken(params.token))!;
       }
     } catch (e) { console.error("[pedido] square", e); }
@@ -64,7 +64,7 @@ export default async function PaginaPedido(props: { params: Promise<{ token: str
         <div className="miolo">
           <Link href="/" style={{ textDecoration: "none" }}><img src="/fotos/logo-panela-do-chef.png" alt={loja.nome} style={{ width: 130, height: "auto", display: "block" }} /></Link>
           <h1 style={{ margin: 0, fontSize: "1.5rem" }}>
-            {cancelado ? "Pedido cancelado" : confirmando ? "Confirmando o pagamento..." : aguardando ? "Pagamento não concluído" : pedido.agendadoPara && ["novo", "confirmado"].includes(pedido.status) ? `Pedido nº ${pedido.numero} reservado!` : `Pedido nº ${pedido.numero} recebido!`}
+            {cancelado ? "Pedido cancelado" : confirmando ? "Confirmando o pagamento..." : aguardando ? `Falta só pagar: ${formatar(pedido.total)}` : pedido.agendadoPara && ["novo", "confirmado"].includes(pedido.status) ? `Pedido nº ${pedido.numero} reservado!` : `Pedido nº ${pedido.numero} recebido!`}
           </h1>
           <p className="slogan" style={{ margin: 0 }}>
             {cancelado
@@ -72,7 +72,7 @@ export default async function PaginaPedido(props: { params: Promise<{ token: str
               : confirmando
                 ? "Só um instante: estamos confirmando com o banco. Esta página atualiza sozinha."
                 : aguardando
-                ? "O pagamento não foi finalizado, então o pedido ainda não foi para a cozinha."
+                ? "Seus dados já estão com a gente. É só tocar no botão e confirmar: o pedido vai na hora para a cozinha."
                 : pedido.pagamento === "dinheiro"
                   ? `Tenha ${formatar(pedido.trocoPara ?? pedido.total)} em dinheiro para pagar o entregador${pedido.trocoPara ? ` (troco de ${formatar(pedido.trocoPara - pedido.total)})` : ""}.`
                   : "Pagamento confirmado. Obrigado!"}
@@ -84,7 +84,9 @@ export default async function PaginaPedido(props: { params: Promise<{ token: str
         {confirmando ? (
           <Recarregar segundos={4} vezes={15} />
         ) : aguardando ? (
-          pedido.linkPagamento ? (
+          squareConfigurado() && pedido.squarePedido ? (
+            <PagarCarteira token={pedido.token} total={pedido.total} link={pedido.linkPagamento} />
+          ) : pedido.linkPagamento ? (
             <a href={pedido.linkPagamento} className="principal" style={{ textDecoration: "none" }}><span>Pagar agora</span><span>{formatar(pedido.total)}</span></a>
           ) : (
             <Link href="/" className="principal" style={{ textDecoration: "none" }}><span>Voltar e tentar de novo</span><span>→</span></Link>

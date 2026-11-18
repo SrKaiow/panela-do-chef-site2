@@ -229,10 +229,20 @@ function Fundo({ onFechar, titulo, children }: { onFechar: () => void; titulo: s
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === "Escape" && onFechar();
     document.addEventListener("keydown", esc);
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.removeEventListener("keydown", esc); document.body.style.overflow = overflow; };
+    return () => document.removeEventListener("keydown", esc);
   }, [onFechar]);
+  useEffect(() => {
+    // Trava a página de trás de verdade (position: fixed). Só overflow: hidden não basta no iPhone:
+    // ao abrir o teclado a página rola por baixo e o cursor dos campos fica fora do lugar.
+    const y = window.scrollY;
+    const b = document.body.style;
+    const antes = { overflow: b.overflow, position: b.position, top: b.top, width: b.width };
+    Object.assign(b, { overflow: "hidden", position: "fixed", top: `-${y}px`, width: "100%" });
+    return () => {
+      Object.assign(b, antes);
+      window.scrollTo({ top: y, behavior: "instant" as ScrollBehavior });
+    };
+  }, []);
   return (
     <div className="fundo" onClick={(e) => e.target === e.currentTarget && onFechar()}>
       <div className="folha" role="dialog" aria-modal="true" aria-label={titulo}>{children}</div>

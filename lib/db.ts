@@ -356,11 +356,13 @@ export async function marcarAvisoLoja(numero: number) {
   return r.rowsAffected > 0;
 }
 
+/** Marca como pago. Devolve true só para quem marcou (evita avisar/imprimir duas vezes). */
 export async function confirmarPagamentoCartao(numero: number) {
-  await exec(
-    "UPDATE pedidos SET pago = 1, status = CASE WHEN status = 'aguardando_pagamento' THEN 'novo' ELSE status END, status_em = CASE WHEN status = 'aguardando_pagamento' THEN ? ELSE status_em END WHERE numero = ?",
+  const r = await exec(
+    "UPDATE pedidos SET pago = 1, status = CASE WHEN status = 'aguardando_pagamento' THEN 'novo' ELSE status END, status_em = CASE WHEN status = 'aguardando_pagamento' THEN ? ELSE status_em END WHERE numero = ? AND pago = 0",
     [new Date().toISOString(), numero],
   );
+  return r.rowsAffected > 0;
 }
 
 /* ------------------------- Limite de tentativas ------------------------- */

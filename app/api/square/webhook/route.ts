@@ -41,8 +41,7 @@ export async function POST(req: Request) {
     const info = await infoPedidoSquare(pagamento.order_id);
     const pedido = (await buscarPorPedidoSquare(pagamento.order_id)) ?? (info.numero ? await buscarPorNumero(info.numero) : null);
     if (pedido && pedido.pagamento === "cartao" && !pedido.pago && (info.pagoPence >= pedido.total || info.quitado)) {
-      await confirmarPagamentoCartao(pedido.numero);
-      await avisarLojaNovoPedido(pedido.numero, siteUrl(req));
+      if (await confirmarPagamentoCartao(pedido.numero)) await avisarLojaNovoPedido(pedido.numero, siteUrl(req));
     }
   }
   // Sempre 200 para avisos válidos: a Square não precisa reenviar os que não são nossos.
