@@ -1,4 +1,4 @@
-import { buscarPorNumero, marcarAvisoLoja, type Pedido } from "./db";
+import { buscarPorNumero, lerConfig, marcarAvisoLoja, salvarConfig, type Pedido } from "./db";
 import { getAjustes } from "./dados";
 import { telefoneInternacional } from "./whatsapp";
 import { rotuloAgendado } from "./horario";
@@ -8,6 +8,7 @@ import { siteUrl } from "./stripe";
  * Aviso de pedido novo no WhatsApp da empresa.
  * Usa o CallMeBot (grátis, manda mensagem para o seu próprio número): defina CALLMEBOT_APIKEY.
  * O número que recebe é WHATSAPP_LOJA ou, se vazio, o telefone dos ajustes da loja.
+ * Também manda notificação com som no celular pelo Telegram (grátis): defina TELEGRAM_BOT_TOKEN.
  */
 
 const libra = (p: number) => "£" + (p / 100).toFixed(2);
@@ -54,16 +55,70 @@ async function enviarCallMeBot(tel: string, texto: string) {
   }
 }
 
+/**
+ * Notificação no celular pelo Telegram (grátis, toca na hora, mesmo com o app fechado).
+ * Defina TELEGRAM_BOT_TOKEN (do @BotFather). O chat é achado sozinho: basta mandar /start para o bot.
+ */
+async function chatTelegram(token: string): Promise<string | null> {
+  if (process.env.TELEGRAM_CHAT_ID) return process.env.TELEGRAM_CHAT_ID;
+  const salvo = await lerConfig<{ chat: string }>("telegram-chat").catch(() => null);
+  if (salvo?.chat) return salvo.chat;
+  const r = await fetch(`https://api.telegram.org/bot${token}/getUpdates`, { cache: "no-store" });
+  const d = (await r.json().catch(() => ({}))) as { result?: { message?: { chat?: { id: number } } }[] };
+  const chat = d.result?.map((u) => u.message?.chat?.id).filter(Boolean).pop();
+  if (!chat) return null;
+  await salvarConfig("telegram-chat", { chat: String(chat) });
+  return String(chat);
+}
+
+async function enviarTelegram(texto: string) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) return false;
+  try {
+    const chat = await chatTelegram(token);
+    if (!chat) {
+      console.error("[aviso loja] telegram: mande /start para o bot");
+      return false;
+    }
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 6000);
+    const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      signal: ctrl.signal,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chat, text: texto.replace(/\*/g, "").slice(0, 4000), disable_web_page_preview: true }),
+    });
+    clearTimeout(t);
+    if (!r.ok) console.error("[aviso loja] telegram", r.status, (await r.text()).slice(0, 200));
+    return r.ok;
+  } catch (e) {
+    console.error("[aviso loja] telegram", e);
+    return false;
+  }
+}
+
 /** Avisa a loja uma única vez por pedido. Chamar quando o pedido vai para a cozinha (dinheiro: na hora; cartão: depois de pago). */
 export async function avisarLojaNovoPedido(numero: number, origem?: string) {
   try {
-    if (!process.env.CALLMEBOT_APIKEY) return;
+    if (!process.env.CALLMEBOT_APIKEY && !process.env.TELEGRAM_BOT_TOKEN) return;
     const p = await buscarPorNumero(numero);
     if (!p || p.status === "aguardando_pagamento" || p.status === "cancelado") return;
     if (!(await marcarAvisoLoja(numero))) return;
     const tel = process.env.WHATSAPP_LOJA || (await getAjustes()).telefone;
-    await enviarCallMeBot(tel, textoPedido(p, origem));
+    const texto = textoPedido(p, origem);
+    await Promise.all([enviarTelegram(texto), process.env.CALLMEBOT_APIKEY ? enviarCallMeBot(tel, texto) : null]);
   } catch (e) {
     console.error("[aviso loja]", e);
   }
+}
+
+/** Teste dos avisos (painel). null = canal não configurado, true = enviado, false = falhou. */
+export async function testarAvisos() {
+  const msg = "🔔 Teste: os avisos de pedido novo da Panela do Chef estão funcionando.";
+  const tel = process.env.WHATSAPP_LOJA || (await getAjustes()).telefone;
+  const [telegram, whatsapp] = await Promise.all([
+    process.env.TELEGRAM_BOT_TOKEN ? enviarTelegram(msg) : Promise.resolve(null),
+    process.env.CALLMEBOT_APIKEY ? enviarCallMeBot(tel, msg) : Promise.resolve(null),
+  ]);
+  return { telegram, whatsapp };
 }
