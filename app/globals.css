@@ -851,3 +851,24 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .modo-entrega button small { font-weight: 500; opacity: 0.75; font-size: 0.8rem; }
 .modo-entrega button.ligado { border-color: var(--ouro); background: rgba(255, 200, 40, 0.1); }
 .selo.selo-coleta { background: var(--ouro); color: #1a1200; margin-right: 6px; }
+
+/* ---------- Cartão "Obrigado" (página do pedido) ---------- */
+.cartao-obrigado { position: relative; text-align: center; padding: 22px 18px 20px; border-radius: 20px; background: #fffdf4; color: #1c1c1c;
+  border: 3px solid #0b8a45; outline: 2px solid #ffd814; outline-offset: -9px; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35); }
+.cartao-obrigado .ob-logo { display: block; width: min(260px, 78%); height: auto; margin: 2px auto 0; }
+.cartao-obrigado .ob-sub { font-size: 0.68rem; letter-spacing: 1.2px; font-weight: 800; color: #0b8a45; margin-top: 8px; white-space: nowrap; }
+.cartao-obrigado .ob-los { width: 13px; height: 9px; vertical-align: 0; fill: #ffd814; stroke: #0b8a45; stroke-width: 1.2; }
+.cartao-obrigado .ob-emb { display: block; width: min(280px, 90%); height: 30px; margin: 12px auto; }
+.cartao-obrigado .ob-emb .fio { stroke: #0b8a45; stroke-width: 1.4; }
+.cartao-obrigado .ob-emb .ponto { fill: #f6980c; }
+.cartao-obrigado .ob-emb .ret { fill: #0b8a45; }
+.cartao-obrigado .ob-emb .los { fill: #ffd814; }
+.cartao-obrigado .ob-emb .glo { fill: #1e3f9e; }
+.cartao-obrigado .ob-emb .fx { fill: none; stroke: #fff; stroke-width: 1.3; }
+.cartao-obrigado .ob-titulo { font-family: var(--f-anton), Impact, sans-serif; font-size: 3rem; line-height: 1; letter-spacing: 2px; color: #0b8a45; }
+.cartao-obrigado .ob-pelo { font-family: Georgia, "Times New Roman", serif; font-style: italic; font-size: 1.2rem; margin-top: 4px; }
+.cartao-obrigado .ob-nome { font-family: var(--f-yellowtail), "Brush Script MT", cursive; font-size: 3rem; line-height: 1.1; color: #f6980c; }
+.cartao-obrigado .ob-texto { font-family: Georgia, "Times New Roman", serif; font-size: 0.98rem; line-height: 1.45; margin: 4px 6px 0; color: #333; }
+.cartao-obrigado .ob-assina { font-family: var(--f-yellowtail), "Brush Script MT", cursive; font-size: 2.3rem; line-height: 1; color: #f6980c; }
+.cartao-obrigado .ob-cargo { font-size: 0.68rem; letter-spacing: 2px; font-weight: 800; color: #0b8a45; margin-top: 6px; }
+.cartao-obrigado .ob-insta { font-size: 0.85rem; font-weight: 700; margin-top: 6px; color: #555; }

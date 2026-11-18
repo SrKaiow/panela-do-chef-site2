@@ -5,6 +5,7 @@ import Rastreio from "@/components/Rastreio";
 import { buscarPorToken, carimbosDoPedido, confirmarPagamentoCartao, pedidoJaAvaliado } from "@/lib/db";
 import { lerFidelidade } from "@/lib/fidelidade";
 import CartaoFidelidade from "@/components/CartaoFidelidade";
+import CartaoObrigado from "@/components/CartaoObrigado";
 import { situacaoAoVivo } from "@/lib/rastreio";
 import { formatar } from "@/lib/cardapio";
 import { getAjustes } from "@/lib/dados";
@@ -95,6 +96,7 @@ export default async function PaginaPedido(props: { params: Promise<{ token: str
           !cancelado && <Rastreio token={pedido.token} inicial={aoVivo} nome={pedido.nome} jaAvaliado={jaAvaliado} />
         )}
 
+        {!aguardando && !cancelado && <CartaoObrigado nome={pedido.nome} />}
         {cartao && cartao.ganhou && cartao.carimbos > 0 && <CartaoFidelidade carimbos={cartao.carimbos} meta={cartao.meta} />}
 
         <section style={{ display: "grid", gap: 6 }}>
