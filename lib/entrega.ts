@@ -33,7 +33,7 @@ export type Cotacao =
 /** Taxa de entrega pela distância em linha reta, igual à regra da Square (faixas em milhas). Valores em pence. */
 export function cotarEntrega(distanciaM: number, subtotal: number, faixas: Faixa[], raioMilhas: number): Cotacao {
   const milhas = Math.round((distanciaM / METROS_POR_MILHA) * 10) / 10;
-  if (milhas > raioMilhas) return { ok: false, milhas, motivo: `Ainda não entregamos tão longe (${milhas} milhas). Entregamos até ${raioMilhas} milhas da cozinha.` };
+  if (milhas > raioMilhas) return { ok: false, milhas, motivo: `Infelizmente ainda não conseguimos atender a sua localização (${milhas} milhas da cozinha). Estamos em Epsom e entregamos num raio de até ${raioMilhas} milhas, para o seu pedido chegar quentinho e com a mesma qualidade. Se preferir, escolha "Coletar" e venha buscar na porta.` };
   const ordenadas = [...faixas].sort((a, b) => a.ateMilhas - b.ateMilhas);
   const faixa = ordenadas.find((f) => distanciaM / METROS_POR_MILHA <= f.ateMilhas) ?? ordenadas[ordenadas.length - 1];
   if (!faixa) return { ok: true, milhas, taxa: 0, gratisAcima: null, gratis: true };

@@ -719,6 +719,7 @@ function FolhaCarrinho({
             </span>
           </label>
           <p className="dica">Usamos seus dados só para preparar e entregar o pedido. <a href="/privacidade" target="_blank">Política de privacidade</a>.</p>
+          {foraDaArea && cotacao && !cotacao.ok && <p className="erro fora-area" role="alert">{cotacao.motivo}</p>}
           {erro && <p className="erro" role="alert">{erro}</p>}
           <button className="principal" type="submit" disabled={enviando || nenhumPagamento || foraDaArea || (!estado.aberto && !quando) || (pagamento === "dinheiro" && !troco)}>
             <span>{enviando ? "Enviando..." : pagamento === "cartao" ? "Ir para o pagamento" : quando ? "Reservar pedido" : "Fazer pedido"}</span>

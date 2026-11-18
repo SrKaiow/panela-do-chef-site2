@@ -887,3 +887,4 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 @keyframes alarme-sino { from { transform: rotate(-18deg); } to { transform: rotate(18deg); } }
 @keyframes alarme-pisca { from { background: rgba(0, 0, 0, 0.88); } to { background: rgba(60, 45, 0, 0.92); } }
 @media (prefers-reduced-motion: reduce) { .alarme-pronto, .alarme-sino { animation: none; } }
+.erro.fora-area { line-height: 1.45; padding: 12px 14px; border-radius: 12px; border: 1px solid currentColor; }
