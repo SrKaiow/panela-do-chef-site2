@@ -49,7 +49,8 @@ export default async function Recibo(props: { params: Promise<{ numero: string }
       <ul className="r-itens">
         {p.itens.map((l, i) => (
           <li key={i}>
-            <div className="r-item"><span className="r-q">{l.qtd}</span><span className="r-n">{l.nome.toUpperCase()}</span><span className="r-v">{valor(l.unitario * l.qtd)}</span></div>
+            {p.itens.length > 1 && <div className="r-ordem">ITEM {i + 1} DE {p.itens.length}</div>}
+            <div className="r-item"><span className="r-q">{l.qtd}x</span><span className="r-n">{l.nome.toUpperCase()}</span><span className="r-v">{valor(l.unitario * l.qtd)}</span></div>
             {l.detalhes.map((d) => <div className="r-det" key={d}>+ {d.toUpperCase()}</div>)}
             {l.obs && <div className="r-det r-b">** {l.obs.toUpperCase()}</div>}
           </li>
@@ -110,12 +111,15 @@ body * { box-shadow: none !important; text-shadow: none !important; }
 .r-num b { font-size: 20pt; line-height: 1; font-weight: 700; }
 .r-data { font-size: 9pt; }
 .r-itens { list-style: none; margin: 0; padding: 0; }
-.r-itens li { padding: 0.6mm 0; break-inside: avoid; }
-.r-item { display: flex; gap: 1.5mm; }
-.r-q { min-width: 4mm; font-weight: 700; }
+.r-itens li { padding: 1mm 0 1.2mm; break-inside: avoid; }
+/* Cada item separado por linha, com o número do item: na correria a cozinha vê onde acaba um e começa o outro. */
+.r-itens li + li { border-top: 1.5px solid #000; margin-top: 1mm; padding-top: 1.5mm; }
+.r-ordem { font-size: 7.5pt; font-weight: 700; letter-spacing: 1px; margin-bottom: 0.5mm; }
+.r-item { display: flex; gap: 1.5mm; font-weight: 700; font-size: 11pt; }
+.r-q { min-width: 6mm; font-weight: 700; }
 .r-n { flex: 1; }
 .r-v { white-space: nowrap; }
-.r-det { padding-left: 5.5mm; font-size: 9pt; }
+.r-det { padding-left: 7.5mm; font-size: 9pt; margin-top: 0.3mm; }
 .r-tot { font-size: 11pt; }
 .r-troco { font-size: 12pt; }
 .r-coleta { margin: 1.5mm 0; padding: 1.5mm 0; border: 1.5px solid #000; text-align: center; font-weight: 700; font-size: 13pt; letter-spacing: 1px; }

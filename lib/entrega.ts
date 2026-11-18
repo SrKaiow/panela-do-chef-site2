@@ -12,10 +12,13 @@ export function distanciaMetros(a: { lat: number; lng: number }, b: { lat: numbe
 
 export const METROS_POR_MILHA = 1609.344;
 
-/** Minutos estimados até a porta, considerando ruas não retas (fator 1.35). */
-export function minutosAte(distancia: number, velocidadeKmh = 25) {
-  const metrosPorMin = (velocidadeKmh * 1000) / 60;
-  return Math.max(0, Math.round(((distancia * 1.35) / metrosPorMin) * 10) / 10);
+/**
+ * Minutos estimados de carro até a porta. A distância é em linha reta, então soma 20% de ruas
+ * e usa no mínimo 45 km/h (média de carro nas A-roads; batia com o Waze: 4.3 mi em ~9 min).
+ */
+export function minutosAte(distancia: number, velocidadeKmh = 45) {
+  const metrosPorMin = (Math.max(velocidadeKmh || 0, 45) * 1000) / 60;
+  return Math.max(0, Math.round(((distancia * 1.2) / metrosPorMin) * 10) / 10);
 }
 
 /** Direção (0 = norte, 90 = leste) de a para b, em graus. Usada para virar a motinha no mapa. */

@@ -9,7 +9,11 @@ import { rotuloAgendado } from "@/lib/horario";
 type Status = AoVivo["status"];
 
 const hora = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" }) : "");
-const km = (m: number) => (m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1).replace(".", ",")} km`);
+/** Distância em milhas (jardas quando está bem perto). */
+const km = (m: number) => {
+  const milhas = m / 1609.344;
+  return milhas < 0.25 ? `${Math.round(m * 1.0936)} yd` : `${milhas.toFixed(1)} mi`;
+};
 const ORDEM: Status[] = ["novo", "confirmado", "preparando", "saiu", "entregue"];
 
 /** Mensagem grande do topo: o que está acontecendo agora com o pedido. */

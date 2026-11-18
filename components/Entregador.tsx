@@ -30,7 +30,11 @@ type PedidoRota = {
 };
 
 const gbp = (p: number) => "£" + (p / 100).toFixed(2);
-const km = (m: number) => (m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1).replace(".", ",")} km`);
+/** Distância em milhas (jardas quando está bem perto), como no Waze. */
+const km = (m: number) => {
+  const milhas = m / 1609.344;
+  return milhas < 0.25 ? `${Math.round(m * 1.0936)} yd` : `${milhas.toFixed(1)} mi`;
+};
 
 const MOTIVOS = [
   { id: "transito", nome: "Muito trânsito", icone: "🚦" },
