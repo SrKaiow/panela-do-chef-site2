@@ -65,6 +65,7 @@ export async function POST(req: Request) {
     if (pagamento === "dinheiro" && b.trocoPara != null && b.trocoPara !== "") {
       trocoPara = emPence(Number(b.trocoPara));
       if (!(trocoPara >= total)) throw new Error("O valor do troco precisa ser maior que o total.");
+      if (trocoPara > total + 50000) throw new Error("Valor do troco muito alto. Confira o valor.");
     }
 
     const { numero, token } = await criarPedido({
