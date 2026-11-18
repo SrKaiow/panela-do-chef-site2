@@ -53,6 +53,10 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
   const [podeNotificar, setPodeNotificar] = useState(false);
   const [, tique] = useState(0);
   const avisou = useRef(inicial.chegando);
+  // Alarme de "pronto para coletar" (só na coleta): toca, vibra e mostra aviso na tela.
+  const [alarmeLigado, setAlarmeLigado] = useState(false);
+  const [tocando, setTocando] = useState(false);
+  const audioRef = useRef<AudioContext | null>(null);
   const statusAnterior = useRef(inicial.status);
 
   useEffect(() => {
@@ -73,8 +77,8 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
         if (r.ok && vivo) setAo(await r.json());
       } catch {}
     }
-    // A caminho: a cada 4 s, para o carro andar no mapa. Antes disso: a cada 8 s.
-    const t = setInterval(buscar, ao.status === "saiu" ? 4000 : 8000);
+    // A caminho: a cada 4 s, para o carro andar no mapa. Coleta: a cada 5 s, para o alarme tocar na hora. Antes disso: a cada 8 s.
+    const t = setInterval(buscar, ao.status === "saiu" ? 4000 : ao.retirada ? 5000 : 8000);
     const voltou = () => { if (document.visibilityState === "visible") buscar(); };
     document.addEventListener("visibilitychange", voltou);
     return () => { vivo = false; clearInterval(t); document.removeEventListener("visibilitychange", voltou); };
@@ -84,6 +88,14 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
   useEffect(() => {
     if (statusAnterior.current === ao.status) return;
     statusAnterior.current = ao.status;
+    if (ao.retirada && ao.status === "saiu") {
+      setTocando(true);
+      try {
+        if (Notification.permission === "granted")
+          new Notification("Pedido pronto para coletar!", { body: "O Chef já está indo até a porta com o seu pedido.", tag: "pronto-" + token, requireInteraction: true } as NotificationOptions);
+      } catch {}
+      return;
+    }
     const m = manchete(ao);
     try { navigator.vibrate?.(200); } catch {}
     try {
@@ -102,6 +114,63 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
       } catch {}
     }
   }, [ao.chegando, ao.status, notificar]);
+
+  // Toca o alarme (bipes fortes) e vibra sem parar até o cliente tocar em "Ok" (no máximo 2 minutos).
+  useEffect(() => {
+    if (!tocando) return;
+    const titulo = document.title;
+    let n = 0;
+    const tocar = () => {
+      n++;
+      try { navigator.vibrate?.([500, 200, 500, 200, 500]); } catch {}
+      document.title = n % 2 ? "🔔 PEDIDO PRONTO!" : titulo;
+      const ctx = audioRef.current ?? (() => { try { return (audioRef.current = new AudioContext()); } catch { return null; } })();
+      if (!ctx) return;
+      if (ctx.state === "suspended") ctx.resume().catch(() => {});
+      [0, 0.28, 0.56].forEach((d, i) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = "square";
+        o.frequency.value = i === 2 ? 1320 : 990;
+        const t0 = ctx.currentTime + d;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.6, t0 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.22);
+        o.connect(g).connect(ctx.destination);
+        o.start(t0);
+        o.stop(t0 + 0.24);
+      });
+    };
+    tocar();
+    const t = setInterval(tocar, 1500);
+    const fim = setTimeout(() => setTocando(false), 120000);
+    return () => { clearInterval(t); clearTimeout(fim); document.title = titulo; try { navigator.vibrate?.(0); } catch {} };
+  }, [tocando]);
+
+  /** Precisa de um toque do cliente: libera o som no celular (regra do iPhone/Android) e pede para mostrar notificação. */
+  async function ligarAlarme() {
+    try {
+      const ctx = audioRef.current ?? new AudioContext();
+      audioRef.current = ctx;
+      await ctx.resume();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.frequency.value = 880;
+      g.gain.setValueAtTime(0.25, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
+      o.connect(g).connect(ctx.destination);
+      o.start();
+      o.stop(ctx.currentTime + 0.26);
+    } catch {}
+    try { navigator.vibrate?.(150); } catch {}
+    setAlarmeLigado(true);
+    try {
+      if ("Notification" in window && Notification.permission === "default") {
+        const p = await Notification.requestPermission();
+        setNotificar(p === "granted");
+      }
+    } catch {}
+  }
 
   async function pedirNotificacao() {
     try {
@@ -125,6 +194,33 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
 
   return (
     <section className="rastreio" aria-label="Acompanhe seu pedido">
+      {tocando && (
+        <div className="alarme-pronto" role="alertdialog" aria-labelledby="alarme-titulo">
+          <div className="alarme-caixa">
+            <span className="alarme-sino" aria-hidden="true">🔔</span>
+            <h2 id="alarme-titulo">Pedido pronto para coletar!</h2>
+            <p>O Chef já está indo até a porta com o seu pedido. Pode encostar!</p>
+            <button type="button" className="principal" onClick={() => setTocando(false)}><span>Ok, estou aqui</span></button>
+          </div>
+        </div>
+      )}
+
+      {ao.retirada && ["novo", "confirmado", "preparando"].includes(ao.status) && (
+        <div className={"alarme-ligar" + (alarmeLigado ? " ligado" : "")}>
+          {alarmeLigado ? (
+            <>
+              <strong>🔔 Alarme ligado</strong>
+              <span>Deixe esta página aberta e o volume ligado: quando ficar pronto, o celular toca e vibra.</span>
+            </>
+          ) : (
+            <>
+              <strong>Vai esperar aqui fora?</strong>
+              <span>Ligue o alarme: quando o pedido ficar pronto, o celular toca e vibra na hora.</span>
+              <button type="button" className="principal" onClick={ligarAlarme}><span>🔔 Ligar alarme de pronto</span></button>
+            </>
+          )}
+        </div>
+      )}
       {ao.status === "saiu" && ao.chegando && (
         <div className="chegando" role="alert">
           <strong>Seu pedido está na porta em ~1 minuto!</strong>

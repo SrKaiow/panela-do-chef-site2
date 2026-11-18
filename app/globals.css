@@ -872,3 +872,18 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .cartao-obrigado .ob-assina { font-family: var(--f-yellowtail), "Brush Script MT", cursive; font-size: 2.3rem; line-height: 1; color: #f6980c; }
 .cartao-obrigado .ob-cargo { font-size: 0.68rem; letter-spacing: 2px; font-weight: 800; color: #0b8a45; margin-top: 6px; }
 .cartao-obrigado .ob-insta { font-size: 0.85rem; font-weight: 700; margin-top: 6px; color: #555; }
+
+/* Alarme de pronto para coletar */
+.alarme-ligar { display: grid; gap: 6px; padding: 16px; border-radius: 16px; background: rgba(255, 216, 20, 0.08); border: 1px dashed var(--ouro); }
+.alarme-ligar.ligado { border-style: solid; }
+.alarme-ligar > span { color: var(--texto-2); }
+.alarme-ligar .principal, .alarme-caixa .principal { justify-content: center; }
+.alarme-ligar .principal { margin-top: 6px; }
+.alarme-pronto { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 20px; background: rgba(0, 0, 0, 0.88); animation: alarme-pisca 1s ease-in-out infinite alternate; }
+.alarme-caixa { width: min(420px, 100%); text-align: center; padding: 28px 22px; border-radius: 24px; background: #141414; border: 3px solid var(--ouro); display: grid; gap: 10px; box-shadow: 0 0 60px rgba(255, 216, 20, 0.35); }
+.alarme-caixa h2 { margin: 0; font-size: 1.8rem; line-height: 1.1; }
+.alarme-caixa p { margin: 0; color: var(--texto-2); }
+.alarme-sino { font-size: 3.4rem; display: inline-block; animation: alarme-sino 0.5s ease-in-out infinite alternate; transform-origin: 50% 10%; }
+@keyframes alarme-sino { from { transform: rotate(-18deg); } to { transform: rotate(18deg); } }
+@keyframes alarme-pisca { from { background: rgba(0, 0, 0, 0.88); } to { background: rgba(60, 45, 0, 0.92); } }
+@media (prefers-reduced-motion: reduce) { .alarme-pronto, .alarme-sino { animation: none; } }
