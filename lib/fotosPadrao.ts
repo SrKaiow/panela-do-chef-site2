@@ -12,9 +12,10 @@ const DESTAQUES_INICIAIS = ["acai-500", "acai-350", "pastel-x-tudo", "batata-cal
 const normal = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 /** Fotos dos adicionais (public/fotos/adicionais/<nome>.jpg), achadas pelo nome da opção. */
-const ADICIONAIS = new Set<string>(["abacaxi","banana","bis","biscoff","calda-de-abacaxi","calda-de-morango","cereja-em-calda","creme-de-ninho","creme-de-oreo","creme-de-pistache","doce-de-leite","fini","geleia-de-banana","gotas-de-chocolate-ao-leite","gotas-de-chocolate-branco","granola","kitkat","kiwi","leite-condensado","m-m","manga","marshmallow","mel","mix-de-castanhas","morango","mousse-de-maracuja","ninho","nutella","oreo","ouro-branco","ovomaltine","pacoca","pasta-de-amendoim","pessego","uva-passas","uva"]);
+const ADICIONAIS = new Set<string>(["tortuguita","chokito","jujuba","abacaxi","banana","bis","biscoff","calda-de-abacaxi","calda-de-morango","cereja-em-calda","creme-de-ninho","creme-de-oreo","creme-de-pistache","doce-de-leite","fini","geleia-de-banana","gotas-de-chocolate-ao-leite","gotas-de-chocolate-branco","granola","kitkat","kiwi","leite-condensado","m-m","manga","marshmallow","mel","mix-de-castanhas","morango","mousse-de-maracuja","ninho","nutella","oreo","ouro-branco","ovomaltine","pacoca","pasta-de-amendoim","pessego","uva-passas","uva"]);
 const APELIDOS: Record<string, string> = {
   "leite-em-po": "ninho", "leite-ninho": "ninho", "ninho": "ninho",
+  "tartaruguita": "tortuguita", "tartuguita": "tortuguita", "choquito": "chokito", "gominha": "jujuba", "jujubas": "jujuba", "jujuba-gominha": "jujuba",
   "m-m-s": "m-m", "m-ms": "m-m", "mms": "m-m", "kit-kat": "kitkat",
   "uva-passa": "uva-passas", "uvas-passas": "uva-passas", "castanhas": "mix-de-castanhas", "morangos": "morango", "uvas": "uva", "uva-verde": "uva", "pessegos": "pessego", "creme-pistachio": "creme-de-pistache", "pistache": "creme-de-pistache", "calda-abacaxi": "calda-de-abacaxi", "geleia-banana": "geleia-de-banana",
 };

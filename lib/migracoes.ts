@@ -278,6 +278,21 @@ function moussesAcaiV1(c: Cardapio): Cardapio {
   return { ...c, adicionais: a, itens };
 }
 
+/** Extras pagos do açaí: Tortuguita, Chokito e Jujuba, logo depois do Ouro Branco. */
+function extrasDocesV1(c: Cardapio): Cardapio {
+  const g = c.adicionais["extras-acai"];
+  if (!g) return c;
+  const novos: Opcao[] = [
+    { nome: "Tortuguita", preco: 2.5 },
+    { nome: "Chokito", preco: 2.5 },
+    { nome: "Jujuba (gominha)", preco: 1.5 },
+  ].filter((n) => !g.opcoes.some((o) => nome(o.nome) === nome(n.nome)));
+  const opcoes = [...g.opcoes];
+  const pos = opcoes.findIndex((o) => /ouro branco/i.test(o.nome));
+  opcoes.splice(pos >= 0 ? pos + 1 : opcoes.length, 0, ...novos);
+  return { ...c, adicionais: { ...c.adicionais, "extras-acai": { ...g, opcoes } } };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
@@ -289,6 +304,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["massa-show-v2", massaShowV2],
   ["copoes-em-breve-v1", copoesEmBreveV1],
   ["mousses-acai-v1", moussesAcaiV1],
+  ["extras-doces-v1", extrasDocesV1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */
