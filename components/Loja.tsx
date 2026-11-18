@@ -330,9 +330,10 @@ function FolhaItem({ cardapio, item, onFechar, onAdicionar }: { cardapio: Cardap
                 {grupo.opcoes.map((op) => {
                   const n = escolhidos.filter((x) => x === op.nome).length;
                   return (
-                    <div key={op.nome} className={"opcao-rep" + (n ? " ligada" : "") + (op.esgotado ? " riscado" : "")}>
+                    <div key={op.nome} className={"opcao-rep" + (n ? " ligada" : "") + (op.esgotado ? " riscado" : "") + (op.destaque && !op.esgotado ? " destaque" : "")}>
                       {op.imagem && <img className="opcao-foto" src={op.imagem} alt="" loading="lazy" />}
                       <span className="opcao-nome">
+                        {op.destaque && !op.esgotado && <span className="opcao-selo">Mais pedido</span>}
                         {op.nome}
                         {op.preco ? <em className="extra">+{formatar(emPence(op.preco))}</em> : null}
                         {op.esgotado ? <em> esgotado</em> : null}

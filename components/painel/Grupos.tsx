@@ -143,6 +143,7 @@ function EditorGrupo({ id, grupo, cardapio, salvar, voltar }: { id: string | nul
       if (l.esgotado) op.esgotado = true;
       if (l.imagem) op.imagem = l.imagem;
       if (l.padrao) op.padrao = true;
+      if (l.destaque) op.destaque = true;
       opcoes.push(op);
     }
     if (!nome.trim()) return setErro("Dê um nome que o cliente vai ver (ex.: Escolha os toppings).");

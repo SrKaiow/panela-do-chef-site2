@@ -12,6 +12,8 @@ export type Opcao = {
   imagem?: string;
   /** Já vem marcada quando o cliente abre o item. */
   padrao?: boolean;
+  /** Selo "Mais pedido" na opção. */
+  destaque?: boolean;
 };
 /** Regras padrão do grupo, usadas quando ele é colocado num item (cada item pode mudar min/max). */
 export type RegrasGrupo = { obrigatorio: boolean; varios: boolean; max: number; repetir: boolean };

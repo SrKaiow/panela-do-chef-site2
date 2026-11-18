@@ -253,6 +253,31 @@ function copoesEmBreveV1(c: Cardapio): Cardapio {
   return { ...c, itens: c.itens.map((i) => (ids.includes(i.id) ? { ...i, disponivel: false, emBreve: true, voltaEm: undefined, destaque: false } : i)) };
 }
 
+/** Mousses no açaí: £2 cada, pode repetir até 3. Maracujá com selo "Mais pedido". Sai o mousse antigo dos extras. */
+function moussesAcaiV1(c: Cardapio): Cardapio {
+  const a = { ...c.adicionais };
+  a["mousses-acai"] = {
+    nome: "Mousses",
+    nomeInterno: "Açaí - mousses (£2 cada)",
+    opcoes: [
+      { nome: "Mousse de Maracujá", preco: 2, destaque: true },
+      { nome: "Mousse de Limão", preco: 2 },
+      { nome: "Mousse de Morango", preco: 2 },
+      { nome: "Mousse de Uva", preco: 2 },
+    ],
+    regras: { obrigatorio: false, varios: true, max: 3, repetir: true },
+  };
+  if (a["extras-acai"]) a["extras-acai"] = { ...a["extras-acai"], opcoes: a["extras-acai"].opcoes.filter((o) => !/^mousse/i.test(o.nome)) };
+  const itens = c.itens.map((i) => {
+    if (!(i.id === "acai-350" || i.id === "acai-500") || (i.escolhas ?? []).some((e) => e.grupo === "mousses-acai")) return i;
+    const esc = [...(i.escolhas ?? [])];
+    const pos = esc.findIndex((e) => e.grupo === "toppings-acai");
+    esc.splice(pos >= 0 ? pos + 1 : esc.length, 0, { grupo: "mousses-acai", min: 0, max: 3 });
+    return { ...i, escolhas: esc };
+  });
+  return { ...c, adicionais: a, itens };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
@@ -263,6 +288,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["massa-show-v1", massaShowV1],
   ["massa-show-v2", massaShowV2],
   ["copoes-em-breve-v1", copoesEmBreveV1],
+  ["mousses-acai-v1", moussesAcaiV1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */
