@@ -1,4 +1,4 @@
-import type { Cardapio, Opcao } from "./cardapio";
+import type { Cardapio, Item, Opcao } from "./cardapio";
 import { lerConfig, salvarConfig } from "./db";
 
 /**
@@ -304,6 +304,16 @@ function rWhitesV1(c: Cardapio): Cardapio {
   return { ...c, itens: c.itens.map((i) => (i.id === "fanta-limao" ? { ...i, nome: "R White's Lemonade (lata 330ml)", imagem: undefined } : i)) };
 }
 
+/** Sprite (lata 330ml), £1.50, logo depois da R White's. */
+function spriteV1(c: Cardapio): Cardapio {
+  if (c.itens.some((i) => i.id === "sprite")) return c;
+  const novo: Item = { id: "sprite", nome: "Sprite (lata 330ml)", categoria: "bebidas", descricao: "", preco: 1.5, disponivel: true };
+  const itens = [...c.itens];
+  const pos = itens.findIndex((i) => i.id === "fanta-limao");
+  itens.splice(pos >= 0 ? pos + 1 : itens.length, 0, novo);
+  return { ...c, itens };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
@@ -318,6 +328,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["extras-doces-v1", extrasDocesV1],
   ["fotos-pasteis-v1", fotosPasteisV1],
   ["r-whites-v1", rWhitesV1],
+  ["sprite-v1", spriteV1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */

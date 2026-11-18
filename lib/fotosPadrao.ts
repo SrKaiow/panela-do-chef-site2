@@ -4,7 +4,7 @@ import type { Cardapio } from "./cardapio";
  * Fotos dos produtos que vêm junto com o site (public/fotos/cardapio/<id>.jpg).
  * Item sem foto no painel usa a daqui; ao trocar a foto no painel, vale a do painel.
  */
-const COM_FOTO = new Set<string>(["fanta-limao","pastel-frango-pequi","pastel-queijo","acai-350","acai-500","acai-banoffe-750","acai-choquito-750","acai-sensacao-maltine","batata-4-queijos","batata-calabacon","batidinha-acai","caldo-de-cana","coca-zero","fanta-laranja","j2o-apple-mango","j2o-apple-raspberry","j2o-orange-passion","massa-penne","massa-show","massa-spaghetti","pastel-4-queijos","pastel-banana-queijo","pastel-brigadeiro","pastel-carne-gueroba","pastel-carne-queijo","pastel-carne","pastel-doce-de-leite","pastel-frango-catupiry","pastel-frango","pastel-ninho-morango","pastel-nutella-morango","pastel-pizza","pastel-x-tudo"]);
+const COM_FOTO = new Set<string>(["sprite","fanta-limao","pastel-frango-pequi","pastel-queijo","acai-350","acai-500","acai-banoffe-750","acai-choquito-750","acai-sensacao-maltine","batata-4-queijos","batata-calabacon","batidinha-acai","caldo-de-cana","coca-zero","fanta-laranja","j2o-apple-mango","j2o-apple-raspberry","j2o-orange-passion","massa-penne","massa-show","massa-spaghetti","pastel-4-queijos","pastel-banana-queijo","pastel-brigadeiro","pastel-carne-gueroba","pastel-carne-queijo","pastel-carne","pastel-doce-de-leite","pastel-frango-catupiry","pastel-frango","pastel-ninho-morango","pastel-nutella-morango","pastel-pizza","pastel-x-tudo"]);
 
 /** Destaques ("Mais pedidos") até alguém marcar ou desmarcar algum no painel. */
 const DESTAQUES_INICIAIS = ["acai-500", "acai-350", "pastel-x-tudo", "batata-calabacon", "pastel-carne-queijo", "pastel-nutella-morango", "batidinha-acai"];
