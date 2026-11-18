@@ -19,10 +19,12 @@ const APELIDOS: Record<string, string> = {
   "m-m-s": "m-m", "m-ms": "m-m", "mms": "m-m", "kit-kat": "kitkat",
   "uva-passa": "uva-passas", "uvas-passas": "uva-passas", "castanhas": "mix-de-castanhas", "morangos": "morango", "uvas": "uva", "uva-verde": "uva", "pessegos": "pessego", "creme-pistachio": "creme-de-pistache", "pistache": "creme-de-pistache", "calda-abacaxi": "calda-de-abacaxi", "geleia-banana": "geleia-de-banana",
 };
+/** Fotos de adicionais trocadas depois de publicadas. */
+const VERSAO_ADICIONAL: Record<string, number> = { tortuguita: 2, chokito: 2, jujuba: 2 };
 function fotoAdicional(nome: string) {
   const n = normal(nome);
   const k = APELIDOS[n] ?? (ADICIONAIS.has(n) ? n : ADICIONAIS.has(n.replace(/s$/, "")) ? n.replace(/s$/, "") : null);
-  return k && ADICIONAIS.has(k) ? `/fotos/adicionais/${k}.jpg` : undefined;
+  return k && ADICIONAIS.has(k) ? `/fotos/adicionais/${k}.jpg${VERSAO_ADICIONAL[k] ? `?v=${VERSAO_ADICIONAL[k]}` : ""}` : undefined;
 }
 
 /** Fotos trocadas depois de publicadas: o "?v=" faz o navegador baixar de novo. */
