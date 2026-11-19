@@ -288,16 +288,21 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
         )}
       </div>
 
+      {/* O número da fila só aparece quando a cozinha está cheia (3+). Com pouco movimento, não mostra número:
+          a mensagem fica neutra e ninguém lê "você é o próximo" no primeiro pedido do dia. */}
       {ao.naFrente != null && ao.status !== "preparando" && (
         <div className="fila">
-          <span className="fila-num num">{ao.naFrente}</span>
-          <span>
-            {ao.naFrente === 0
-              ? "Nenhum pedido na sua frente. Você é o próximo!"
-              : ao.naFrente === 1
-                ? "pedido na sua frente na cozinha"
-                : "pedidos na sua frente na cozinha"}
-          </span>
+          {ao.naFrente >= 3 ? (
+            <>
+              <span className="fila-num num">{ao.naFrente}</span>
+              <span>pedidos na sua frente na cozinha</span>
+            </>
+          ) : (
+            <>
+              <span className="fila-num" aria-hidden="true">🔥</span>
+              <span>Seu pedido já está na fila da cozinha. O Chef prepara tudo na hora, na ordem de chegada.</span>
+            </>
+          )}
         </div>
       )}
 
