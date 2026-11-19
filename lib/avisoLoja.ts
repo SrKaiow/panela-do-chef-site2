@@ -138,6 +138,11 @@ export async function avisarLojaNovoPedido(numero: number, origem?: string) {
       [{ text: "🖨 Imprimir na loja", callback_data: `imp:${p.numero}` }, { text: "✅ Aceitar pedido", callback_data: `ok:${p.numero}` }],
       [{ text: "Abrir o painel", url: `${origem || siteUrl()}/painel#pedidos` }],
     ];
+    // Pagamento no site aprovado: uma notificação curta só do pagamento, antes do pedido.
+    if (p.pagamento === "cartao" && p.pago) {
+      const pagou = `💳 PAGAMENTO APROVADO · ${libra(p.total)}\nPedido #${p.numero} · ${p.nome.split(" ")[0]} · pago no site (Square)`;
+      await enviarTelegram(pagou);
+    }
     await Promise.all([enviarTelegram(texto, botoes), process.env.CALLMEBOT_APIKEY ? enviarCallMeBot(tel, texto) : null]);
   } catch (e) {
     console.error("[aviso loja]", e);
