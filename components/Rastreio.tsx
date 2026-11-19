@@ -312,7 +312,9 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
           <div className="ao-vivo-topo">
             <span className="pulso" aria-hidden="true" />
             <strong>
-              {ao.entregador
+              {ao.entregador && Date.now() - new Date(ao.entregador.atualizadoEm).getTime() > 3 * 60000
+                ? `O entregador está a caminho · última posição há ${Math.round((Date.now() - new Date(ao.entregador.atualizadoEm).getTime()) / 60000)} min${ao.minutos != null ? ` · cerca de ${Math.max(1, Math.round(ao.minutos))} min` : ""}`
+                : ao.entregador
                 ? ao.distancia != null
                   ? `O entregador está a ${km(ao.distancia)}${ao.minutos != null ? ` · cerca de ${Math.max(1, Math.round(ao.minutos))} min` : ""}`
                   : "O entregador está a caminho"

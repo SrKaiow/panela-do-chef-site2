@@ -70,7 +70,9 @@ export async function situacaoAoVivo(p: Pedido): Promise<AoVivo> {
   const extra = imprevisto ? Math.max(0, imprevisto.minutos - (Date.now() - new Date(imprevisto.em).getTime()) / 60000) : 0;
   if (p.status === "saiu" && !naFila && !p.retirada) {
     const local = await lerLocal();
-    if (local && Date.now() - new Date(local.atualizadoEm).getTime() < 10 * 60 * 1000) {
+    // Mostra a última posição por até 45 min: o celular do entregador pode parar de mandar o GPS
+    // quando ele abre o Waze (o navegador fica em segundo plano). Melhor o carro parado no mapa do que nada.
+    if (local && Date.now() - new Date(local.atualizadoEm).getTime() < 45 * 60 * 1000) {
       let direcao: number | null = ultimaPosicao?.direcao ?? null;
       if (ultimaPosicao && distanciaMetros(ultimaPosicao, local) > 8) direcao = direcaoGraus(ultimaPosicao, local);
       else if (direcao == null && destino) direcao = direcaoGraus(local, destino);
@@ -79,7 +81,9 @@ export async function situacaoAoVivo(p: Pedido): Promise<AoVivo> {
       if (destino) {
         const rota = await rotaCarro(local, destino, vel);
         distancia = rota.metros;
-        minutos = rota.minutos;
+        // Posição antiga (GPS parado): desconta o tempo que já passou desde a última posição.
+        const idade = (Date.now() - new Date(local.atualizadoEm).getTime()) / 60000;
+        minutos = idade > 1 ? Math.max(1, Math.round(rota.minutos - idade)) : rota.minutos;
         previsao = new Date(Date.now() + Math.max(1, minutos + extra) * 60000).toISOString();
       }
     } else if (p.saiuEm) {

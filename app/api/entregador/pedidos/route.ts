@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { logado } from "@/lib/auth";
 import { entregaAtual, listarPorStatus, lerLocal, pedidosNaConta } from "@/lib/db";
-import { rotaCarro } from "@/lib/rota";
+import { rotaCarro, rotaEstimada } from "@/lib/rota";
 import { getAjustes } from "@/lib/dados";
 import { linkWhatsapp, mensagens, whatsappAutomatico } from "@/lib/whatsapp";
 import { siteUrl } from "@/lib/stripe";
@@ -19,7 +19,12 @@ export async function GET(req: Request) {
   const nome = (n: string) => n.trim().split(/\s+/)[0] || n;
   // Tempo e distância pelas ruas (como o Waze), não em linha reta.
   const rotas = await Promise.all(
-    pedidos.map((p) => (local && p.lat != null && p.lng != null && p.status === "saiu" ? rotaCarro(local, { lat: p.lat, lng: p.lng }, ajustes.entrega.velocidadeMediaKmh) : Promise.resolve(null))),
+    // Rota de verdade só para a entrega atual (as outras usam estimativa, para a tela não ficar lenta).
+    pedidos.map((p) => {
+      if (!local || p.lat == null || p.lng == null || p.status !== "saiu") return Promise.resolve(null);
+      const destino = { lat: p.lat, lng: p.lng };
+      return p.numero === atual ? rotaCarro(local, destino, ajustes.entrega.velocidadeMediaKmh) : Promise.resolve(rotaEstimada(local, destino, ajustes.entrega.velocidadeMediaKmh));
+    }),
   );
   return NextResponse.json({
     automatico: whatsappAutomatico(),

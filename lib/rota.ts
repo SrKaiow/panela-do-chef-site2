@@ -9,6 +9,11 @@ type Rota = { minutos: number; metros: number; pelaRua: boolean };
 const cache = new Map<string, { em: number; r: Rota }>();
 const SERVIDORES = ["https://router.project-osrm.org", "https://routing.openstreetmap.de/routed-car"];
 
+/** Estimativa rápida sem chamar o serviço de mapas (linha reta + margem de ruas). */
+export function rotaEstimada(de: { lat: number; lng: number }, para: { lat: number; lng: number }, velKmh?: number): Rota {
+  return rotaEstimada(de, para, velKmh);
+}
+
 export async function rotaCarro(de: { lat: number; lng: number }, para: { lat: number; lng: number }, velKmh?: number): Promise<Rota> {
   const chave = `${de.lat.toFixed(3)},${de.lng.toFixed(3)}>${para.lat.toFixed(4)},${para.lng.toFixed(4)}`;
   const c = cache.get(chave);
@@ -16,7 +21,7 @@ export async function rotaCarro(de: { lat: number; lng: number }, para: { lat: n
   for (const base of SERVIDORES) {
     try {
       const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 2500);
+      const t = setTimeout(() => ctrl.abort(), 1500);
       const r = await fetch(`${base}/route/v1/driving/${de.lng},${de.lat};${para.lng},${para.lat}?overview=false`, { signal: ctrl.signal, headers: { "User-Agent": "paneladochef.co.uk" } });
       clearTimeout(t);
       if (!r.ok) continue;
