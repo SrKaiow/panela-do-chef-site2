@@ -24,15 +24,17 @@ export async function POST(req: Request) {
     // Campo-isca invisível: só robô preenche.
     if (b.site) throw new Error("Não foi possível enviar o pedido.");
 
-    // Fora do horário: só aceita pedido agendado para um horário válido da próxima abertura.
+    // Reserva de horário é só para coleta na porta; entrega é sempre "agora", com a cozinha aberta.
     const estado = estadoLoja(ajustes.horarios, ajustes.pausado);
     let agendadoPara: string | null = null;
-    if (typeof b.agendadoPara === "string" && b.agendadoPara) {
+    if (b.retirada !== true) {
+      if (!estado.aberto) throw new Error("A entrega é só com a cozinha aberta. Para deixar reservado para mais tarde, escolha \"Coletar\".");
+    } else if (typeof b.agendadoPara === "string" && b.agendadoPara) {
       const valido = horariosParaAgendar(ajustes.horarios).some((h) => h.valor === b.agendadoPara);
       if (!valido) throw new Error("Esse horário não está mais disponível. Escolha outro.");
       agendadoPara = b.agendadoPara;
     } else if (!estado.aberto) {
-      throw new Error("A cozinha está fechada agora. Escolha um horário para receber o seu pedido.");
+      throw new Error("A cozinha está fechada agora. Escolha um horário para vir buscar o seu pedido.");
     }
 
     // Coletar na porta: sem endereço e sem taxa de entrega.

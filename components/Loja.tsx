@@ -114,8 +114,8 @@ export default function Loja({
         <Novidades itens={cardapio.itens} abrir={setAberto} />
         {!estado.aberto && (
           <p className="aviso-agendar">
-            <strong>Cozinha fechada agora.</strong> Monte seu pedido e escolha o horário de entrega
-            {estado.proxima ? ` (a partir de ${estado.proxima.quando} às ${estado.proxima.abre})` : ""}: ele fica reservado pra você.
+            <strong>Cozinha fechada agora.</strong> Entregas voltam
+            {estado.proxima ? ` ${estado.proxima.quando} às ${estado.proxima.abre}` : " quando a cozinha abrir"}. Quer garantir o seu? Reserve um horário e venha <strong>coletar na porta</strong>.
           </p>
         )}
         <p className="aviso-alergia">
@@ -215,8 +215,8 @@ function AvisoFechado({ estado }: { estado: Estado }) {
           <strong>Cozinha fechada{estado.proxima ? `, pedir ${estado.proxima.quando}` : ""}</strong>
           <span>
             {estado.proxima
-              ? `Voltamos ${estado.proxima.quando} às ${estado.proxima.abre}. Olhe o cardápio e já deixe seu pedido reservado.`
-              : "Olhe o cardápio e já deixe seu pedido reservado."}
+              ? `Voltamos ${estado.proxima.quando} às ${estado.proxima.abre}. Se quiser, já reserve seu pedido para coletar na porta.`
+              : "Se quiser, já reserve seu pedido para coletar na porta."}
           </span>
         </div>
         <a className="botao" href="#cardapio">Ver o cardápio</a>
@@ -557,7 +557,7 @@ function FolhaCarrinho({
           pagamento,
           retirada: coleta,
           local: coleta && local ? { lat: local.lat, lng: local.lng } : undefined,
-          agendadoPara: quando || null,
+          agendadoPara: coleta ? quando || null : null,
           itens: carrinho.map(({ itemId, qtd, selecoes, obs }) => ({ itemId, qtd, selecoes, obs })),
         }),
       });
@@ -667,8 +667,13 @@ function FolhaCarrinho({
           </label>
           </>)}
 
-          <div className="grupo">
-            <div className="grupo-titulo"><h3>{coleta ? "Quando você vem buscar?" : "Quando você quer receber?"}</h3></div>
+          {!coleta && (estado.aberto ? (
+            <p className="dica">Entrega agora, o quanto antes. Quer deixar reservado para mais tarde? Escolha <strong>Coletar</strong>.</p>
+          ) : (
+            <p className="erro" role="alert">A cozinha está fechada agora, então não dá para pedir entrega{estado.proxima ? ` (voltamos ${estado.proxima.quando} às ${estado.proxima.abre})` : ""}. Para deixar o pedido reservado, escolha <strong>Coletar</strong> e venha buscar na porta.</p>
+          ))}
+          {coleta && <div className="grupo">
+            <div className="grupo-titulo"><h3>Quando você vem buscar?</h3></div>
             {!estado.aberto && (
               <p className="dica">A cozinha está fechada agora. Escolha um horário e seu pedido fica reservado.</p>
             )}
@@ -679,7 +684,7 @@ function FolhaCarrinho({
                 {horarios.map((h) => <option key={h.valor} value={h.valor}>{h.rotulo}</option>)}
               </select>
             </label>
-          </div>
+          </div>}
           <label className="campo" htmlFor="f-obs">Observação <span className="dica">({coleta ? "alergia ou recado" : "entrega ou alergia"}, opcional)</span>
             <textarea id="f-obs" maxLength={300} placeholder="Ex.: tocar o interfone 3 · tenho alergia a amendoim" value={form.observacao} onChange={mudar("observacao")} />
           </label>
@@ -763,8 +768,8 @@ function FolhaCarrinho({
           <p className="dica">Usamos seus dados só para preparar e entregar o pedido. <a href="/privacidade" target="_blank">Política de privacidade</a>.</p>
           {foraDaArea && cotacao && !cotacao.ok && <p className="erro fora-area" role="alert">{cotacao.motivo}</p>}
           {erro && <p className="erro" role="alert">{erro}</p>}
-          <button className="principal" type="submit" disabled={enviando || nenhumPagamento || foraDaArea || (coleta && !local) || (!estado.aberto && !quando) || (pagamento === "dinheiro" && !troco)}>
-            <span>{enviando ? "Enviando..." : pagamento === "cartao" ? "Ir para o pagamento" : quando ? "Reservar pedido" : "Fazer pedido"}</span>
+          <button className="principal" type="submit" disabled={enviando || nenhumPagamento || foraDaArea || (coleta && !local) || (!coleta && !estado.aberto) || (coleta && !estado.aberto && !quando) || (pagamento === "dinheiro" && !troco)}>
+            <span>{enviando ? "Enviando..." : pagamento === "cartao" ? "Ir para o pagamento" : coleta && quando ? "Reservar pedido" : "Fazer pedido"}</span>
             <span className="preco">{formatar(total)}</span>
           </button>
           <button type="button" className="secundario" onClick={() => setEtapa("carrinho")}>← Voltar ao carrinho</button>
