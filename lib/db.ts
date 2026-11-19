@@ -34,6 +34,7 @@ async function preparar(c: Client) {
     "square_pedido TEXT", "link_pagamento TEXT",
     "a_caminho_em TEXT",
     "retirada INTEGER NOT NULL DEFAULT 0",
+    "imprimir_pedido TEXT",
     "atraso_min INTEGER NOT NULL DEFAULT 0", "atraso_motivo TEXT", "atraso_em TEXT", "atraso_lat REAL", "atraso_lng REAL",
   ]) {
     try { await c.execute(`ALTER TABLE pedidos ADD COLUMN ${col}`); } catch {}
@@ -175,6 +176,8 @@ export type Pedido = {
   atraso: { minutos: number; motivo: string; em: string; lat: number | null; lng: number | null } | null;
   /** Cliente vem buscar na porta (sem entrega e sem taxa). */
   retirada: boolean;
+  /** Pedido de impressão feito pelo celular/Telegram: o computador da loja imprime quando vê. */
+  imprimirPedido: string | null;
   /** Lançado em "Clientes a pagar" (só no painel/entregador). */
   naConta?: boolean;
 };
@@ -215,13 +218,14 @@ function linhaParaPedido(r: Record<string, unknown>): Pedido {
     entregueEm: (r.entregue_em as string) ?? null,
     aCaminhoEm: (r.a_caminho_em as string) ?? null,
     retirada: Number(r.retirada ?? 0) === 1,
+    imprimirPedido: (r.imprimir_pedido as string) ?? null,
     atraso: r.atraso_em
       ? { minutos: Number(r.atraso_min) || 0, motivo: String(r.atraso_motivo ?? "transito"), em: String(r.atraso_em), lat: numOuNull(r.atraso_lat), lng: numOuNull(r.atraso_lng) }
       : null,
   };
 }
 
-type NovoPedido = Omit<Pedido, "numero" | "token" | "criadoEm" | "stripeSessao" | "squarePedido" | "linkPagamento" | "statusEm" | "avisadoSaiu" | "avisadoChegando" | "aceitoEm" | "preparoEm" | "saiuEm" | "entregueEm" | "aCaminhoEm" | "atraso">;
+type NovoPedido = Omit<Pedido, "numero" | "token" | "criadoEm" | "stripeSessao" | "squarePedido" | "linkPagamento" | "statusEm" | "avisadoSaiu" | "avisadoChegando" | "aceitoEm" | "preparoEm" | "saiuEm" | "entregueEm" | "aCaminhoEm" | "atraso" | "imprimirPedido" | "naConta">;
 
 export async function criarPedido(p: NovoPedido) {
   const token = randomBytes(12).toString("base64url");
@@ -698,4 +702,9 @@ export async function pedidoParaConta(numero: number) {
   const data = new Date(p.criadoEm).toLocaleDateString("en-CA", { timeZone: "Europe/London" });
   await exec("INSERT INTO contas_lancamentos (conta_id, tipo, valor, descricao, data, criado_em, pedido) VALUES (?, 'compra', ?, ?, ?, ?, ?)", [id, p.total, `Pedido #${numero}: ${itens}`.slice(0, 160), data, new Date().toISOString(), numero]);
   return { jaEstava: false, nome: p.nome };
+}
+
+/** Pede para o computador da loja imprimir este pedido (botão no celular ou no Telegram). */
+export async function pedirImpressao(numero: number) {
+  await exec("UPDATE pedidos SET imprimir_pedido = ? WHERE numero = ?", [new Date().toISOString(), numero]);
 }

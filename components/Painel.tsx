@@ -196,6 +196,18 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
         const fila = lista.filter((p) => p.status === "novo" && !feitos.includes(p.numero) && Date.now() - new Date(p.criadoEm).getTime() < 3 * 3600_000);
         if (fila.length) { guardarImpressos([...feitos, ...fila.map((p) => p.numero)]); fila.forEach((p, i) => setTimeout(() => imprimir(p.numero), i * 4000)); }
       }
+      // Impressão pedida pelo celular ou pelo Telegram: este computador imprime se o "Imprimir sozinho" estiver ligado.
+      // (Só em computador: no celular a impressão abriria a janela de imprimir.)
+      if (autoRef.current && !/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+        let feitas: string[] = [];
+        try { feitas = JSON.parse(localStorage.getItem("impressoes-remotas") || "[]"); } catch {}
+        const remotas = lista.filter((p) => p.imprimirPedido && Date.now() - new Date(p.imprimirPedido).getTime() < 30 * 60000 && !feitas.includes(`${p.numero}@${p.imprimirPedido}`));
+        if (remotas.length) {
+          feitas = [...feitas, ...remotas.map((p) => `${p.numero}@${p.imprimirPedido}`)].slice(-200);
+          try { localStorage.setItem("impressoes-remotas", JSON.stringify(feitas)); } catch {}
+          remotas.forEach((p, i) => setTimeout(() => imprimir(p.numero), i * 4000));
+        }
+      }
       setPedidos(lista);
       setErro("");
     } catch {
@@ -241,7 +253,7 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
     }
   }
 
-  async function atualizar(numero: number, dados: { status?: Status; pago?: boolean; avisoManual?: "saiu" | "chegando" }) {
+  async function atualizar(numero: number, dados: { status?: Status; pago?: boolean; avisoManual?: "saiu" | "chegando"; imprimirNaLoja?: boolean }) {
     setPedidos((ps) => ps.map((p) => (p.numero === numero ? { ...p, ...dados } : p)));
     const r = await fetch(`/api/painel/pedidos/${numero}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dados) });
     if (!r.ok) setErro("Não consegui salvar a mudança. Confira a conexão.");
@@ -406,7 +418,10 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
                   </a>
                 )}
                 {p.status !== "cancelado" && (
-                  <button className="btn" onClick={() => imprimir(p.numero)} title="Imprimir o recibo da cozinha">🖨 Imprimir</button>
+                  <button className="btn" onClick={() => imprimir(p.numero)} title="Imprimir neste aparelho">🖨 Imprimir</button>
+                )}
+                {p.status !== "cancelado" && (
+                  <button className="btn" onClick={async () => { await atualizar(p.numero, { imprimirNaLoja: true }); window.alert("Pronto! O computador da loja vai imprimir em alguns segundos (precisa estar com o painel aberto e o \"Imprimir sozinho\" ligado)."); }} title="Manda imprimir na impressora da loja, de qualquer lugar">🖨 Imprimir na loja</button>
                 )}
                 {p.status !== "aguardando_pagamento" && p.status !== "cancelado" && (
                   <a className="btn" href={`/pedido/${p.token}`} target="_blank" rel="noreferrer">Ver rastreio</a>

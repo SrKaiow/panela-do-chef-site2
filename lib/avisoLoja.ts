@@ -71,7 +71,34 @@ async function chatTelegram(token: string): Promise<string | null> {
   return String(chat);
 }
 
-async function enviarTelegram(texto: string) {
+type Botoes = { text: string; callback_data?: string; url?: string }[][];
+
+/** Segredo do webhook do Telegram (derivado do token: muda se o token mudar). */
+export async function segredoTelegram() {
+  const token = process.env.TELEGRAM_BOT_TOKEN || "";
+  const dig = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("webhook:" + token));
+  return Array.from(new Uint8Array(dig)).map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 48);
+}
+
+/** Chat que recebe os avisos (só ele pode usar os botões). */
+export async function chatDoTelegram() {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  return token ? chatTelegram(token) : null;
+}
+
+export async function salvarChatTelegram(chat: string) {
+  await salvarConfig("telegram-chat", { chat });
+}
+
+/** Chamadas simples à API do Telegram (responder botão, mandar mensagem). */
+export async function apiTelegram(metodo: string, corpo: object) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) return null;
+  const r = await fetch(`https://api.telegram.org/bot${token}/${metodo}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
+  return r.json().catch(() => null);
+}
+
+async function enviarTelegram(texto: string, botoes?: Botoes) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) return false;
   try {
@@ -86,7 +113,7 @@ async function enviarTelegram(texto: string) {
       method: "POST",
       signal: ctrl.signal,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chat, text: texto.replace(/\*/g, "").slice(0, 4000), disable_web_page_preview: true }),
+      body: JSON.stringify({ chat_id: chat, text: texto.replace(/\*/g, "").slice(0, 4000), disable_web_page_preview: true, ...(botoes ? { reply_markup: { inline_keyboard: botoes } } : {}) }),
     });
     clearTimeout(t);
     if (!r.ok) console.error("[aviso loja] telegram", r.status, (await r.text()).slice(0, 200));
@@ -106,14 +133,24 @@ export async function avisarLojaNovoPedido(numero: number, origem?: string) {
     if (!(await marcarAvisoLoja(numero))) return;
     const tel = process.env.WHATSAPP_LOJA || (await getAjustes()).telefone;
     const texto = textoPedido(p, origem);
-    await Promise.all([enviarTelegram(texto), process.env.CALLMEBOT_APIKEY ? enviarCallMeBot(tel, texto) : null]);
+    // Botões no Telegram: imprimir na impressora da loja e aceitar, direto da notificação.
+    const botoes: Botoes = [
+      [{ text: "🖨 Imprimir na loja", callback_data: `imp:${p.numero}` }, { text: "✅ Aceitar pedido", callback_data: `ok:${p.numero}` }],
+      [{ text: "Abrir o painel", url: `${origem || siteUrl()}/painel#pedidos` }],
+    ];
+    await Promise.all([enviarTelegram(texto, botoes), process.env.CALLMEBOT_APIKEY ? enviarCallMeBot(tel, texto) : null]);
   } catch (e) {
     console.error("[aviso loja]", e);
   }
 }
 
 /** Teste dos avisos (painel). null = canal não configurado, true = enviado, false = falhou. */
-export async function testarAvisos() {
+export async function testarAvisos(origem?: string) {
+  // Liga os botões do Telegram (webhook). Primeiro acha o chat (o getUpdates para de funcionar depois do webhook).
+  if (process.env.TELEGRAM_BOT_TOKEN && origem && /^https:\/\//.test(origem)) {
+    await chatDoTelegram().catch(() => null);
+    await apiTelegram("setWebhook", { url: `${origem}/api/telegram/webhook`, secret_token: await segredoTelegram(), allowed_updates: ["callback_query", "message"] }).catch(() => null);
+  }
   const msg = "🔔 Teste: os avisos de pedido novo da Panela do Chef estão funcionando.";
   const tel = process.env.WHATSAPP_LOJA || (await getAjustes()).telefone;
   const [telegram, whatsapp] = await Promise.all([

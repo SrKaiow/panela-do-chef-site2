@@ -17,6 +17,8 @@ export function middleware(req: NextRequest) {
   if (req.nextUrl.pathname === "/api/stripe/webhook" || req.nextUrl.pathname === "/api/square/webhook") return NextResponse.next();
   // O app OwnTracks do entregador manda a posição direto (com a senha do entregador).
   if (req.nextUrl.pathname === "/api/entregador/owntracks") return NextResponse.next();
+  // Botões do Telegram: vêm direto do Telegram, com cabeçalho secreto conferido na rota.
+  if (req.nextUrl.pathname === "/api/telegram/webhook") return NextResponse.next();
 
   const origem = req.headers.get("origin");
   const host = req.headers.get("x-forwarded-host") || req.headers.get("host");

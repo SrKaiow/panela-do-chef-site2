@@ -1,7 +1,7 @@
 import { siteUrl } from "@/lib/stripe";
 import { NextResponse } from "next/server";
 import { logado } from "@/lib/auth";
-import { STATUS, mudarStatus, marcarPago, marcarAviso, type Status } from "@/lib/db";
+import { STATUS, mudarStatus, marcarPago, marcarAviso, type Status, pedirImpressao } from "@/lib/db";
 import { aoMudarStatus } from "@/lib/avisos";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +19,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ numero: strin
     await aoMudarStatus(numero, b.status as Status, siteUrl(req));
   }
   if (typeof b.pago === "boolean") await marcarPago(numero, b.pago);
+  if (b.imprimirNaLoja === true) await pedirImpressao(numero);
   if (b.avisoManual === "saiu" || b.avisoManual === "chegando") await marcarAviso(numero, b.avisoManual);
   return NextResponse.json({ ok: true });
 }
