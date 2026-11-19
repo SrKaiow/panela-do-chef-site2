@@ -85,6 +85,25 @@ async function preparar(c: Client) {
     ultima TEXT NOT NULL,
     PRIMARY KEY (dia, visitante)
   )`);
+  // Clientes a pagar (fiado / semanal): cada cliente tem uma conta com lançamentos.
+  await c.execute(`CREATE TABLE IF NOT EXISTS contas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    telefone TEXT NOT NULL DEFAULT '',
+    obs TEXT NOT NULL DEFAULT '',
+    semanal INTEGER NOT NULL DEFAULT 0,
+    criado_em TEXT NOT NULL,
+    arquivado INTEGER NOT NULL DEFAULT 0
+  )`);
+  await c.execute(`CREATE TABLE IF NOT EXISTS contas_lancamentos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    conta_id INTEGER NOT NULL,
+    tipo TEXT NOT NULL,
+    valor INTEGER NOT NULL,
+    descricao TEXT NOT NULL DEFAULT '',
+    data TEXT NOT NULL,
+    criado_em TEXT NOT NULL
+  )`);
   // Cartão fidelidade: quantos brindes o cliente (pelo telefone) já resgatou.
   await c.execute(`CREATE TABLE IF NOT EXISTS fidelidade (
     telefone TEXT PRIMARY KEY,
@@ -607,4 +626,48 @@ export async function carimbosDoPedido(p: Pedido, meta: number, minimoPence = 0)
   const pedidos = r.rows.filter((x) => telefoneChave(String(x.telefone)) === tel).length;
   const resgatados = Number(f.rows[0]?.resgatados ?? 0);
   return { carimbos: Math.max(0, pedidos - resgatados * meta), meta, ganhou: p.subtotal >= minimoPence };
+}
+
+/* ------------------------- Clientes a pagar (fiado / semanal) ------------------------- */
+
+export type Lancamento = { id: number; tipo: "compra" | "pagamento"; valor: number; descricao: string; data: string };
+export type Conta = { id: number; nome: string; telefone: string; obs: string; semanal: boolean; criadoEm: string; saldo: number; ultimo: string | null; lancamentos: Lancamento[] };
+
+/** Contas com saldo (compras - pagamentos, em pence) e os lançamentos, mais recentes primeiro. */
+export async function listarContas(): Promise<Conta[]> {
+  const contas = await exec("SELECT * FROM contas WHERE arquivado = 0 ORDER BY nome COLLATE NOCASE");
+  const lanc = await exec("SELECT * FROM contas_lancamentos ORDER BY data DESC, id DESC");
+  const porConta = new Map<number, Lancamento[]>();
+  for (const r of lanc.rows) {
+    const id = Number(r.conta_id);
+    const l: Lancamento = { id: Number(r.id), tipo: r.tipo === "pagamento" ? "pagamento" : "compra", valor: Number(r.valor), descricao: String(r.descricao ?? ""), data: String(r.data) };
+    porConta.set(id, [...(porConta.get(id) ?? []), l]);
+  }
+  return contas.rows.map((r) => {
+    const id = Number(r.id);
+    const ls = porConta.get(id) ?? [];
+    const saldo = ls.reduce((s, l) => s + (l.tipo === "compra" ? l.valor : -l.valor), 0);
+    return { id, nome: String(r.nome), telefone: String(r.telefone ?? ""), obs: String(r.obs ?? ""), semanal: Number(r.semanal) === 1, criadoEm: String(r.criado_em), saldo, ultimo: ls[0]?.data ?? null, lancamentos: ls };
+  });
+}
+
+export async function salvarConta(c: { id?: number; nome: string; telefone: string; obs: string; semanal: boolean }) {
+  if (c.id) {
+    await exec("UPDATE contas SET nome = ?, telefone = ?, obs = ?, semanal = ? WHERE id = ?", [c.nome, c.telefone, c.obs, c.semanal ? 1 : 0, c.id]);
+    return c.id;
+  }
+  const r = await exec("INSERT INTO contas (nome, telefone, obs, semanal, criado_em) VALUES (?, ?, ?, ?, ?) RETURNING id", [c.nome, c.telefone, c.obs, c.semanal ? 1 : 0, new Date().toISOString()]);
+  return Number(r.rows[0].id);
+}
+
+export async function arquivarConta(id: number) {
+  await exec("UPDATE contas SET arquivado = 1 WHERE id = ?", [id]);
+}
+
+export async function lancarConta(l: { contaId: number; tipo: "compra" | "pagamento"; valor: number; descricao: string; data: string }) {
+  await exec("INSERT INTO contas_lancamentos (conta_id, tipo, valor, descricao, data, criado_em) VALUES (?, ?, ?, ?, ?, ?)", [l.contaId, l.tipo, l.valor, l.descricao, l.data, new Date().toISOString()]);
+}
+
+export async function apagarLancamento(id: number) {
+  await exec("DELETE FROM contas_lancamentos WHERE id = ?", [id]);
 }
