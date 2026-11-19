@@ -1,7 +1,7 @@
 import { buscarPorNumero, entregaAtual, listarPorStatus, marcarAviso, type Local, type Status } from "./db";
 import { distanciaMetros } from "./entrega";
 import { getAjustes } from "./dados";
-import { enviarModelo } from "./whatsapp";
+import { whatsappAutomatico, enviarModelo } from "./whatsapp";
 import { siteUrl } from "./stripe";
 
 const primeiroNome = (n: string) => n.trim().split(/\s+/)[0] || n;
@@ -30,6 +30,8 @@ export async function verificarChegadas(local: Local) {
     if (p.avisadoChegando || p.lat == null || p.lng == null) continue;
     const d = distanciaMetros(local, { lat: p.lat, lng: p.lng });
     if (d > limite) continue;
+    // Sem WhatsApp automático: o próprio site avisa o cliente (alarme na página dele), sem o entregador mandar nada.
+    if (!whatsappAutomatico()) { await marcarAviso(p.numero, "chegando"); continue; }
     const ok = await enviarModelo(p.telefone, process.env.WHATSAPP_MODELO_CHEGANDO || "", [primeiroNome(p.nome)]);
     if (ok) await marcarAviso(p.numero, "chegando");
     else manuais.push(p.numero);

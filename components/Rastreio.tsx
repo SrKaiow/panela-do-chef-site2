@@ -61,6 +61,8 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
   // Alarme de "pronto para coletar" (só na coleta): toca, vibra e mostra aviso na tela.
   const [alarmeLigado, setAlarmeLigado] = useState(false);
   const [tocando, setTocando] = useState(false);
+  /** Qual alarme: pronto para coletar ou entregador chegando. */
+  const [motivoAlarme, setMotivoAlarme] = useState<"pronto" | "chegando">("pronto");
   const audioRef = useRef<AudioContext | null>(null);
   const statusAnterior = useRef(inicial.status);
 
@@ -95,6 +97,7 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
     if (statusAnterior.current === ao.status) return;
     statusAnterior.current = ao.status;
     if (ao.retirada && ao.status === "saiu") {
+      setMotivoAlarme("pronto");
       setTocando(true);
       try {
         if (Notification.permission === "granted")
@@ -112,10 +115,12 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
   useEffect(() => {
     if (ao.chegando && !avisou.current && ao.status === "saiu") {
       avisou.current = true;
-      try { navigator.vibrate?.([300, 120, 300]); } catch {}
+      // O GPS do entregador chegou perto: toca o alarme e mostra o aviso em tela cheia (sem o entregador mandar nada).
+      setMotivoAlarme("chegando");
+      setTocando(true);
       try {
-        if (notificar && Notification.permission === "granted") {
-          new Notification("Seu pedido está chegando!", { body: "Falta mais ou menos 1 minuto. Já pode ir até a porta." });
+        if (Notification.permission === "granted") {
+          new Notification("Seu pedido está chegando!", { body: "Falta mais ou menos 1 minuto. Já pode ir até a porta.", tag: "chegando-" + token, requireInteraction: true } as NotificationOptions);
         }
       } catch {}
     }
@@ -204,25 +209,41 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
         <div className="alarme-pronto" role="alertdialog" aria-labelledby="alarme-titulo">
           <div className="alarme-caixa">
             <span className="alarme-sino" aria-hidden="true">🔔</span>
-            <h2 id="alarme-titulo">Pedido pronto para coletar!</h2>
-            <p>O Chef já está indo até a porta com o seu pedido. Pode encostar!</p>
-            <button type="button" className="principal" onClick={() => setTocando(false)}><span>Ok, estou aqui</span></button>
+            {motivoAlarme === "chegando" ? (
+              <>
+                <h2 id="alarme-titulo">Seu pedido está chegando!</h2>
+                <p>Falta mais ou menos 1 minuto. Já pode ir até a porta!</p>
+                <button type="button" className="principal" onClick={() => setTocando(false)}><span>Ok, estou indo</span></button>
+              </>
+            ) : (
+              <>
+                <h2 id="alarme-titulo">Pedido pronto para coletar!</h2>
+                <p>O Chef já está indo até a porta com o seu pedido. Pode encostar!</p>
+                <button type="button" className="principal" onClick={() => setTocando(false)}><span>Ok, estou aqui</span></button>
+              </>
+            )}
           </div>
         </div>
       )}
 
-      {ao.retirada && ["novo", "confirmado", "preparando"].includes(ao.status) && (
+      {((ao.retirada && ["novo", "confirmado", "preparando"].includes(ao.status)) || (!ao.retirada && ["novo", "confirmado", "preparando", "saiu"].includes(ao.status) && !ao.chegando)) && (
         <div className={"alarme-ligar" + (alarmeLigado ? " ligado" : "")}>
           {alarmeLigado ? (
             <>
               <strong>🔔 Alarme ligado</strong>
-              <span>Deixe esta página aberta e o volume ligado: quando ficar pronto, o celular toca e vibra.</span>
+              <span>Deixe esta página aberta e o volume ligado: {ao.retirada ? "quando ficar pronto" : "quando o entregador estiver a 1 minuto"}, o celular toca e vibra.</span>
             </>
-          ) : (
+          ) : ao.retirada ? (
             <>
               <strong>Vai esperar aqui fora?</strong>
               <span>Ligue o alarme: quando o pedido ficar pronto, o celular toca e vibra na hora.</span>
               <button type="button" className="principal" onClick={ligarAlarme}><span>🔔 Ligar alarme de pronto</span></button>
+            </>
+          ) : (
+            <>
+              <strong>Quer saber a hora de ir para a porta?</strong>
+              <span>Ligue o alarme: quando o entregador estiver a 1 minuto, o celular toca e vibra sozinho.</span>
+              <button type="button" className="principal" onClick={ligarAlarme}><span>🔔 Ligar alarme de chegada</span></button>
             </>
           )}
         </div>
