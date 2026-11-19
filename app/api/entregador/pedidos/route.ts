@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { logado } from "@/lib/auth";
-import { entregaAtual, listarPorStatus, lerLocal } from "@/lib/db";
+import { entregaAtual, listarPorStatus, lerLocal, pedidosNaConta } from "@/lib/db";
 import { rotaCarro } from "@/lib/rota";
 import { getAjustes } from "@/lib/dados";
 import { linkWhatsapp, mensagens, whatsappAutomatico } from "@/lib/whatsapp";
@@ -15,6 +15,7 @@ export async function GET(req: Request) {
   // Coleta na porta não passa pelo entregador.
   const pedidos = (await listarPorStatus(["confirmado", "preparando", "saiu"])).filter((p) => !p.retirada);
   const atual = await entregaAtual();
+  const naConta = await pedidosNaConta().catch(() => new Set<number>());
   const nome = (n: string) => n.trim().split(/\s+/)[0] || n;
   // Tempo e distância pelas ruas (como o Waze), não em linha reta.
   const rotas = await Promise.all(
@@ -37,6 +38,7 @@ export async function GET(req: Request) {
         pago: p.pago,
         total: p.total,
         trocoPara: p.trocoPara,
+        naConta: naConta.has(p.numero),
         itens: p.itens.map((l) => `${l.qtd}× ${l.nome}`),
         distancia,
         minutos: rotas[i]?.minutos ?? null,

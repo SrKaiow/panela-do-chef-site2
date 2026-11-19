@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { logado } from "@/lib/auth";
-import { apagarLancamento, arquivarConta, lancarConta, listarContas, salvarConta } from "@/lib/db";
+import { apagarLancamento, arquivarConta, lancarConta, listarContas, pedidoParaConta, salvarConta } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +34,10 @@ export async function POST(req: Request) {
       const data = /^\d{4}-\d{2}-\d{2}$/.test(String(b.data)) ? String(b.data) : new Date().toISOString().slice(0, 10);
       await lancarConta({ contaId, tipo, valor, descricao: texto(b.descricao, 160), data });
       return NextResponse.json({ ok: true, contas: await listarContas() });
+    }
+    if (b.acao === "do-pedido") {
+      const r = await pedidoParaConta(Number(b.numero));
+      return NextResponse.json({ ok: true, ...r });
     }
     if (b.acao === "apagar-lancamento") {
       await apagarLancamento(Number(b.id));

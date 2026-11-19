@@ -228,6 +228,19 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
   useEffect(() => { document.title = qtdNovos ? `(${qtdNovos}) Pedidos novos` : "Painel | Panela do Chef"; }, [qtdNovos]);
   useEffect(() => { onNovos?.(qtdNovos, pendentes, somPronto || !som); }, [qtdNovos, pendentes, somPronto, som, onNovos]);
 
+  /** Joga o pedido em "Clientes a pagar" (acha o cliente pelo telefone ou cria). */
+  async function porNaConta(p: Pedido) {
+    if (!window.confirm(`Pôr o pedido #${p.numero} (${gbp(p.total)}) na conta de ${p.nome}? O entregador não vai cobrar.`)) return;
+    try {
+      const r = await fetch("/api/painel/contas", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ acao: "do-pedido", numero: p.numero }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.erro || "Não consegui lançar.");
+      setPedidos((lista) => lista.map((x) => (x.numero === p.numero ? { ...x, naConta: true } : x)));
+    } catch (e: any) {
+      window.alert(e.message);
+    }
+  }
+
   async function atualizar(numero: number, dados: { status?: Status; pago?: boolean; avisoManual?: "saiu" | "chegando" }) {
     setPedidos((ps) => ps.map((p) => (p.numero === numero ? { ...p, ...dados } : p)));
     const r = await fetch(`/api/painel/pedidos/${numero}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dados) });
@@ -347,8 +360,13 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
                 ))}
               </ul>
 
-              <div className={"pag " + p.pagamento}>
-                {p.pagamento === "dinheiro" ? (
+              <div className={"pag " + p.pagamento + (p.naConta ? " na-conta" : "")}>
+                {p.naConta ? (
+                  <>
+                    <strong>📒 NA CONTA · {gbp(p.total)}</strong>
+                    <span>Cliente paga depois: não cobrar na entrega</span>
+                  </>
+                ) : p.pagamento === "dinheiro" ? (
                   <>
                     <strong>DINHEIRO · cobrar {gbp(p.total)}</strong>
                     {p.trocoPara ? <span>Troco para {gbp(p.trocoPara)} → levar {gbp(p.trocoPara - p.total)}</span> : <span>Sem troco</span>}
@@ -393,7 +411,11 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
                 {p.status !== "aguardando_pagamento" && p.status !== "cancelado" && (
                   <a className="btn" href={`/pedido/${p.token}`} target="_blank" rel="noreferrer">Ver rastreio</a>
                 )}
-                {p.pagamento === "dinheiro" && p.status === "entregue" && (
+                {p.pagamento === "dinheiro" && !p.naConta && p.status !== "cancelado" && (
+                  <button className="btn btn-conta" onClick={() => porNaConta(p)} title="Lança este pedido em Clientes a pagar">📒 Pôr na conta (a pagar)</button>
+                )}
+                {p.naConta && <a className="btn" href="#contas">📒 Ver na conta</a>}
+                {p.pagamento === "dinheiro" && !p.naConta && p.status === "entregue" && (
                   <button className="btn" onClick={() => atualizar(p.numero, { pago: !p.pago })}>{p.pago ? "Dinheiro recebido ✓" : "Marcar dinheiro recebido"}</button>
                 )}
                 {p.status !== "cancelado" && p.status !== "entregue" && (

@@ -102,8 +102,10 @@ async function preparar(c: Client) {
     valor INTEGER NOT NULL,
     descricao TEXT NOT NULL DEFAULT '',
     data TEXT NOT NULL,
-    criado_em TEXT NOT NULL
+    criado_em TEXT NOT NULL,
+    pedido INTEGER
   )`);
+  try { await c.execute("ALTER TABLE contas_lancamentos ADD COLUMN pedido INTEGER"); } catch {}
   // Cartão fidelidade: quantos brindes o cliente (pelo telefone) já resgatou.
   await c.execute(`CREATE TABLE IF NOT EXISTS fidelidade (
     telefone TEXT PRIMARY KEY,
@@ -173,6 +175,8 @@ export type Pedido = {
   atraso: { minutos: number; motivo: string; em: string; lat: number | null; lng: number | null } | null;
   /** Cliente vem buscar na porta (sem entrega e sem taxa). */
   retirada: boolean;
+  /** Lançado em "Clientes a pagar" (só no painel/entregador). */
+  naConta?: boolean;
 };
 
 const numOuNull = (v: unknown) => (v == null ? null : Number(v));
@@ -670,4 +674,28 @@ export async function lancarConta(l: { contaId: number; tipo: "compra" | "pagame
 
 export async function apagarLancamento(id: number) {
   await exec("DELETE FROM contas_lancamentos WHERE id = ?", [id]);
+}
+
+/** Números dos pedidos do site que já foram lançados em alguma conta. */
+export async function pedidosNaConta(): Promise<Set<number>> {
+  const r = await exec("SELECT DISTINCT pedido FROM contas_lancamentos WHERE pedido IS NOT NULL");
+  return new Set(r.rows.map((x) => Number(x.pedido)));
+}
+
+/**
+ * Joga um pedido do site na conta do cliente (acha pelo telefone; se não existir, cria).
+ * Não lança o mesmo pedido duas vezes.
+ */
+export async function pedidoParaConta(numero: number) {
+  const p = await buscarPorNumero(numero);
+  if (!p) throw new Error("Pedido não encontrado.");
+  if ((await pedidosNaConta()).has(numero)) return { jaEstava: true, nome: p.nome };
+  const chave = telefoneChave(p.telefone);
+  const contas = await exec("SELECT id, telefone FROM contas WHERE arquivado = 0");
+  let id = Number(contas.rows.find((r) => chave && telefoneChave(String(r.telefone ?? "")) === chave)?.id ?? 0);
+  if (!id) id = await salvarConta({ nome: p.nome, telefone: p.telefone, obs: "", semanal: false });
+  const itens = p.itens.map((l) => `${l.qtd}x ${l.nome}`).join(", ");
+  const data = new Date(p.criadoEm).toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+  await exec("INSERT INTO contas_lancamentos (conta_id, tipo, valor, descricao, data, criado_em, pedido) VALUES (?, 'compra', ?, ?, ?, ?, ?)", [id, p.total, `Pedido #${numero}: ${itens}`.slice(0, 160), data, new Date().toISOString(), numero]);
+  return { jaEstava: false, nome: p.nome };
 }

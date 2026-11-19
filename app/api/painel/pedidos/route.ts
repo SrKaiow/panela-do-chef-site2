@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { logado } from "@/lib/auth";
-import { confirmarPagamentoCartao, listarPedidos, type Pedido } from "@/lib/db";
+import { confirmarPagamentoCartao, listarPedidos, type Pedido, pedidosNaConta } from "@/lib/db";
 import { pedidoSquarePago, squareConfigurado } from "@/lib/square";
 import { avisarLojaNovoPedido } from "@/lib/avisoLoja";
 
@@ -35,5 +35,7 @@ export async function GET() {
   } catch (e) {
     console.error("[painel] conferir square", e);
   }
-  return NextResponse.json({ pedidos });
+  // Pedidos que já foram para "Clientes a pagar".
+  const naConta = await pedidosNaConta().catch(() => new Set<number>());
+  return NextResponse.json({ pedidos: pedidos.map((p) => ({ ...p, naConta: naConta.has(p.numero) })) });
 }

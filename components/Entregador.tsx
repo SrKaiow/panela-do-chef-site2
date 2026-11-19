@@ -15,6 +15,7 @@ type PedidoRota = {
   pago: boolean;
   total: number;
   trocoPara: number | null;
+  naConta?: boolean;
   itens: string[];
   distancia: number | null;
   minutos: number | null;
@@ -239,8 +240,10 @@ export default function Entregador() {
               {p.observacao && <div className="obs">{p.observacao}</div>}
               {!p.temCoordenadas && <div className="sub">Postcode sem localização: o aviso automático de 1 minuto não funciona neste pedido.</div>}
 
-              <div className={"pag " + p.pagamento}>
-                {p.pagamento === "dinheiro" ? (
+              <div className={"pag " + (p.naConta ? "cartao" : p.pagamento)}>
+                {p.naConta ? (
+                  <strong>NA CONTA · NÃO COBRAR</strong>
+                ) : p.pagamento === "dinheiro" ? (
                   <>
                     <strong>COBRAR {gbp(p.total)} EM DINHEIRO</strong>
                     <span>{p.trocoPara ? `Levar troco de ${gbp(p.trocoPara - p.total)} (cliente paga com ${gbp(p.trocoPara)})` : "Sem troco"}</span>

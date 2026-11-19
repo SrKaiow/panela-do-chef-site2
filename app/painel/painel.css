@@ -389,3 +389,5 @@ a.btn.principal-p { color: #fff; justify-content: center; }
 .conta { align-content: start; }
 .conta .sq-filtros { align-items: center; }
 .conta a.sq-btn { text-decoration: none; }
+.btn-conta { background: #fff7d6 !important; border-color: #e8c200 !important; color: #5a4500 !important; }
+.pag.na-conta { background: #fff4c2; }
