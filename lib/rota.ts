@@ -11,7 +11,8 @@ const SERVIDORES = ["https://router.project-osrm.org", "https://routing.openstre
 
 /** Estimativa rápida sem chamar o serviço de mapas (linha reta + margem de ruas). */
 export function rotaEstimada(de: { lat: number; lng: number }, para: { lat: number; lng: number }, velKmh?: number): Rota {
-  return rotaEstimada(de, para, velKmh);
+  const reta = distanciaMetros(de, para);
+  return { minutos: Math.max(1, Math.round(minutosAte(reta, velKmh) * 1.4 + 1)), metros: Math.round(reta * 1.5), pelaRua: false };
 }
 
 export async function rotaCarro(de: { lat: number; lng: number }, para: { lat: number; lng: number }, velKmh?: number): Promise<Rota> {
@@ -37,6 +38,5 @@ export async function rotaCarro(de: { lat: number; lng: number }, para: { lat: n
       /* tenta o próximo servidor */
     }
   }
-  const reta = distanciaMetros(de, para);
-  return { minutos: Math.max(1, Math.round(minutosAte(reta, velKmh) * 1.4 + 1)), metros: Math.round(reta * 1.5), pelaRua: false };
+  return rotaEstimada(de, para, velKmh);
 }
