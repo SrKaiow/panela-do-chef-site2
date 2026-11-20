@@ -314,6 +314,16 @@ function spriteV1(c: Cardapio): Cardapio {
   return { ...c, itens };
 }
 
+/** Massa Show: "Cebola em conserva" nos ingredientes, logo depois da cebola roxa. */
+function cebolaConservaV1(c: Cardapio): Cardapio {
+  const g = c.adicionais["massa-ingredientes"];
+  if (!g || g.opcoes.some((o) => /conserva/i.test(o.nome))) return c;
+  const opcoes = [...g.opcoes];
+  const pos = opcoes.findIndex((o) => o.nome === "Cebola roxa");
+  opcoes.splice(pos >= 0 ? pos + 1 : opcoes.length, 0, { nome: "Cebola em conserva" });
+  return { ...c, adicionais: { ...c.adicionais, "massa-ingredientes": { ...g, opcoes } } };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
@@ -329,6 +339,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["fotos-pasteis-v1", fotosPasteisV1],
   ["r-whites-v1", rWhitesV1],
   ["sprite-v1", spriteV1],
+  ["cebola-conserva-v1", cebolaConservaV1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */
