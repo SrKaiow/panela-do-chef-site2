@@ -30,8 +30,9 @@ export async function verificarChegadas(local: Local) {
     if (p.avisadoChegando || p.lat == null || p.lng == null) continue;
     const d = distanciaMetros(local, { lat: p.lat, lng: p.lng });
     if (d > limite) continue;
-    // Sem WhatsApp automático: o próprio site avisa o cliente (alarme na página dele), sem o entregador mandar nada.
-    if (!whatsappAutomatico()) { await marcarAviso(p.numero, "chegando"); continue; }
+    // Sem WhatsApp automático: o alarme da página do cliente toca sozinho pela distância, mas isso só funciona
+    // com a página aberta. Por isso NÃO marca como avisado: o entregador ainda vê o botão do WhatsApp.
+    if (!whatsappAutomatico()) { manuais.push(p.numero); continue; }
     const ok = await enviarModelo(p.telefone, process.env.WHATSAPP_MODELO_CHEGANDO || "", [primeiroNome(p.nome)]);
     if (ok) await marcarAviso(p.numero, "chegando");
     else manuais.push(p.numero);

@@ -70,6 +70,21 @@ export default function Entregador() {
     }
   }, []);
 
+  // Chegou perto de um cliente que ainda não foi avisado: vibra e apita para lembrar de tocar no botão do WhatsApp.
+  const lembrados = useRef(new Set<number>());
+  useEffect(() => {
+    if (automatico) return;
+    for (const p of pedidos) {
+      if (!p.atual || p.avisadoChegando || p.distancia == null || p.distancia > metrosAviso || lembrados.current.has(p.numero)) continue;
+      lembrados.current.add(p.numero);
+      try { navigator.vibrate?.([400, 150, 400, 150, 400]); } catch {}
+      try {
+        const ctx = new AudioContext();
+        [0, 0.25, 0.5].forEach((d) => { const o = ctx.createOscillator(); const g = ctx.createGain(); o.frequency.value = 1046; g.gain.setValueAtTime(0.4, ctx.currentTime + d); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + d + 0.18); o.connect(g).connect(ctx.destination); o.start(ctx.currentTime + d); o.stop(ctx.currentTime + d + 0.2); });
+      } catch {}
+    }
+  }, [pedidos, metrosAviso, automatico]);
+
   useEffect(() => {
     carregar();
     const t = setInterval(carregar, 8000);
@@ -255,7 +270,7 @@ export default function Entregador() {
 
               {pertinho && !p.avisadoChegando && !automatico && (
                 <a className="btn aviso-1min" href={p.waChegando} target="_blank" rel="noreferrer" onClick={() => acao(p.numero, { avisoManual: "chegando" })}>
-                  Faltando ~1 min: avisar no WhatsApp
+                  📲 Chegando! Toque para avisar no WhatsApp
                 </a>
               )}
               {p.avisadoChegando && <div className="ok-aviso">Cliente avisado que você está chegando ✓</div>}
