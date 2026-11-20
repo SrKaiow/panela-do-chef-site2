@@ -71,3 +71,17 @@ export async function coordenadasDoPostcode(postcode: string): Promise<{ lat: nu
     return null;
   }
 }
+
+/**
+ * Entregas liberadas fora do raio (clientes amigos), com taxa fixa. Vale só para aquele postcode E aquele número da casa.
+ * Para liberar outro: { postcode: "XX00XX", numero: "12", taxa: 1500 } (taxa em pence).
+ */
+const ENTREGAS_ESPECIAIS = [{ postcode: "CR42BH", numero: "16", taxa: 2000 }];
+
+export function entregaEspecial(postcode: string, endereco: string): number | null {
+  const pc = postcode.replace(/\s+/g, "").toUpperCase();
+  // Qualquer número do endereço (ex.: "Flat 2, 16 High St" também vale para o 16).
+  const numeros = (endereco.match(/\b\d+[a-z]?\b/gi) || []).map((n) => n.toLowerCase());
+  const e = ENTREGAS_ESPECIAIS.find((x) => x.postcode === pc && numeros.includes(x.numero.toLowerCase()));
+  return e ? e.taxa : null;
+}

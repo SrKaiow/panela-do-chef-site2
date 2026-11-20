@@ -500,7 +500,7 @@ function FolhaCarrinho({
     setCotando(true);
     const t = setTimeout(async () => {
       try {
-        const r = await fetch(`/api/entrega/cotacao?postcode=${postcodeLimpo}&subtotal=${subtotal}`);
+        const r = await fetch(`/api/entrega/cotacao?postcode=${postcodeLimpo}&subtotal=${subtotal}&endereco=${encodeURIComponent(form.endereco.slice(0, 60))}`);
         const d = await r.json();
         if (vivo) setCotacao(d);
       } catch {
@@ -510,7 +510,7 @@ function FolhaCarrinho({
       }
     }, 400);
     return () => { vivo = false; clearTimeout(t); };
-  }, [postcodeLimpo, subtotal]);
+  }, [postcodeLimpo, subtotal, (form.endereco.match(/\b\d+[a-z]?\b/gi) || []).join(",")]);
 
   const primeiraFaixa = [...loja.faixas].sort((a, b) => a.ateMilhas - b.ateMilhas)[0];
   const taxa = coleta ? 0 : cotacao && cotacao.ok ? cotacao.taxa : null;

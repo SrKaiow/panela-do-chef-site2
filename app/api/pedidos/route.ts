@@ -6,7 +6,7 @@ import { estadoLoja, horariosParaAgendar } from "@/lib/horario";
 import { criarPedido, salvarPagamentoSquare, salvarSessaoStripe } from "@/lib/db";
 import { stripe, siteUrl } from "@/lib/stripe";
 import { avisarLojaNovoPedido } from "@/lib/avisoLoja";
-import { conferirColeta, coordenadasDoPostcode, cotarEntrega, distanciaMetros } from "@/lib/entrega";
+import { conferirColeta, coordenadasDoPostcode, cotarEntrega, distanciaMetros, entregaEspecial } from "@/lib/entrega";
 import { mensagemSegura, permitir, respostaLimite } from "@/lib/seguranca";
 
 export const dynamic = "force-dynamic";
@@ -73,9 +73,14 @@ export async function POST(req: Request) {
       if (!achou) throw new Error("Não encontramos esse postcode. Confira e tente de novo (ex.: KT17 1JW).");
       coords = achou;
       distanciaM = Math.round(distanciaMetros(ajustes.entrega.cozinha, coords));
-      const cotacao = cotarEntrega(distanciaM, subtotal, ajustes.entrega.faixas, ajustes.entrega.raioMilhas);
-      if (!cotacao.ok) throw new Error(cotacao.motivo);
-      taxa = cotacao.taxa;
+      // Cliente liberado fora do raio (postcode + número da casa), com taxa fixa.
+      const especial = entregaEspecial(postcode, endereco);
+      if (especial != null) taxa = especial;
+      else {
+        const cotacao = cotarEntrega(distanciaM, subtotal, ajustes.entrega.faixas, ajustes.entrega.raioMilhas);
+        if (!cotacao.ok) throw new Error(cotacao.motivo);
+        taxa = cotacao.taxa;
+      }
     }
     const total = subtotal + taxa;
 
