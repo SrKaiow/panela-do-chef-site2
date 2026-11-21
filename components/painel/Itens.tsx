@@ -46,7 +46,7 @@ function Biblioteca({ cardapio, salvar, ir }: { cardapio: Cardapio; salvar: Salv
     return !b || i.nome.toLowerCase().includes(b) || i.descricao?.toLowerCase().includes(b);
   });
 
-  /** Um toque: Disponível → Esgotado (volta amanhã sozinho) → Esgotado (até ligar de novo) → Disponível. */
+  /** Um toque: Disponível → Esgotado (o site mostra "volta amanhã"; só volta quando você ligar) → Esgotado sem aviso → Disponível. */
   function alternar(item: Item) {
     const proximo = (i: Item): Item =>
       i.emBreve ? { ...i, disponivel: true, emBreve: undefined, voltaEm: undefined }
@@ -116,7 +116,7 @@ function Biblioteca({ cardapio, salvar, ir }: { cardapio: Cardapio; salvar: Salv
                 <td className="so-largo sq-sub">{nomeCat[i.categoria] ?? "—"}</td>
                 <td>
                   <button className={"sq-pilula " + (i.disponivel ? "ok" : "off")} onClick={() => alternar(i)} title="Clique para mudar">
-                    {i.disponivel ? "Disponível" : i.emBreve ? "Em breve" : i.voltaEm ? "Esgotado · volta amanhã" : "Esgotado"}
+                    {i.disponivel ? "Disponível" : i.emBreve ? "Em breve" : i.voltaEm ? "Esgotado · \"volta amanhã\"" : "Esgotado"}
                   </button>
                 </td>
                 <td className="direita num">
@@ -337,7 +337,7 @@ function EditorItem({ cardapio, item, salvar, voltar, avisar }: { cardapio: Card
             {!f.disponivel && !f.emBreve && (
               <label className="sq-check">
                 <input type="checkbox" checked={!!f.voltaEm} onChange={(e) => mudar("voltaEm", e.target.checked ? amanhaLondres() : undefined)} />
-                <span><strong>Volta amanhã sozinho</strong><span className="sq-sub">O site mostra "Esgotado · volta amanhã" e libera o item de novo amanhã cedo. Desmarque se não tiver data para voltar.</span></span>
+                <span><strong>Mostrar "volta amanhã" no site</strong><span className="sq-sub">O site mostra "Esgotado · volta amanhã". O item só volta a vender quando você marcar "Disponível" de novo aqui no painel.</span></span>
               </label>
             )}
             <label className="sq-check">

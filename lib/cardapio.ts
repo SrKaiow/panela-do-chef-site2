@@ -62,8 +62,16 @@ export type Cardapio = {
 export const hojeLondres = (d = new Date()) => d.toLocaleDateString("en-CA", { timeZone: "Europe/London" });
 export const amanhaLondres = () => hojeLondres(new Date(Date.now() + 24 * 3600_000));
 
-/** Itens marcados "volta amanhã" voltam sozinhos quando o dia chega. */
+/**
+ * Antes os itens "volta amanhã" voltavam sozinhos no dia seguinte, mas às vezes ainda estavam sem estoque.
+ * Agora "volta amanhã" é só o aviso no site: o item só volta quando o dono ligar de novo no painel.
+ */
 export function aplicarVoltas(c: Cardapio): Cardapio {
+  return c;
+}
+
+/** (Antigo) volta automática — não é mais usada. */
+export function aplicarVoltasAutomaticas(c: Cardapio): Cardapio {
   const hoje = hojeLondres();
   if (!c.itens.some((i) => !i.disponivel && i.voltaEm && i.voltaEm <= hoje)) return c;
   return { ...c, itens: c.itens.map((i) => (!i.disponivel && i.voltaEm && i.voltaEm <= hoje ? { ...i, disponivel: true, voltaEm: undefined } : i)) };
