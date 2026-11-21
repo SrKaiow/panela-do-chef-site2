@@ -424,3 +424,5 @@ a.btn.principal-p { color: #fff; justify-content: center; }
 @keyframes crono-pisca { 50% { opacity: .55; } }
 .crono-espera { background: #eef2ff; color: #3730a3; }
 .crono-fim { background: #f0efea; color: #555; font-weight: 700; font-size: .85rem; }
+
+.av-avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid #f2c200; display: block; margin-bottom: 6px; }

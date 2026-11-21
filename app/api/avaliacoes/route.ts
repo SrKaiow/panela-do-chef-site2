@@ -32,7 +32,7 @@ export async function POST(req: Request) {
   }
 
   // Só aceita foto enviada para o nosso próprio site (e ela só aparece depois da sua aprovação).
-  const foto = typeof b.foto === "string" && /^\/api\/fotos\/[A-Za-z0-9_-]{6,40}$/.test(b.foto) ? b.foto : null;
-  await criarAvaliacao({ nome, local, nota, texto: corpo, pedidoNumero, foto });
+  const nossa = (v: unknown) => (typeof v === "string" && /^\/api\/fotos\/[A-Za-z0-9_-]{6,40}$/.test(v) ? v : null);
+  await criarAvaliacao({ nome, local, nota, texto: corpo, pedidoNumero, foto: nossa(b.foto), avatar: nossa(b.avatar) });
   return NextResponse.json({ ok: true });
 }

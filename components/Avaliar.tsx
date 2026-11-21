@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { reduzirFoto } from "@/lib/reduzirFoto";
+import { fotoPerfil, reduzirFoto } from "@/lib/reduzirFoto";
 
 export const ROTULOS_NOTA = ["", "Satisfeito", "Muito bom", "Ótimo", "Excelente", "AMEIIIIIII"];
 const CARINHAS = ["", "🙂", "😊", "😄", "🤩", "😍"];
@@ -21,21 +21,24 @@ export default function Avaliar({ token, nomeInicial = "", onFechar }: { token?:
   const [estado, setEstado] = useState<"editando" | "enviando" | "enviado">("editando");
   const [erro, setErro] = useState("");
   const input = useRef<HTMLInputElement>(null);
+  const inputAvatar = useRef<HTMLInputElement>(null);
+  const [avatar, setAvatar] = useState<string | null>(null);
 
-  async function escolherFoto(arquivo?: File | null) {
+  async function escolherFoto(arquivo?: File | null, perfil = false) {
     if (!arquivo) return;
     if (!arquivo.type.startsWith("image/")) return setErro("Escolha uma foto.");
     setErro("");
     setSubindo(true);
     try {
-      const blob = await reduzirFoto(arquivo, 1400);
+      const blob = perfil ? await fotoPerfil(arquivo, 400) : await reduzirFoto(arquivo, 1400);
       const form = new FormData();
       if (token) form.append("token", token);
       form.append("foto", blob, blob.type === "image/webp" ? "foto.webp" : "foto.jpg");
       const r = await fetch("/api/avaliacoes/foto", { method: "POST", body: form });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.erro || "Não consegui enviar a foto.");
-      setFoto(d.url);
+      if (perfil) setAvatar(d.url);
+      else setFoto(d.url);
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não consegui enviar a foto.");
     } finally {
@@ -51,7 +54,7 @@ export default function Avaliar({ token, nomeInicial = "", onFechar }: { token?:
       const r = await fetch("/api/avaliacoes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nota, nome, local, texto, token, site, foto }),
+        body: JSON.stringify({ nota, nome, local, texto, token, site, foto, avatar }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.erro || "Não foi possível enviar.");
@@ -119,6 +122,18 @@ export default function Avaliar({ token, nomeInicial = "", onFechar }: { token?:
       <label className="campo" htmlFor="av-texto">Conta pra gente
         <textarea id="av-texto" required minLength={3} maxLength={500} value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="O que achou da comida, do tamanho e da entrega?" />
       </label>
+      <div className="perfil-avaliacao">
+        <button type="button" className="perfil-bolinha" onClick={() => inputAvatar.current?.click()} disabled={subindo} aria-label={avatar ? "Trocar sua foto de perfil" : "Colocar sua foto de perfil"}>
+          {avatar ? <img src={avatar} alt="" /> : <span aria-hidden="true">{nome.trim().charAt(0).toUpperCase() || "🙂"}</span>}
+          <i aria-hidden="true">{avatar ? "✎" : "+"}</i>
+        </button>
+        <div>
+          <strong>Sua foto de perfil <span className="dica">(opcional)</span></strong>
+          <span className="dica">Aparece na bolinha ao lado do seu nome, para todo mundo ver que a avaliação é de verdade.</span>
+          {avatar && <button type="button" className="perfil-tirar" onClick={() => setAvatar(null)}>Remover foto</button>}
+        </div>
+        <input ref={inputAvatar} type="file" accept="image/*" hidden onChange={(e) => { escolherFoto(e.target.files?.[0], true); e.target.value = ""; }} />
+      </div>
       <div className="avaliar-linha">
         <label className="campo" htmlFor="av-nome">Seu nome
           <input id="av-nome" required maxLength={40} value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Ana T." />

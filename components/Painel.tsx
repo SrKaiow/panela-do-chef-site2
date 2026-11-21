@@ -325,6 +325,7 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
               <article key={a.id} className={"pedido av-" + a.status}>
                 <header>
                   <div>
+                    {a.avatar && <img className="av-avatar" src={a.avatar} alt={`Foto de perfil de ${a.nome}`} />}
                     <h2>{"★".repeat(a.nota)}<span style={{ opacity: 0.25 }}>{"★".repeat(5 - a.nota)}</span> · {a.nome}</h2>
                     <span className="sub">{a.local ? a.local + " · " : ""}{dia(a.criadoEm)} às {hora(a.criadoEm)}{a.pedidoNumero ? ` · pedido #${a.pedidoNumero}` : ""}</span>
                   </div>

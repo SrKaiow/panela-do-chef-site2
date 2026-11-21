@@ -53,6 +53,8 @@ async function preparar(c: Client) {
   )`);
   // Avaliações criadas antes da foto do pedido.
   try { await c.execute("ALTER TABLE avaliacoes ADD COLUMN foto TEXT"); } catch {}
+  // Foto de perfil do cliente na avaliação.
+  try { await c.execute("ALTER TABLE avaliacoes ADD COLUMN avatar TEXT"); } catch {}
   await c.execute(`CREATE TABLE IF NOT EXISTS config (
     chave TEXT PRIMARY KEY,
     valor TEXT NOT NULL,
@@ -139,7 +141,7 @@ async function preparar(c: Client) {
  * Com a versão em dia, um servidor novo da Cloudflare só faz 1 consulta para começar (antes eram ~30,
  * e o "Error 1102 - Worker exceeded resource limits" aparecia quando muitos começavam ao mesmo tempo).
  */
-const VERSAO_ESQUEMA = "2026-11-21-gastos";
+const VERSAO_ESQUEMA = "2026-11-21-avatar";
 
 async function prepararRapido(c: Client) {
   try {
@@ -498,6 +500,8 @@ export type Avaliacao = {
   status: "pendente" | "aprovada" | "oculta";
   /** Foto de como o pedido chegou (enviada pelo cliente). */
   foto: string | null;
+  /** Foto de perfil do cliente (aparece na bolinha ao lado do nome). */
+  avatar: string | null;
 };
 
 function linhaParaAvaliacao(r: Record<string, unknown>): Avaliacao {
@@ -511,12 +515,13 @@ function linhaParaAvaliacao(r: Record<string, unknown>): Avaliacao {
     pedidoNumero: numOuNull(r.pedido_numero),
     status: r.status as Avaliacao["status"],
     foto: (r.foto as string) ?? null,
+    avatar: (r.avatar as string) ?? null,
   };
 }
 
-export async function criarAvaliacao(a: { nome: string; local: string | null; nota: number; texto: string; pedidoNumero: number | null; foto?: string | null }) {
-  await exec("INSERT INTO avaliacoes (criado_em, nome, local, nota, texto, pedido_numero, status, foto) VALUES (?, ?, ?, ?, ?, ?, 'pendente', ?)",
-    [new Date().toISOString(), a.nome, a.local, a.nota, a.texto, a.pedidoNumero, a.foto ?? null]);
+export async function criarAvaliacao(a: { nome: string; local: string | null; nota: number; texto: string; pedidoNumero: number | null; foto?: string | null; avatar?: string | null }) {
+  await exec("INSERT INTO avaliacoes (criado_em, nome, local, nota, texto, pedido_numero, status, foto, avatar) VALUES (?, ?, ?, ?, ?, ?, 'pendente', ?, ?)",
+    [new Date().toISOString(), a.nome, a.local, a.nota, a.texto, a.pedidoNumero, a.foto ?? null, a.avatar ?? null]);
 }
 
 export async function listarAvaliacoes(somenteAprovadas: boolean) {
