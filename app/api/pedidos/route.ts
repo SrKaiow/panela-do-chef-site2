@@ -43,7 +43,8 @@ export async function POST(req: Request) {
     const telefone = texto(b.telefone, 30);
     const endereco = retirada ? "Coleta na porta" : texto(b.endereco, 160);
     const postcode = retirada ? ajustes.entrega.cozinha.postcode.toUpperCase() : texto(b.postcode, 10).toUpperCase();
-    const observacao = texto(b.observacao, 300) || null;
+    let semLocal = false;
+    const observacaoCliente = texto(b.observacao, 300) || null;
     if (!nome || !telefone) throw new Error("Preencha nome e telefone.");
     if (!endereco || !postcode) throw new Error("Preencha nome, telefone, endereço e postcode.");
     const digitos = telefone.replace(/\D/g, "");
@@ -61,10 +62,16 @@ export async function POST(req: Request) {
       // Coleta: só com a localização do celular dentro do raio (contra pedido de quem está longe e não vem).
       const lat = Number(b.local?.lat);
       const lng = Number(b.local?.lng);
-      if (!(Math.abs(lat) <= 90 && Math.abs(lng) <= 180) || (lat === 0 && lng === 0)) throw new Error("Para pedir para coletar, ative a localização do celular e toque em \"Confirmar minha localização\".");
-      const perto = conferirColeta(ajustes.entrega.cozinha, { lat, lng }, ajustes.entrega.raioMilhas);
-      if (!perto.ok) throw new Error(perto.motivo);
-      distanciaM = perto.distanciaM;
+      const temLocal = b.local != null && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && !(lat === 0 && lng === 0);
+      if (temLocal) {
+        // Com localização: só bloqueia quem está longe de verdade.
+        const perto = conferirColeta(ajustes.entrega.cozinha, { lat, lng }, ajustes.entrega.raioMilhas);
+        if (!perto.ok) throw new Error(perto.motivo);
+        distanciaM = perto.distanciaM;
+      } else {
+        // Sem localização (o celular não deixou): o pedido entra, e a cozinha vê o aviso no pedido.
+        semLocal = true;
+      }
     } else {
       const minimo = emPence(ajustes.entrega.pedidoMinimo);
       if (minimo && subtotal < minimo) throw new Error("O pedido não atingiu o valor mínimo para entrega.");
@@ -92,7 +99,8 @@ export async function POST(req: Request) {
     }
 
     const { numero, token } = await criarPedido({
-      nome, telefone, endereco, postcode, observacao,
+      nome, telefone, endereco, postcode,
+      observacao: semLocal ? ["⚠ COLETA SEM LOCALIZAÇÃO CONFIRMADA", observacaoCliente].filter(Boolean).join(" · ") : observacaoCliente,
       lat: coords.lat, lng: coords.lng, agendadoPara, distanciaM, retirada,
       itens: linhas, subtotal, taxa, total, pagamento, trocoPara,
       pago: false,

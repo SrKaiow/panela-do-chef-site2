@@ -450,6 +450,19 @@ function FolhaCarrinho({
   const [local, setLocal] = useState<{ lat: number; lng: number; milhas: number } | null>(null);
   const [localErro, setLocalErro] = useState("");
   const [localizando, setLocalizando] = useState(false);
+  /** Tenta pegar a localização na hora de enviar (sem travar o pedido se o celular não deixar). */
+  function localNaHora(): Promise<{ lat: number; lng: number } | null> {
+    return new Promise((ok) => {
+      if (!("geolocation" in navigator)) return ok(null);
+      const t = setTimeout(() => ok(null), 9000);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => { clearTimeout(t); ok({ lat: pos.coords.latitude, lng: pos.coords.longitude }); },
+        () => { clearTimeout(t); ok(null); },
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 },
+      );
+    });
+  }
+
   function pegarLocal() {
     setLocalErro("");
     if (!("geolocation" in navigator)) { setLocalErro("Este celular não deixou pegar a localização. Escolha Entrega."); return; }
@@ -539,6 +552,10 @@ function FolhaCarrinho({
       }
     }
     setEnviando(true);
+    // Coleta sem a localização confirmada: tenta pegar agora. Se o celular não deixar, o pedido segue
+    // assim mesmo (a cozinha vê o aviso "localização não confirmada"). Só bloqueia quem está longe de verdade.
+    let localEnvio = coleta && local ? { lat: local.lat, lng: local.lng } : undefined;
+    if (coleta && !localEnvio) localEnvio = (await localNaHora()) ?? undefined;
     try {
       try {
         if (salvarDados) {
@@ -558,7 +575,7 @@ function FolhaCarrinho({
           trocoPara: pagamento === "dinheiro" && troco === "sim" && form.troco ? parseFloat(form.troco.replace(",", ".")) : null,
           pagamento,
           retirada: coleta,
-          local: coleta && local ? { lat: local.lat, lng: local.lng } : undefined,
+          local: localEnvio,
           agendadoPara: coleta ? quando || null : null,
           itens: carrinho.map(({ itemId, qtd, selecoes, obs }) => ({ itemId, qtd, selecoes, obs })),
         }),
@@ -770,7 +787,8 @@ function FolhaCarrinho({
           <p className="dica">Usamos seus dados só para preparar e entregar o pedido. <a href="/privacidade" target="_blank">Política de privacidade</a>.</p>
           {foraDaArea && cotacao && !cotacao.ok && <p className="erro fora-area" role="alert">{cotacao.motivo}</p>}
           {erro && <p className="erro" role="alert">{erro}</p>}
-          <button className="principal" type="submit" disabled={enviando || nenhumPagamento || foraDaArea || (coleta && !local) || (!coleta && !estado.aberto) || (coleta && !estado.aberto && !quando) || (pagamento === "dinheiro" && !troco)}>
+          {!enviando && pagamento === "dinheiro" && !troco && <p className="dica" style={{ textAlign: "center" }}>Para continuar, escolha acima se vai pagar o valor exato ou se precisa de troco.</p>}
+          <button className="principal" type="submit" disabled={enviando || nenhumPagamento || foraDaArea || (!coleta && !estado.aberto) || (coleta && !estado.aberto && !quando) || (pagamento === "dinheiro" && !troco)}>
             <span>{enviando ? "Enviando..." : pagamento === "cartao" ? "Ir para o pagamento" : coleta && quando ? "Reservar pedido" : "Fazer pedido"}</span>
             <span className="preco">{formatar(total)}</span>
           </button>
