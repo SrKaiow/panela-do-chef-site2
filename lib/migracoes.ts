@@ -324,6 +324,21 @@ function cebolaConservaV1(c: Cardapio): Cardapio {
   return { ...c, adicionais: { ...c.adicionais, "massa-ingredientes": { ...g, opcoes } } };
 }
 
+/** Massa Show: Salmão (+£4) nos adicionais; o máximo passa de 3 para 4 (para caber todos). */
+function salmaoMassaV1(c: Cardapio): Cardapio {
+  const g = c.adicionais["massa-proteina"];
+  if (!g || g.opcoes.some((o) => /salm/i.test(o.nome))) return c;
+  const opcoes = [...g.opcoes];
+  const pos = opcoes.findIndex((o) => /camar/i.test(o.nome));
+  opcoes.splice(pos >= 0 ? pos + 1 : opcoes.length, 0, { nome: "Salmão", preco: 4 });
+  const regras = g.regras ? { ...g.regras, max: Math.max(g.regras.max, opcoes.length) } : g.regras;
+  return {
+    ...c,
+    adicionais: { ...c.adicionais, "massa-proteina": { ...g, opcoes, regras } },
+    itens: c.itens.map((i) => ({ ...i, escolhas: i.escolhas?.map((e) => (e.grupo === "massa-proteina" ? { ...e, max: Math.max(e.max, opcoes.length) } : e)) })),
+  };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
@@ -340,6 +355,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["r-whites-v1", rWhitesV1],
   ["sprite-v1", spriteV1],
   ["cebola-conserva-v1", cebolaConservaV1],
+  ["salmao-massa-v1", salmaoMassaV1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */
