@@ -391,3 +391,26 @@ a.btn.principal-p { color: #fff; justify-content: center; }
 .conta a.sq-btn { text-decoration: none; }
 .btn-conta { background: #fff7d6 !important; border-color: #e8c200 !important; color: #5a4500 !important; }
 .pag.na-conta { background: #fff4c2; }
+
+/* Relatório semanal */
+.rel-semana { align-items: center; justify-content: space-between; }
+.rel-link { text-decoration: none; }
+.rel-verde { color: #0b6b37; } .rel-vermelho { color: #b4231b; }
+.rel-resultado.pos { background: #0b8a45; color: #fff; border-color: #0b8a45; }
+.rel-resultado.neg { background: #b4231b; color: #fff; border-color: #b4231b; }
+.rel-resultado .sq-rotulo, .rel-resultado .sq-sub { color: rgba(255,255,255,.85); }
+.rel-kpis strong { font-size: 1.6rem; font-weight: 800; }
+.rel-tabela-wrap { overflow-x: auto; }
+.rel-tabela { width: 100%; border-collapse: collapse; font-size: 0.92rem; min-width: 520px; }
+.rel-tabela th { text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: .5px; color: var(--texto-2); padding: 8px; border-bottom: 1px solid var(--linha); }
+.rel-tabela td { padding: 8px; border-bottom: 1px solid var(--linha); vertical-align: top; }
+.rel-tabela th:not(:first-child), .rel-tabela td:not(:first-child) { text-align: right; }
+.rel-tabela tr.hoje td { background: #fffbe6; }
+.rel-tabela tfoot td { font-weight: 800; border-top: 2px solid var(--texto); border-bottom: 0; }
+.rel-barra { height: 4px; margin-top: 4px; background: #f0efea; border-radius: 2px; max-width: 160px; }
+.rel-barra span { display: block; height: 100%; background: #f2c200; border-radius: 2px; }
+.rel-form { display: grid; grid-template-columns: 110px 150px 150px 1fr auto; gap: 10px; align-items: end; }
+@media (max-width: 760px) { .rel-form { grid-template-columns: 1fr 1fr; } .rel-desc { grid-column: 1 / -1; } }
+.rel-categorias { display: flex; flex-wrap: wrap; gap: 6px; }
+.rel-gastos { list-style: none; margin: 0; padding: 0; display: grid; }
+.rel-gastos li { display: grid; grid-template-columns: 52px 1fr auto 28px; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--linha); font-size: 0.92rem; }

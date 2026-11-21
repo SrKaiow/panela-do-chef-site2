@@ -10,6 +10,7 @@ import { Categorias, Modificadores } from "./Grupos";
 import HorariosEntrega from "./HorariosEntrega";
 import { Clientes, Visitas } from "./Clientes";
 import Contas from "./Contas";
+import Relatorio from "./Relatorio";
 import { estadoLoja } from "@/lib/horario";
 
 export type Salvar<T> = (novo: T) => Promise<boolean>;
@@ -19,6 +20,7 @@ const MENU = [
   { id: "pedidos", nome: "Pedidos", icone: "M6 2h12l2 4v15a1 1 0 01-1 1H5a1 1 0 01-1-1V6zm-2 4h16M9 11h6M9 15h6" },
   { id: "clientes", nome: "Clientes", icone: "M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 21a8 8 0 0116 0" },
   { id: "contas", nome: "Clientes a pagar", icone: "M3 6h18v12H3zM3 10h18M7 15h4" },
+  { id: "relatorio", nome: "Relatório semanal", icone: "M4 20V10M10 20V4M16 20v-7M22 20H2" },
   { id: "visitas", nome: "Visitas do site", icone: "M3 20h18M6 16v-4M11 16V8M16 16v-6M21 16V5" },
   { titulo: "Itens e cardápio" },
   { id: "itens", nome: "Biblioteca de itens", icone: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" },
@@ -29,7 +31,7 @@ const MENU = [
   { id: "avaliacoes", nome: "Avaliações", icone: "M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" },
 ] as const;
 
-type Secao = "inicio" | "pedidos" | "clientes" | "contas" | "visitas" | "itens" | "modificadores" | "categorias" | "horarios" | "avaliacoes";
+type Secao = "inicio" | "pedidos" | "clientes" | "contas" | "relatorio" | "visitas" | "itens" | "modificadores" | "categorias" | "horarios" | "avaliacoes";
 
 function lerHash(): { secao: Secao; sub: string | null } {
   const [s, sub] = (typeof window === "undefined" ? "" : window.location.hash.slice(1)).split("/");
@@ -164,8 +166,9 @@ export default function Admin() {
 
           {rota.secao === "clientes" && <Clientes avisar={setAviso} />}
           {rota.secao === "contas" && <Contas avisar={setAviso} />}
+          {rota.secao === "relatorio" && <Relatorio avisar={setAviso} />}
           {rota.secao === "visitas" && <Visitas />}
-          {!pronto && !["pedidos", "avaliacoes", "clientes", "contas", "visitas"].includes(rota.secao) && <p className="sq-carregando">Carregando...</p>}
+          {!pronto && !["pedidos", "avaliacoes", "clientes", "contas", "relatorio", "visitas"].includes(rota.secao) && <p className="sq-carregando">Carregando...</p>}
           {pronto && rota.secao === "inicio" && <Inicio cardapio={cardapio} ajustes={ajustes} salvarAjustes={salvarAjustes} ir={ir} />}
           {pronto && rota.secao === "itens" && <Itens cardapio={cardapio} salvar={salvarCardapio} aberto={rota.sub} ir={ir} avisar={setAviso} />}
           {pronto && rota.secao === "modificadores" && <Modificadores cardapio={cardapio} salvar={salvarCardapio} />}

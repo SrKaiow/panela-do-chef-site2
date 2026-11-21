@@ -87,6 +87,15 @@ async function preparar(c: Client) {
     ultima TEXT NOT NULL,
     PRIMARY KEY (dia, visitante)
   )`);
+  // Gastos da semana (mercado, combustível...) para o relatório semanal.
+  await c.execute(`CREATE TABLE IF NOT EXISTS gastos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    data TEXT NOT NULL,
+    categoria TEXT NOT NULL,
+    descricao TEXT NOT NULL DEFAULT '',
+    valor INTEGER NOT NULL,
+    criado_em TEXT NOT NULL
+  )`);
   // Notificação no celular do cliente (Web Push): um aparelho por linha, ligado a um pedido.
   await c.execute(`CREATE TABLE IF NOT EXISTS push_inscricoes (
     endpoint TEXT PRIMARY KEY,
@@ -130,7 +139,7 @@ async function preparar(c: Client) {
  * Com a versão em dia, um servidor novo da Cloudflare só faz 1 consulta para começar (antes eram ~30,
  * e o "Error 1102 - Worker exceeded resource limits" aparecia quando muitos começavam ao mesmo tempo).
  */
-const VERSAO_ESQUEMA = "2026-11-21-push";
+const VERSAO_ESQUEMA = "2026-11-21-gastos";
 
 async function prepararRapido(c: Client) {
   try {
@@ -744,4 +753,75 @@ export async function pedirImpressao(numero: number) {
 export async function marcarPushChegando(numero: number) {
   const r = await exec("UPDATE pedidos SET push_chegando = 1 WHERE numero = ? AND push_chegando = 0", [numero]);
   return r.rowsAffected > 0;
+}
+
+/* ------------------------------ Relatório semanal ------------------------------ */
+
+export type Gasto = { id: number; data: string; categoria: string; descricao: string; valor: number };
+export type DiaRelatorio = { data: string; pedidos: number; total: number; cartao: number; dinheiro: number; naConta: number; taxas: number };
+export type Relatorio = {
+  inicio: string;
+  fim: string;
+  dias: DiaRelatorio[];
+  gastos: Gasto[];
+  recebidoContas: number;
+  totais: { pedidos: number; vendas: number; cartao: number; dinheiro: number; naConta: number; taxas: number; gastos: number; entrou: number; resultado: number; ticketMedio: number };
+};
+
+const diaDeLondres = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+
+/** Semana de segunda (inicio) a domingo. Vendas pelo dia do pedido (horário de Londres). */
+export async function relatorioSemana(inicio: string): Promise<Relatorio> {
+  const d0 = new Date(inicio + "T12:00:00Z");
+  const datas = Array.from({ length: 7 }, (_, i) => new Date(d0.getTime() + i * 86400000).toISOString().slice(0, 10));
+  const fim = datas[6];
+  // Janela larga em UTC (Londres pode estar +1h) e o filtro fino pelo dia de Londres.
+  const de = new Date(d0.getTime() - 36 * 3600000).toISOString();
+  const ate = new Date(d0.getTime() + 8 * 86400000).toISOString();
+  const [ped, gas, naConta, rec] = await Promise.all([
+    exec("SELECT numero, criado_em, total, taxa, pagamento, status FROM pedidos WHERE criado_em >= ? AND criado_em < ? AND status NOT IN ('cancelado', 'aguardando_pagamento')", [de, ate]),
+    exec("SELECT * FROM gastos WHERE data >= ? AND data <= ? ORDER BY data, id", [inicio, fim]),
+    pedidosNaConta(),
+    exec("SELECT COALESCE(SUM(valor), 0) AS v FROM contas_lancamentos WHERE tipo = 'pagamento' AND data >= ? AND data <= ?", [inicio, fim]),
+  ]);
+  const dias: DiaRelatorio[] = datas.map((data) => ({ data, pedidos: 0, total: 0, cartao: 0, dinheiro: 0, naConta: 0, taxas: 0 }));
+  for (const r of ped.rows) {
+    const d = dias.find((x) => x.data === diaDeLondres(String(r.criado_em)));
+    if (!d) continue;
+    const total = Number(r.total);
+    d.pedidos++;
+    d.total += total;
+    d.taxas += Number(r.taxa);
+    if (naConta.has(Number(r.numero))) d.naConta += total;
+    else if (r.pagamento === "cartao") d.cartao += total;
+    else d.dinheiro += total;
+  }
+  const gastos: Gasto[] = gas.rows.map((r) => ({ id: Number(r.id), data: String(r.data), categoria: String(r.categoria), descricao: String(r.descricao ?? ""), valor: Number(r.valor) }));
+  const soma = (k: keyof DiaRelatorio) => dias.reduce((s, d) => s + Number(d[k]), 0);
+  const recebidoContas = Number(rec.rows[0]?.v ?? 0);
+  const vendas = soma("total");
+  const totalGastos = gastos.reduce((s, g) => s + g.valor, 0);
+  // "Entrou" = o que de fato entrou no caixa: cartão + dinheiro + o que os clientes a pagar acertaram.
+  const entrou = soma("cartao") + soma("dinheiro") + recebidoContas;
+  const pedidos = soma("pedidos");
+  return {
+    inicio, fim, dias, gastos, recebidoContas,
+    totais: { pedidos, vendas, cartao: soma("cartao"), dinheiro: soma("dinheiro"), naConta: soma("naConta"), taxas: soma("taxas"), gastos: totalGastos, entrou, resultado: entrou - totalGastos, ticketMedio: pedidos ? Math.round(vendas / pedidos) : 0 },
+  };
+}
+
+export async function salvarGasto(g: { data: string; categoria: string; descricao: string; valor: number }) {
+  await exec("INSERT INTO gastos (data, categoria, descricao, valor, criado_em) VALUES (?, ?, ?, ?, ?)", [g.data, g.categoria, g.descricao, g.valor, new Date().toISOString()]);
+}
+
+export async function apagarGasto(id: number) {
+  await exec("DELETE FROM gastos WHERE id = ?", [id]);
+}
+
+/** Segunda-feira da semana de uma data (AAAA-MM-DD), no horário de Londres. */
+export function segundaDe(data?: string | null) {
+  const hoje = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+  const d = new Date((data && /^\d{4}-\d{2}-\d{2}$/.test(data) ? data : hoje) + "T12:00:00Z");
+  const dia = (d.getUTCDay() + 6) % 7; // segunda = 0
+  return new Date(d.getTime() - dia * 86400000).toISOString().slice(0, 10);
 }
