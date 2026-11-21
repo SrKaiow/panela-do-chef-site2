@@ -1,4 +1,4 @@
-import { buscarPorNumero, entregaAtual, listarPorStatus, marcarAviso, type Local, type Status } from "./db";
+import { buscarPorNumero, entregaAtualDe, listarPorStatus, marcarAviso, type Local, type Status } from "./db";
 import { distanciaMetros } from "./entrega";
 import { getAjustes } from "./dados";
 import { whatsappAutomatico, enviarModelo } from "./whatsapp";
@@ -26,9 +26,10 @@ export async function aoMudarStatus(numero: number, status: Status, origem?: str
  */
 export async function verificarChegadas(local: Local) {
   // Só a entrega que está sendo feita agora (os outros pedidos no carro esperam a vez deles).
-  const atual = await entregaAtual();
-  const emRota = (await listarPorStatus(["saiu"])).filter((p) => p.numero === atual);
-  const limite = (await getAjustes()).entrega.avisoChegandoMetros;
+  const [noCarro, ajustes] = await Promise.all([listarPorStatus(["saiu"]), getAjustes()]);
+  const atual = entregaAtualDe(noCarro);
+  const emRota = noCarro.filter((p) => p.numero === atual);
+  const limite = ajustes.entrega.avisoChegandoMetros;
   const manuais: number[] = [];
   for (const p of emRota) {
     if (p.avisadoChegando || p.lat == null || p.lng == null) continue;

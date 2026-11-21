@@ -38,6 +38,17 @@ const km = (m: number) => {
   return milhas < 0.25 ? `${Math.round(m * 1.0936)} yd` : `${milhas.toFixed(1)} mi`;
 };
 
+/** fetch com prazo: no 4G/5G uma requisição pode ficar presa ao trocar de antena; melhor desistir e tentar de novo. */
+async function buscar(url: string, init: RequestInit = {}, ms = 9000) {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), ms);
+  try {
+    return await fetch(url, { ...init, signal: ctl.signal, cache: "no-store" });
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 const MOTIVOS = [
   { id: "transito", nome: "Muito trânsito", icone: "🚦" },
   { id: "acidente", nome: "Acidente", icone: "💥" },
@@ -55,18 +66,33 @@ export default function Entregador() {
   const watchId = useRef<number | null>(null);
   const ultimoPost = useRef(0);
   const wakeLock = useRef<{ release: () => Promise<void> } | null>(null);
+  const carregando = useRef(false);
+  const ultimaCarga = useRef(0);
+  const falhasLista = useRef(0);
+  const falhasGps = useRef(0);
 
-  const carregar = useCallback(async () => {
+  const carregar = useCallback(async (forcar = false) => {
+    // Uma de cada vez, e no máximo a cada 3 s (o GPS também chama isto).
+    if (carregando.current || (!forcar && Date.now() - ultimaCarga.current < 3000)) return;
+    carregando.current = true;
+    ultimaCarga.current = Date.now();
     try {
-      const r = await fetch("/api/entregador/pedidos", { cache: "no-store" });
+      const r = await buscar("/api/entregador/pedidos");
       if (r.status === 401) { window.location.href = "/entregador/entrar"; return; }
       conferirVersao(r);
+      if (!r.ok) throw new Error(String(r.status));
       const d = await r.json();
       setPedidos(d.pedidos);
       setAutomatico(d.automatico);
       setMetrosAviso(d.metrosAviso);
+      falhasLista.current = 0;
+      setErro((e) => (e.startsWith("Sem internet") || e.startsWith("Conexão") ? "" : e));
     } catch {
-      setErro("Sem internet. Tentando de novo...");
+      // Uma falha só (troca de antena, túnel) não é motivo para alarme: avisa a partir da segunda seguida.
+      falhasLista.current++;
+      if (falhasLista.current >= 2) setErro("Conexão fraca: tentando de novo... (a tela continua funcionando)");
+    } finally {
+      carregando.current = false;
     }
   }, []);
 
@@ -86,27 +112,51 @@ export default function Entregador() {
   }, [pedidos, metrosAviso, automatico]);
 
   useEffect(() => {
-    carregar();
-    const t = setInterval(carregar, 8000);
+    carregar(true);
+    const t = setInterval(() => carregar(), 8000);
     const r = setInterval(() => setAgora(Date.now()), 1000);
     return () => { clearInterval(t); clearInterval(r); };
   }, [carregar]);
 
-  async function enviarPosicao(pos: GeolocationPosition) {
+  // Envio da posição: só um por vez, sempre a mais nova. Se falhar, tenta de novo sozinho.
+  const ultimaPos = useRef<{ lat: number; lng: number; precisao: number } | null>(null);
+  const enviando = useRef(false);
+  async function enviarPosicao(pos?: GeolocationPosition) {
+    if (pos) ultimaPos.current = { lat: pos.coords.latitude, lng: pos.coords.longitude, precisao: pos.coords.accuracy };
     const t = Date.now();
-    if (t - ultimoPost.current < 4000) return; // no máximo a cada 4 segundos
+    if (!ultimaPos.current || enviando.current || t - ultimoPost.current < 4000) return; // no máximo a cada 4 segundos
     ultimoPost.current = t;
+    enviando.current = true;
     try {
-      const r = await fetch("/api/entregador/localizacao", {
+      const r = await buscar("/api/entregador/localizacao", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude, precisao: pos.coords.accuracy }),
-      });
-      if (r.ok) { setUltimoEnvio(Date.now()); setErro(""); carregar(); }
+        body: JSON.stringify(ultimaPos.current),
+      }, 8000);
+      if (r.status === 401) { window.location.href = "/entregador/entrar"; return; }
+      if (!r.ok) throw new Error(String(r.status));
+      falhasGps.current = 0;
+      setUltimoEnvio(Date.now());
+      setErro((e) => (e.startsWith("Sem internet") || e.startsWith("Conexão") || e.startsWith("Não consegui enviar") ? "" : e));
+      carregar();
     } catch {
-      setErro("Não consegui enviar a localização. Confira a internet.");
+      falhasGps.current++;
+      ultimoPost.current = 0; // tenta de novo no próximo ciclo, sem esperar
+      if (falhasGps.current >= 3) setErro("Conexão fraca: a localização vai assim que o sinal voltar.");
+    } finally {
+      enviando.current = false;
     }
   }
+
+  // Reenvia a última posição a cada 5 s mesmo parado (no semáforo o GPS do iPhone não manda nada novo)
+  // e logo que a internet volta. Assim o cliente nunca fica com o carro "parado" no mapa por falha de sinal.
+  useEffect(() => {
+    const t = setInterval(() => { if (watchId.current != null) enviarPosicao(); }, 5000);
+    const voltouNet = () => { ultimoPost.current = 0; enviarPosicao(); carregar(true); };
+    window.addEventListener("online", voltouNet);
+    return () => { clearInterval(t); window.removeEventListener("online", voltouNet); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Lembra que o GPS foi ligado: ao voltar para a página (ou se o celular recarregar a aba), religa sozinho.
   const lembrar = (v: boolean) => { try { localStorage.setItem("panela-gps", v ? "1" : "0"); } catch {} };
@@ -138,6 +188,8 @@ export default function Entregador() {
     watchId.current = navigator.geolocation.watchPosition(
       (pos) => { setGps("ligado"); enviarPosicao(pos); },
       (e) => {
+        // Demora do GPS (túnel, prédio) com posição já conhecida: segue mandando a última, sem alarme.
+        if (e.code !== 1 && ultimaPos.current) return;
         setGps("erro");
         setErro(e.code === 1 ? "Localização bloqueada. Libere a localização para este site nas configurações do navegador." : "Não consegui pegar o GPS. Tente ir para um lugar aberto.");
       },
@@ -161,20 +213,28 @@ export default function Entregador() {
   useEffect(() => () => pararGps(), []);
 
   const [motivo, setMotivo] = useState("transito");
+  /** Ação do entregador: tenta 2 vezes (sinal fraco) antes de mostrar erro. */
+  async function mandar(url: string, method: string, dados: object, falha: string) {
+    for (let i = 0; i < 2; i++) {
+      try {
+        const r = await buscar(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(dados) }, 10000);
+        if (r.ok) { carregar(true); return true; }
+        if (r.status < 500) break;
+      } catch { /* tenta de novo */ }
+    }
+    setErro(falha);
+    carregar(true);
+    return false;
+  }
   async function avisarAtraso(minutos: number) {
-    const r = await fetch("/api/entregador/imprevisto", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ minutos, motivo }) });
-    if (!r.ok) setErro("Não consegui avisar. Confira a internet.");
-    carregar();
+    await mandar("/api/entregador/imprevisto", "POST", { minutos, motivo }, "Não consegui avisar. Confira a internet e toque de novo.");
   }
   async function limparAtraso() {
-    await fetch("/api/entregador/imprevisto", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ limpar: true }) });
-    carregar();
+    await mandar("/api/entregador/imprevisto", "POST", { limpar: true }, "Não consegui salvar. Toque de novo.");
   }
 
   async function acao(numero: number, dados: Record<string, unknown>) {
-    const r = await fetch(`/api/entregador/pedidos/${numero}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dados) });
-    if (!r.ok) setErro("Não consegui salvar. Confira a internet.");
-    carregar();
+    await mandar(`/api/entregador/pedidos/${numero}`, "PATCH", dados, "Não consegui salvar. Confira a internet e toque de novo.");
   }
 
   const prontos = pedidos.filter((p) => p.status !== "saiu");

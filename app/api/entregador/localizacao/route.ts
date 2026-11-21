@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { logado } from "@/lib/auth";
 import { salvarLocal } from "@/lib/db";
 import { verificarChegadas } from "@/lib/avisos";
@@ -14,6 +14,7 @@ export async function POST(req: Request) {
   if (!(Math.abs(lat) <= 90 && Math.abs(lng) <= 180)) return NextResponse.json({ erro: "Posição inválida." }, { status: 400 });
   const precisao = Number.isFinite(Number(b.precisao)) ? Number(b.precisao) : null;
   await salvarLocal(lat, lng, precisao);
-  const avisarManual = await verificarChegadas({ lat, lng, precisao, atualizadoEm: new Date().toISOString() });
-  return NextResponse.json({ ok: true, avisarManual });
+  // Responde na hora (no 4G cada segundo conta) e confere a chegada perto do cliente logo depois.
+  after(() => verificarChegadas({ lat, lng, precisao, atualizadoEm: new Date().toISOString() }).catch((e) => console.error("[chegadas]", e)));
+  return NextResponse.json({ ok: true });
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { logado } from "@/lib/auth";
-import { entregaAtual, listarPorStatus, lerLocal, pedidosNaConta } from "@/lib/db";
+import { entregaAtualDe, listarPorStatus, lerLocal, pedidosNaConta } from "@/lib/db";
 import { rotaCarro, rotaEstimada } from "@/lib/rota";
 import { getAjustes } from "@/lib/dados";
 import { linkWhatsapp, mensagens, whatsappAutomatico } from "@/lib/whatsapp";
@@ -10,12 +10,16 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   if (!(await logado("entregador"))) return NextResponse.json({ erro: "Entre de novo." }, { status: 401 });
-  const local = await lerLocal();
-  const ajustes = await getAjustes();
+  // Tudo ao mesmo tempo (antes era uma consulta depois da outra e a tela demorava no 4G).
+  const [local, ajustes, todos, naConta] = await Promise.all([
+    lerLocal(),
+    getAjustes(),
+    listarPorStatus(["confirmado", "preparando", "saiu"]),
+    pedidosNaConta().catch(() => new Set<number>()),
+  ]);
+  const atual = entregaAtualDe(todos);
   // Coleta na porta não passa pelo entregador.
-  const pedidos = (await listarPorStatus(["confirmado", "preparando", "saiu"])).filter((p) => !p.retirada);
-  const atual = await entregaAtual();
-  const naConta = await pedidosNaConta().catch(() => new Set<number>());
+  const pedidos = todos.filter((p) => !p.retirada);
   const nome = (n: string) => n.trim().split(/\s+/)[0] || n;
   // Tempo e distância pelas ruas (como o Waze), não em linha reta.
   const rotas = await Promise.all(

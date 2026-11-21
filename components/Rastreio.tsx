@@ -82,7 +82,7 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
     let vivo = true;
     async function buscar() {
       try {
-        const r = await fetch(`/api/pedido/${token}/status`, { cache: "no-store" });
+        const r = await fetch(`/api/pedido/${token}/status`, { cache: "no-store", signal: typeof AbortSignal.timeout === "function" ? AbortSignal.timeout(8000) : undefined });
         if (r.ok) conferirVersao(r);
         if (r.ok && vivo) setAo(await r.json());
       } catch {}

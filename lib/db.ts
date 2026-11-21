@@ -385,7 +385,12 @@ export async function iniciarEntrega(numero: number) {
  * se só tem um pedido no carro, é ele (não precisa tocar em nada).
  */
 export async function entregaAtual(): Promise<number | null> {
-  const noCarro = await listarPorStatus(["saiu"]);
+  return entregaAtualDe(await listarPorStatus(["saiu"]));
+}
+
+/** Mesma regra de entregaAtual(), a partir de uma lista de pedidos já carregada (sem ir ao banco de novo). */
+export function entregaAtualDe(lista: Pedido[]): number | null {
+  const noCarro = lista.filter((p) => p.status === "saiu");
   const iniciada = noCarro.filter((p) => p.aCaminhoEm).sort((a, b) => b.aCaminhoEm!.localeCompare(a.aCaminhoEm!))[0];
   if (iniciada) return iniciada.numero;
   return noCarro.length === 1 ? noCarro[0].numero : null;
