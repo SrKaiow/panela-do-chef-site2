@@ -354,6 +354,7 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
                 <div>
                   <h2>#{p.numero} · {p.nome}</h2>
                   <span className="sub">{dia(p.criadoEm)} às {hora(p.criadoEm)}</span>
+                  <Cronometro p={p} />
                 </div>
                 {p.retirada && <span className="selo selo-coleta">COLETA</span>}
                 <span className={`selo st-${p.status}`}>{p.retirada && p.status === "saiu" ? "Pronto p/ coletar" : p.retirada && p.status === "entregue" ? "Retirado" : NOMES[p.status]}</span>
@@ -454,5 +455,40 @@ function CancelarBotao({ onConfirmar }: { onConfirmar: () => void }) {
       <button className="btn perigo cheio" onClick={onConfirmar}>Confirmar cancelamento</button>
       <button className="btn" onClick={() => setConfirmando(false)}>Voltar</button>
     </>
+  );
+}
+
+/**
+ * Relógio do pedido (só no painel): quanto tempo desde que o cliente pediu, contando ao vivo.
+ * Verde até 20 min, amarelo até 40, vermelho depois disso (pisca passando de 1 hora).
+ * Reserva: conta a partir do horário reservado. Entregue: mostra quanto tempo levou no total.
+ */
+function Cronometro({ p }: { p: Pedido }) {
+  const ativo = ["novo", "confirmado", "preparando", "saiu"].includes(p.status);
+  const [agora, setAgora] = useState(() => Date.now());
+  useEffect(() => {
+    if (!ativo) return;
+    const t = setInterval(() => setAgora(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [ativo]);
+  const inicio = new Date(p.agendadoPara ?? p.criadoEm).getTime();
+  const fmt = (ms: number) => {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), seg = s % 60;
+    const dd = (n: number) => String(n).padStart(2, "0");
+    return h ? `${h}h ${dd(m)}min` : `${dd(m)}:${dd(seg)}`;
+  };
+  if (p.status === "entregue") {
+    const fim = p.entregueEm ? new Date(p.entregueEm).getTime() : null;
+    return fim && fim > inicio ? <span className="crono crono-fim">✓ levou {fmt(fim - inicio)}</span> : null;
+  }
+  if (!ativo) return null;
+  if (p.agendadoPara && agora < inicio) return <span className="crono crono-espera">⏰ reserva em {fmt(inicio - agora)}</span>;
+  const min = (agora - inicio) / 60000;
+  const cor = min >= 40 ? "crono-vermelho" + (min >= 60 ? " crono-pisca" : "") : min >= 20 ? "crono-amarelo" : "crono-verde";
+  return (
+    <span className={"crono " + cor} title="Tempo desde que o cliente pediu" suppressHydrationWarning>
+      ⏱ {fmt(agora - inicio)}
+    </span>
   );
 }
