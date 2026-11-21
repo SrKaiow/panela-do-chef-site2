@@ -125,6 +125,27 @@ async function preparar(c: Client) {
   )`);
 }
 
+/**
+ * Versão do esquema do banco. Quando mudar algo em preparar() (tabela ou coluna nova), troque este valor.
+ * Com a versão em dia, um servidor novo da Cloudflare só faz 1 consulta para começar (antes eram ~30,
+ * e o "Error 1102 - Worker exceeded resource limits" aparecia quando muitos começavam ao mesmo tempo).
+ */
+const VERSAO_ESQUEMA = "2026-11-21-push";
+
+async function prepararRapido(c: Client) {
+  try {
+    const r = await c.execute("SELECT valor FROM config WHERE chave = 'esquema'");
+    if (r.rows[0]?.valor === VERSAO_ESQUEMA) return;
+  } catch {
+    /* banco novo: segue para o preparo completo */
+  }
+  await preparar(c);
+  await c.execute({
+    sql: "INSERT INTO config (chave, valor, atualizado_em) VALUES ('esquema', ?, ?) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor, atualizado_em = excluded.atualizado_em",
+    args: [VERSAO_ESQUEMA, new Date().toISOString()],
+  });
+}
+
 function db() {
   if (!client) {
     client = createClient({
@@ -132,7 +153,7 @@ function db() {
       authToken: process.env.DATABASE_AUTH_TOKEN || process.env.DATABASE_TOKEN || process.env.TURSO_AUTH_TOKEN || undefined,
     });
   }
-  if (!pronto) pronto = preparar(client);
+  if (!pronto) pronto = prepararRapido(client).catch((e) => { pronto = null; throw e; });
   return { c: client, pronto };
 }
 
