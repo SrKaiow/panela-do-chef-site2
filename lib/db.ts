@@ -35,6 +35,7 @@ async function preparar(c: Client) {
     "a_caminho_em TEXT",
     "retirada INTEGER NOT NULL DEFAULT 0",
     "imprimir_pedido TEXT",
+    "push_chegando INTEGER NOT NULL DEFAULT 0",
     "atraso_min INTEGER NOT NULL DEFAULT 0", "atraso_motivo TEXT", "atraso_em TEXT", "atraso_lat REAL", "atraso_lng REAL",
   ]) {
     try { await c.execute(`ALTER TABLE pedidos ADD COLUMN ${col}`); } catch {}
@@ -86,6 +87,15 @@ async function preparar(c: Client) {
     ultima TEXT NOT NULL,
     PRIMARY KEY (dia, visitante)
   )`);
+  // Notificação no celular do cliente (Web Push): um aparelho por linha, ligado a um pedido.
+  await c.execute(`CREATE TABLE IF NOT EXISTS push_inscricoes (
+    endpoint TEXT PRIMARY KEY,
+    numero INTEGER NOT NULL,
+    criado_em TEXT NOT NULL,
+    titulo TEXT,
+    corpo TEXT,
+    url TEXT
+  )`);
   // Clientes a pagar (fiado / semanal): cada cliente tem uma conta com lançamentos.
   await c.execute(`CREATE TABLE IF NOT EXISTS contas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -126,7 +136,7 @@ function db() {
   return { c: client, pronto };
 }
 
-async function exec(sql: string, args: (string | number | null)[] = []) {
+export async function exec(sql: string, args: (string | number | null)[] = []) {
   const { c, pronto } = db();
   await pronto;
   return c.execute({ sql, args });
@@ -707,4 +717,10 @@ export async function pedidoParaConta(numero: number) {
 /** Pede para o computador da loja imprimir este pedido (botão no celular ou no Telegram). */
 export async function pedirImpressao(numero: number) {
   await exec("UPDATE pedidos SET imprimir_pedido = ? WHERE numero = ?", [new Date().toISOString(), numero]);
+}
+
+/** Marca que o push de "chegando" já foi mandado (uma vez por pedido). Devolve true só na primeira vez. */
+export async function marcarPushChegando(numero: number) {
+  const r = await exec("UPDATE pedidos SET push_chegando = 1 WHERE numero = ? AND push_chegando = 0", [numero]);
+  return r.rowsAffected > 0;
 }

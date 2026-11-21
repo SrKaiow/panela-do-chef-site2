@@ -10,6 +10,10 @@ const figtree = Figtree({ weight: ["400", "600", "700", "800"], subsets: ["latin
 export const metadata: Metadata = {
   title: "Panela do Chef | Comida brasileira com entrega",
   description: "Açaí, pastéis, batatas recheadas e marmitas do Chef Kaio. Peça online e pague em dinheiro na entrega ou no cartão.",
+  // Ícone e "app" na tela de início (no iPhone é o que permite o alarme com a tela bloqueada).
+  manifest: "/manifest.webmanifest",
+  icons: { icon: "/icon-192.png", apple: "/icon-192.png" },
+  appleWebApp: { capable: true, title: "Panela do Chef", statusBarStyle: "black" },
 };
 
 export const viewport: Viewport = {

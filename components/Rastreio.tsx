@@ -60,6 +60,8 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
   const avisou = useRef(inicial.chegando);
   // Alarme de "pronto para coletar" (só na coleta): toca, vibra e mostra aviso na tela.
   const [alarmeLigado, setAlarmeLigado] = useState(false);
+  /** true: vai tocar mesmo com a tela bloqueada; false: só com a página aberta. */
+  const [pushOk, setPushOk] = useState<boolean | null>(null);
   const [tocando, setTocando] = useState(false);
   /** Qual alarme: pronto para coletar ou entregador chegando. */
   const [motivoAlarme, setMotivoAlarme] = useState<"pronto" | "chegando">("pronto");
@@ -181,6 +183,23 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
         setNotificar(p === "granted");
       }
     } catch {}
+    // Notificação com a tela bloqueada (Web Push): Android/Chrome e iPhone com o site na tela de início.
+    try {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window) || Notification.permission !== "granted") {
+        setPushOk(false);
+        return;
+      }
+      const reg = await navigator.serviceWorker.register("/sw.js");
+      await navigator.serviceWorker.ready;
+      const { chave } = await (await fetch("/api/push/chave")).json();
+      const bin = atob(chave.replace(/-/g, "+").replace(/_/g, "/"));
+      const sub = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: Uint8Array.from(bin, (c) => c.charCodeAt(0)) }));
+      const r = await fetch(`/api/pedido/${token}/push`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ endpoint: sub.endpoint }) });
+      setPushOk(r.ok);
+    } catch (e) {
+      console.error("[push]", e);
+      setPushOk(false);
+    }
   }
 
   async function pedirNotificacao() {
@@ -231,7 +250,14 @@ export default function Rastreio({ token, inicial, nome, jaAvaliado }: { token: 
           {alarmeLigado ? (
             <>
               <strong>🔔 Alarme ligado</strong>
-              <span>Deixe esta página aberta e o volume ligado: {ao.retirada ? "quando ficar pronto" : "quando o entregador estiver a 1 minuto"}, o celular toca e vibra.</span>
+              {pushOk ? (
+                <span>Pode bloquear o celular ou sair desta página: {ao.retirada ? "quando ficar pronto" : "quando o entregador estiver a 1 minuto"}, chega uma notificação no seu celular.</span>
+              ) : (
+                <span>Deixe esta página aberta e o volume ligado: {ao.retirada ? "quando ficar pronto" : "quando o entregador estiver a 1 minuto"}, o celular toca e vibra.</span>
+              )}
+              {pushOk === false && /iPhone|iPad/i.test(navigator.userAgent) && !(window.navigator as any).standalone && (
+                <span className="dica">No iPhone, para avisar com a tela bloqueada: toque em <strong>Compartilhar</strong> → <strong>Adicionar à Tela de Início</strong>, abra a Panela do Chef pelo ícone e ligue o alarme de novo.</span>
+              )}
             </>
           ) : ao.retirada ? (
             <>
