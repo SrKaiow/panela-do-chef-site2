@@ -28,7 +28,8 @@ export async function verificarChegadas(local: Local) {
   // Só a entrega que está sendo feita agora (os outros pedidos no carro esperam a vez deles).
   const [noCarro, ajustes] = await Promise.all([listarPorStatus(["saiu"]), getAjustes()]);
   const atual = entregaAtualDe(noCarro);
-  const emRota = noCarro.filter((p) => p.numero === atual);
+  // Sem entrega escolhida ("Ir para este cliente"), confere todas as do carro: chegou perto de uma, avisa essa.
+  const emRota = noCarro.filter((p) => !p.retirada && (atual == null || p.numero === atual));
   const limite = ajustes.entrega.avisoChegandoMetros;
   const manuais: number[] = [];
   for (const p of emRota) {

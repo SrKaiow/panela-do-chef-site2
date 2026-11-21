@@ -101,7 +101,7 @@ export default function Entregador() {
   useEffect(() => {
     if (automatico) return;
     for (const p of pedidos) {
-      if (!p.atual || p.avisadoChegando || p.distancia == null || p.distancia > metrosAviso || lembrados.current.has(p.numero)) continue;
+      if ((!p.atual && pedidos.some((x) => x.atual)) || p.avisadoChegando || p.distancia == null || p.distancia > metrosAviso || lembrados.current.has(p.numero)) continue;
       lembrados.current.add(p.numero);
       try { navigator.vibrate?.([400, 150, 400, 150, 400]); } catch {}
       try {

@@ -390,7 +390,8 @@ export async function entregaAtual(): Promise<number | null> {
 
 /** Mesma regra de entregaAtual(), a partir de uma lista de pedidos já carregada (sem ir ao banco de novo). */
 export function entregaAtualDe(lista: Pedido[]): number | null {
-  const noCarro = lista.filter((p) => p.status === "saiu");
+  // "saiu" na coleta é "pronto para coletar": não está no carro, não conta aqui.
+  const noCarro = lista.filter((p) => p.status === "saiu" && !p.retirada);
   const iniciada = noCarro.filter((p) => p.aCaminhoEm).sort((a, b) => b.aCaminhoEm!.localeCompare(a.aCaminhoEm!))[0];
   if (iniciada) return iniciada.numero;
   return noCarro.length === 1 ? noCarro[0].numero : null;
