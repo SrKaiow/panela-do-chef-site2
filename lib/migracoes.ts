@@ -339,6 +339,13 @@ function salmaoMassaV1(c: Cardapio): Cardapio {
   };
 }
 
+/** Massa Show: camarão baixa para £3. */
+function camaraoMassaV1(c: Cardapio): Cardapio {
+  const g = c.adicionais["massa-proteina"];
+  if (!g) return c;
+  return { ...c, adicionais: { ...c.adicionais, "massa-proteina": { ...g, opcoes: g.opcoes.map((o) => (/camar/i.test(o.nome) ? { ...o, preco: 3 } : o)) } } };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
@@ -356,6 +363,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["sprite-v1", spriteV1],
   ["cebola-conserva-v1", cebolaConservaV1],
   ["salmao-massa-v1", salmaoMassaV1],
+  ["camarao-massa-3-v1", camaraoMassaV1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */

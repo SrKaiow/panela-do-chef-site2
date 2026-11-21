@@ -142,9 +142,11 @@ export default function Loja({
                   <button key={item.id} className="item" disabled={!item.disponivel} onClick={() => setAberto(item)}>
                     <div className="foto">
                       {item.video ? (
-                        <video autoPlay muted loop playsInline preload="metadata" poster={item.video + "-capa.jpg"} aria-hidden="true">
-                          <source src={item.video + ".webm"} type="video/webm" />
-                          <source src={item.video + ".mp4"} type="video/mp4" />
+                        // Versão quadrada do vídeo (o vídeo inteiro no centro, laterais desfocadas): no quadradinho do cardápio
+                        // o vídeo em pé cortava e o prato ficava fora do centro.
+                        <video autoPlay muted loop playsInline preload="metadata" poster={item.video + "-quadrado-capa.jpg"} aria-hidden="true">
+                          <source src={item.video + "-quadrado.webm"} type="video/webm" />
+                          <source src={item.video + "-quadrado.mp4"} type="video/mp4" />
                         </video>
                       ) : item.imagem ? <img src={item.imagem} alt="" loading="lazy" /> : <IconeCategoria categoria={item.categoria} />}
                     </div>
