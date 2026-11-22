@@ -434,3 +434,6 @@ a.btn.principal-p { color: #fff; justify-content: center; }
 .rel-grupo[open] .rel-gastos { padding-bottom: 6px; }
 .rel-acoes { display: flex; gap: 6px; align-items: center; }
 .rel-acoes select { font-size: 0.8rem; padding: 4px 6px; border-radius: 8px; border: 1px solid var(--linha); background: transparent; color: inherit; max-width: 96px; }
+
+.conta-frete { grid-column: 2 / -1; justify-self: start; margin-top: 2px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--linha); background: #fff; font-size: .8rem; font-weight: 700; cursor: pointer; color: var(--texto); }
+.conta-frete.feito { background: #e3f6ea; border-color: #b8e6c9; color: #0b6b37; }

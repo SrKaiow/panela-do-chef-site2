@@ -327,6 +327,11 @@ function guaranaV1(c: Cardapio): Cardapio {
   return { ...c, itens };
 }
 
+/** O Guaraná antigo (id "guarana", esgotado) sai: ficam os novos, normal e zero. */
+function guaranaAntigoForaV1(c: Cardapio): Cardapio {
+  return { ...c, itens: c.itens.filter((i) => i.id !== "guarana") };
+}
+
 /** Massa Show: "Cebola em conserva" nos ingredientes, logo depois da cebola roxa. */
 function cebolaConservaV1(c: Cardapio): Cardapio {
   const g = c.adicionais["massa-ingredientes"];
@@ -378,6 +383,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["salmao-massa-v1", salmaoMassaV1],
   ["camarao-massa-3-v1", camaraoMassaV1],
   ["guarana-v1", guaranaV1],
+  ["guarana-antigo-fora-v1", guaranaAntigoForaV1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */

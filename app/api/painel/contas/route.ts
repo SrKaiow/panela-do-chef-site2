@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { logado } from "@/lib/auth";
-import { apagarLancamento, arquivarConta, lancarConta, listarContas, pedidoParaConta, salvarConta } from "@/lib/db";
+import { apagarLancamento, freteLancamento, arquivarConta, lancarConta, listarContas, pedidoParaConta, salvarConta } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +38,15 @@ export async function POST(req: Request) {
     if (b.acao === "do-pedido") {
       const r = await pedidoParaConta(Number(b.numero));
       return NextResponse.json({ ok: true, ...r });
+    }
+    if (b.acao === "tirar-frete" || b.acao === "devolver-frete") {
+      const manual = Math.round(Number(String(b.valor ?? "0").replace(",", ".")) * 100) || undefined;
+      try {
+        await freteLancamento(Number(b.id), b.acao === "tirar-frete", manual);
+      } catch (e) {
+        return erro(e instanceof Error ? e.message : "Não consegui tirar o frete.");
+      }
+      return NextResponse.json({ ok: true, contas: await listarContas() });
     }
     if (b.acao === "apagar-lancamento") {
       await apagarLancamento(Number(b.id));

@@ -199,6 +199,20 @@ export default function Contas({ avisar }: { avisar: Aviso }) {
                         <span className="sq-sub">{dataBR(l.data)}</span>
                         <span>{l.descricao || (l.tipo === "compra" ? "Pedido" : "Pagamento")}</span>
                         <strong className={l.tipo === "compra" ? "conta-devendo" : "conta-ok"}>{l.tipo === "compra" ? "+" : "−"}{gbp(l.valor)}</strong>
+                        {l.tipo === "compra" && (
+                          l.freteRemovido ? (
+                            <button className="conta-frete feito" title="Desfazer" onClick={() => enviar({ acao: "devolver-frete", id: l.id }, "Frete voltou para a conta.")}>🚚 frete {gbp(l.freteRemovido)} tirado · desfazer</button>
+                          ) : (
+                            <button className="conta-frete" onClick={() => {
+                              if (l.pedido && l.taxaPedido > 0) {
+                                if (window.confirm(`Tirar o frete de ${gbp(l.taxaPedido)} deste pedido?`)) enviar({ acao: "tirar-frete", id: l.id }, `Frete de ${gbp(l.taxaPedido)} tirado.`);
+                              } else {
+                                const v = window.prompt("Quanto de frete tirar? (£)", "");
+                                if (v && Number(v.replace(",", ".")) > 0) enviar({ acao: "tirar-frete", id: l.id, valor: v }, `Frete de £${Number(v.replace(",", ".")).toFixed(2)} tirado.`);
+                              }
+                            }}>🚚 Tirar frete{l.pedido && l.taxaPedido > 0 ? ` (${gbp(l.taxaPedido)})` : ""}</button>
+                          )
+                        )}
                         <button className="conta-x" aria-label="Apagar lançamento" onClick={() => { if (window.confirm("Apagar este lançamento?")) enviar({ acao: "apagar-lancamento", id: l.id }, "Lançamento apagado."); }}>×</button>
                       </li>
                     ))}

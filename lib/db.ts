@@ -128,6 +128,8 @@ async function preparar(c: Client) {
     pedido INTEGER
   )`);
   try { await c.execute("ALTER TABLE contas_lancamentos ADD COLUMN pedido INTEGER"); } catch {}
+  // Frete tirado de um pedido na conta (ex.: dois pedidos para o mesmo lugar), em pence.
+  try { await c.execute("ALTER TABLE contas_lancamentos ADD COLUMN frete_removido INTEGER NOT NULL DEFAULT 0"); } catch {}
   // Cartão fidelidade: quantos brindes o cliente (pelo telefone) já resgatou.
   await c.execute(`CREATE TABLE IF NOT EXISTS fidelidade (
     telefone TEXT PRIMARY KEY,
@@ -141,7 +143,7 @@ async function preparar(c: Client) {
  * Com a versão em dia, um servidor novo da Cloudflare só faz 1 consulta para começar (antes eram ~30,
  * e o "Error 1102 - Worker exceeded resource limits" aparecia quando muitos começavam ao mesmo tempo).
  */
-const VERSAO_ESQUEMA = "2026-11-21-avatar";
+const VERSAO_ESQUEMA = "2026-11-22-frete-conta";
 
 async function prepararRapido(c: Client) {
   try {
@@ -689,17 +691,24 @@ export async function carimbosDoPedido(p: Pedido, meta: number, minimoPence = 0)
 
 /* ------------------------- Clientes a pagar (fiado / semanal) ------------------------- */
 
-export type Lancamento = { id: number; tipo: "compra" | "pagamento"; valor: number; descricao: string; data: string };
+export type Lancamento = {
+  id: number; tipo: "compra" | "pagamento"; valor: number; descricao: string; data: string;
+  /** Pedido do site lançado aqui, a taxa de entrega dele e quanto de frete já foi tirado (pence). */
+  pedido: number | null; taxaPedido: number; freteRemovido: number;
+};
 export type Conta = { id: number; nome: string; telefone: string; obs: string; semanal: boolean; criadoEm: string; saldo: number; ultimo: string | null; lancamentos: Lancamento[] };
 
 /** Contas com saldo (compras - pagamentos, em pence) e os lançamentos, mais recentes primeiro. */
 export async function listarContas(): Promise<Conta[]> {
   const contas = await exec("SELECT * FROM contas WHERE arquivado = 0 ORDER BY nome COLLATE NOCASE");
-  const lanc = await exec("SELECT * FROM contas_lancamentos ORDER BY data DESC, id DESC");
+  const lanc = await exec("SELECT l.*, p.taxa AS taxa_pedido FROM contas_lancamentos l LEFT JOIN pedidos p ON p.numero = l.pedido ORDER BY l.data DESC, l.id DESC");
   const porConta = new Map<number, Lancamento[]>();
   for (const r of lanc.rows) {
     const id = Number(r.conta_id);
-    const l: Lancamento = { id: Number(r.id), tipo: r.tipo === "pagamento" ? "pagamento" : "compra", valor: Number(r.valor), descricao: String(r.descricao ?? ""), data: String(r.data) };
+    const l: Lancamento = {
+      id: Number(r.id), tipo: r.tipo === "pagamento" ? "pagamento" : "compra", valor: Number(r.valor), descricao: String(r.descricao ?? ""), data: String(r.data),
+      pedido: r.pedido == null ? null : Number(r.pedido), taxaPedido: Number(r.taxa_pedido ?? 0), freteRemovido: Number(r.frete_removido ?? 0),
+    };
     porConta.set(id, [...(porConta.get(id) ?? []), l]);
   }
   return contas.rows.map((r) => {
@@ -725,6 +734,25 @@ export async function arquivarConta(id: number) {
 
 export async function lancarConta(l: { contaId: number; tipo: "compra" | "pagamento"; valor: number; descricao: string; data: string }) {
   await exec("INSERT INTO contas_lancamentos (conta_id, tipo, valor, descricao, data, criado_em) VALUES (?, ?, ?, ?, ?, ?)", [l.contaId, l.tipo, l.valor, l.descricao, l.data, new Date().toISOString()]);
+}
+
+/**
+ * Tira (ou devolve) o frete de uma compra na conta. Pedido do site: tira a taxa de entrega dele.
+ * Compra anotada à mão: tira o valor informado. `valor` 0 = desfaz.
+ */
+export async function freteLancamento(id: number, tirar: boolean, valorManual?: number) {
+  const r = await exec("SELECT l.valor, l.frete_removido, l.tipo, p.taxa FROM contas_lancamentos l LEFT JOIN pedidos p ON p.numero = l.pedido WHERE l.id = ?", [id]);
+  const l = r.rows[0];
+  if (!l || l.tipo !== "compra") throw new Error("Lançamento não encontrado.");
+  const valor = Number(l.valor), ja = Number(l.frete_removido ?? 0);
+  if (!tirar) {
+    if (ja) await exec("UPDATE contas_lancamentos SET valor = ?, frete_removido = 0 WHERE id = ?", [valor + ja, id]);
+    return;
+  }
+  if (ja) return;
+  const frete = Number(l.taxa ?? 0) || valorManual || 0;
+  if (!(frete > 0 && frete < valor)) throw new Error("Esse pedido não tem frete para tirar.");
+  await exec("UPDATE contas_lancamentos SET valor = ?, frete_removido = ? WHERE id = ?", [valor - frete, frete, id]);
 }
 
 export async function apagarLancamento(id: number) {
