@@ -3,7 +3,6 @@ import { randomBytes } from "crypto";
 import type { LinhaPedido } from "./cardapio";
 
 let client: Client | null = null;
-let pronto: Promise<void> | null = null;
 
 async function preparar(c: Client) {
   await c.execute(`CREATE TABLE IF NOT EXISTS pedidos (
@@ -159,21 +158,51 @@ async function prepararRapido(c: Client) {
   });
 }
 
-function db() {
+/**
+ * Na Cloudflare um mesmo servidor atende muitos pedidos. Nada de promessa compartilhada entre eles:
+ * se o celular de um cliente cai no meio (4G), a consulta dele pode ficar pendurada para sempre e
+ * travar todo mundo que esperasse a mesma promessa ("Worker threw exception" em todo o site).
+ * Por isso: cada consulta tem prazo; se travar, o cliente do banco é recriado e tenta de novo uma vez.
+ */
+let preparado = false;
+function cliente() {
   if (!client) {
     client = createClient({
       url: process.env.DATABASE_URL || process.env.TURSO_DATABASE_URL || "file:pedidos.db",
       authToken: process.env.DATABASE_AUTH_TOKEN || process.env.DATABASE_TOKEN || process.env.TURSO_AUTH_TOKEN || undefined,
     });
   }
-  if (!pronto) pronto = prepararRapido(client).catch((e) => { pronto = null; throw e; });
-  return { c: client, pronto };
+  return client;
+}
+function comPrazo<T>(p: Promise<T>, ms: number): Promise<T> {
+  let t: ReturnType<typeof setTimeout> | undefined;
+  return Promise.race([p, new Promise<T>((_, falha) => { t = setTimeout(() => falha(new Error("banco demorou")), ms); })]).finally(() => clearTimeout(t));
+}
+async function rodar(sql: string, args: (string | number | null | Uint8Array)[]) {
+  for (let tentativa = 0; ; tentativa++) {
+    try {
+      const c = cliente();
+      if (!preparado) {
+        await comPrazo(prepararRapido(c), 15000);
+        preparado = true;
+      }
+      return await comPrazo(c.execute({ sql, args }), 10000);
+    } catch (e) {
+      // Só repete leitura (ou o preparo): uma gravação que travou pode ter entrado, e repetir duplicaria o pedido.
+      const leitura = /^\s*select/i.test(sql) || !preparado;
+      if (tentativa >= 1 || !leitura) {
+        if (!leitura) { try { client?.close(); } catch { /* já fechado */ } client = null; }
+        throw e;
+      }
+      console.error("[db] recriando conexão:", e instanceof Error ? e.message : e);
+      try { client?.close(); } catch { /* já fechado */ }
+      client = null;
+    }
+  }
 }
 
 export async function exec(sql: string, args: (string | number | null)[] = []) {
-  const { c, pronto } = db();
-  await pronto;
-  return c.execute({ sql, args });
+  return rodar(sql, args);
 }
 
 /* ------------------------------ Pedidos ------------------------------ */
@@ -355,9 +384,7 @@ export async function salvarConfig(chave: string, valor: unknown) {
 
 export async function salvarFoto(tipo: string, dados: Uint8Array) {
   const id = randomBytes(9).toString("base64url");
-  const { c, pronto } = db();
-  await pronto;
-  await c.execute({ sql: "INSERT INTO fotos (id, tipo, dados, criado_em) VALUES (?, ?, ?, ?)", args: [id, tipo, dados, new Date().toISOString()] });
+  await rodar("INSERT INTO fotos (id, tipo, dados, criado_em) VALUES (?, ?, ?, ?)", [id, tipo, dados, new Date().toISOString()]);
   return id;
 }
 
