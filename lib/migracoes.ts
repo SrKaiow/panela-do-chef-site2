@@ -314,6 +314,19 @@ function spriteV1(c: Cardapio): Cardapio {
   return { ...c, itens };
 }
 
+/** Guaraná Antarctica normal e zero (lata 330ml), £1.50 cada, logo depois da Sprite. */
+function guaranaV1(c: Cardapio): Cardapio {
+  if (c.itens.some((i) => i.id === "guarana-antarctica")) return c;
+  const novos: Item[] = [
+    { id: "guarana-antarctica", nome: "Guaraná Antarctica (lata 330ml)", categoria: "bebidas", descricao: "O original do Brasil, geladinho.", preco: 1.5, disponivel: true },
+    { id: "guarana-antarctica-zero", nome: "Guaraná Antarctica Zero (lata 330ml)", categoria: "bebidas", descricao: "Zero açúcar.", preco: 1.5, disponivel: true },
+  ];
+  const itens = [...c.itens];
+  const pos = itens.findIndex((i) => i.id === "sprite");
+  itens.splice(pos >= 0 ? pos + 1 : itens.length, 0, ...novos);
+  return { ...c, itens };
+}
+
 /** Massa Show: "Cebola em conserva" nos ingredientes, logo depois da cebola roxa. */
 function cebolaConservaV1(c: Cardapio): Cardapio {
   const g = c.adicionais["massa-ingredientes"];
@@ -364,6 +377,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["cebola-conserva-v1", cebolaConservaV1],
   ["salmao-massa-v1", salmaoMassaV1],
   ["camarao-massa-3-v1", camaraoMassaV1],
+  ["guarana-v1", guaranaV1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */
