@@ -12,13 +12,13 @@ const hoje = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Lo
 const NOMES = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 const dataBR = (d: string) => d.split("-").reverse().slice(0, 2).join("/");
 const somarDias = (d: string, n: number) => new Date(new Date(d + "T12:00:00Z").getTime() + n * 86400000).toISOString().slice(0, 10);
-export const CATEGORIAS_GASTO = ["Mercado", "Combustível", "Embalagens", "Ingredientes", "Entregador", "Gás / Luz", "Outros"];
+export const CATEGORIAS_GASTO = ["Lidl", "Brazabrazil", "Combustível", "Sainsbury's", "Mercado", "Embalagens", "Entregador", "Gás / Luz", "Outros"];
 type Aviso = (a: { tipo: "ok" | "erro"; texto: string }) => void;
 
 export default function Relatorio({ avisar }: { avisar: Aviso }) {
   const [semana, setSemana] = useState<string | null>(null);
   const [rel, setRel] = useState<Rel | null>(null);
-  const [form, setForm] = useState({ data: hoje(), categoria: "Mercado", descricao: "", valor: "" });
+  const [form, setForm] = useState({ data: hoje(), categoria: "Lidl", descricao: "", valor: "" });
   const [enviando, setEnviando] = useState(false);
 
   const carregar = useCallback(async (s: string | null) => {
@@ -53,7 +53,11 @@ export default function Relatorio({ avisar }: { avisar: Aviso }) {
   if (!rel) return <div className="sq-pagina"><p className="sq-carregando">Carregando...</p></div>;
   const t = rel.totais;
   const atual = rel.inicio <= hoje() && hoje() <= rel.fim;
-  const porCategoria = CATEGORIAS_GASTO.map((c) => ({ c, v: rel.gastos.filter((g) => g.categoria === c).reduce((s, g) => s + g.valor, 0) })).filter((x) => x.v > 0);
+  // Agrupa por categoria (onde gastou), da maior para a menor.
+  const porCategoria = [...new Set(rel.gastos.map((g) => g.categoria))]
+    .map((c) => ({ c, itens: rel.gastos.filter((g) => g.categoria === c), v: rel.gastos.filter((g) => g.categoria === c).reduce((s, g) => s + g.valor, 0) }))
+    .sort((a, b) => b.v - a.v);
+  const sugestoes = [...new Set([...CATEGORIAS_GASTO, ...rel.gastos.map((g) => g.categoria)])];
   const maxDia = Math.max(1, ...rel.dias.map((d) => d.total));
 
   return (
@@ -110,10 +114,9 @@ export default function Relatorio({ avisar }: { avisar: Aviso }) {
         <strong>Lançar gasto</strong>
         <div className="rel-form">
           <label className="sq-campo">Valor (£)<input inputMode="decimal" placeholder="0.00" value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} /></label>
-          <label className="sq-campo">Tipo
-            <select value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })}>
-              {CATEGORIAS_GASTO.map((c) => <option key={c}>{c}</option>)}
-            </select>
+          <label className="sq-campo">Categoria
+            <input list="rel-cats" maxLength={40} value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })} placeholder="Ex.: Lidl" />
+            <datalist id="rel-cats">{sugestoes.map((c) => <option key={c} value={c} />)}</datalist>
           </label>
           <label className="sq-campo">Data<input type="date" value={form.data} min={rel.inicio} max={rel.fim} onChange={(e) => setForm({ ...form, data: e.target.value })} /></label>
           <label className="sq-campo rel-desc">Onde / o quê (opcional)<input maxLength={120} placeholder="Ex.: Lidl · Shell da Kingston Rd" value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} /></label>
@@ -128,16 +131,32 @@ export default function Relatorio({ avisar }: { avisar: Aviso }) {
             <div className="rel-categorias">
               {porCategoria.map((x) => <span key={x.c} className="sq-pilula">{x.c}: <strong>{gbp(x.v)}</strong></span>)}
             </div>
-            <ul className="rel-gastos">
-              {rel.gastos.map((g) => (
-                <li key={g.id}>
-                  <span className="sq-sub">{dataBR(g.data)}</span>
-                  <span><strong>{g.categoria}</strong>{g.descricao ? ` · ${g.descricao}` : ""}</span>
-                  <strong className="rel-vermelho">−{gbp(g.valor)}</strong>
-                  <button className="conta-x" aria-label="Apagar gasto" onClick={() => { if (window.confirm("Apagar este gasto?")) enviar({ acao: "apagar", id: g.id }, "Gasto apagado."); }}>×</button>
-                </li>
-              ))}
-            </ul>
+            {porCategoria.map((grupo) => (
+              <details key={grupo.c} className="rel-grupo" open>
+                <summary><strong>{grupo.c}</strong><span className="sq-sub">{grupo.itens.length} lançamento{grupo.itens.length === 1 ? "" : "s"}</span><strong className="rel-vermelho">−{gbp(grupo.v)}</strong></summary>
+                <ul className="rel-gastos">
+                  {grupo.itens.map((g) => (
+                    <li key={g.id}>
+                      <span className="sq-sub">{dataBR(g.data)}</span>
+                      <span>{g.descricao || "—"}</span>
+                      <strong className="rel-vermelho">−{gbp(g.valor)}</strong>
+                      <span className="rel-acoes">
+                        <select aria-label="Mudar categoria" value="" onChange={(e) => {
+                          let c = e.target.value;
+                          if (c === "__nova") c = (window.prompt("Nome da categoria (ex.: Lidl):") || "").trim();
+                          if (c && c !== g.categoria) enviar({ acao: "categoria", id: g.id, categoria: c }, `Movido para ${c}.`);
+                        }}>
+                          <option value="">Mover</option>
+                          {sugestoes.filter((c) => c !== g.categoria).map((c) => <option key={c} value={c}>{c}</option>)}
+                          <option value="__nova">+ Nova categoria...</option>
+                        </select>
+                        <button className="conta-x" aria-label="Apagar gasto" onClick={() => { if (window.confirm("Apagar este gasto?")) enviar({ acao: "apagar", id: g.id }, "Gasto apagado."); }}>×</button>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ))}
           </>
         )}
       </section>

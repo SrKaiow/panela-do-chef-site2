@@ -16,7 +16,7 @@ export default async function RelatorioImpressao(props: { params: Promise<{ inic
   const { inicio } = await props.params;
   const rel = await relatorioSemana(segundaDe(inicio));
   const t = rel.totais;
-  const cats = [...new Set(rel.gastos.map((g) => g.categoria))].map((c) => ({ c, v: rel.gastos.filter((g) => g.categoria === c).reduce((s, g) => s + g.valor, 0) }));
+  const cats = [...new Set(rel.gastos.map((g) => g.categoria))].map((c) => ({ c, v: rel.gastos.filter((g) => g.categoria === c).reduce((s, g) => s + g.valor, 0) })).sort((a, b) => b.v - a.v);
   const gerado = new Date().toLocaleString("pt-BR", { timeZone: "Europe/London", dateStyle: "short", timeStyle: "short" });
 
   return (
@@ -58,11 +58,15 @@ export default async function RelatorioImpressao(props: { params: Promise<{ inic
       {rel.gastos.length === 0 ? <p className="rp-nota">Nenhum gasto lançado nesta semana.</p> : (
         <>
           <table className="rp-gastos">
-            <thead><tr><th>Data</th><th>Tipo</th><th>Onde / o quê</th><th>Valor</th></tr></thead>
-            <tbody>{rel.gastos.map((g) => <tr key={g.id}><td>{dataBR(g.data).slice(0, 5)}</td><td>{g.categoria}</td><td>{g.descricao || "—"}</td><td className="vermelho">{gbp(g.valor)}</td></tr>)}</tbody>
-            <tfoot><tr><td colSpan={3}>Total de gastos</td><td>{gbp(t.gastos)}</td></tr></tfoot>
+            <thead><tr><th>Data</th><th>Onde / o quê</th><th>Valor</th></tr></thead>
+            {cats.map((x) => (
+              <tbody key={x.c}>
+                <tr className="rp-cat"><td colSpan={2}>{x.c}</td><td>{gbp(x.v)}</td></tr>
+                {rel.gastos.filter((g) => g.categoria === x.c).map((g) => <tr key={g.id}><td>{dataBR(g.data).slice(0, 5)}</td><td>{g.descricao || "—"}</td><td className="vermelho">{gbp(g.valor)}</td></tr>)}
+              </tbody>
+            ))}
+            <tfoot><tr><td colSpan={2}>Total de gastos</td><td>{gbp(t.gastos)}</td></tr></tfoot>
           </table>
-          <p className="rp-nota">{cats.map((x) => `${x.c}: ${gbp(x.v)}`).join(" · ")}</p>
         </>
       )}
 
@@ -103,6 +107,7 @@ td { padding: 7px 8px; border-bottom: 1px solid #eee; }
 th:not(:first-child), td:not(:first-child) { text-align: right; }
 tfoot td { font-weight: 800; border-top: 2px solid #1c1c1c; border-bottom: 0; }
 .rp-gastos th:not(:last-child), .rp-gastos td:not(:last-child) { text-align: left; }
+.rp-cat td { background: #f3f3ef; font-weight: 800; border-top: 1.5px solid #1c1c1c; }
 .rp-nota { font-size: 12px; color: #555; margin: 6px 0 0; }
 .rp-final { margin-top: 24px; display: grid; grid-template-columns: repeat(3, 1fr); border: 2px solid #1c1c1c; border-radius: 12px; overflow: hidden; }
 .rp-final div { padding: 12px 14px; display: grid; gap: 2px; }

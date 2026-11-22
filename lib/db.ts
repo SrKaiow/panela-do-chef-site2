@@ -825,6 +825,10 @@ export async function salvarGasto(g: { data: string; categoria: string; descrica
   await exec("INSERT INTO gastos (data, categoria, descricao, valor, criado_em) VALUES (?, ?, ?, ?, ?)", [g.data, g.categoria, g.descricao, g.valor, new Date().toISOString()]);
 }
 
+export async function mudarCategoriaGasto(id: number, categoria: string) {
+  await exec("UPDATE gastos SET categoria = ? WHERE id = ?", [categoria, id]);
+}
+
 export async function apagarGasto(id: number) {
   await exec("DELETE FROM gastos WHERE id = ?", [id]);
 }

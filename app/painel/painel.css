@@ -413,7 +413,7 @@ a.btn.principal-p { color: #fff; justify-content: center; }
 @media (max-width: 760px) { .rel-form { grid-template-columns: 1fr 1fr; } .rel-desc { grid-column: 1 / -1; } }
 .rel-categorias { display: flex; flex-wrap: wrap; gap: 6px; }
 .rel-gastos { list-style: none; margin: 0; padding: 0; display: grid; }
-.rel-gastos li { display: grid; grid-template-columns: 52px 1fr auto 28px; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--linha); font-size: 0.92rem; }
+.rel-gastos li { display: grid; grid-template-columns: 52px 1fr auto auto; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--linha); font-size: 0.92rem; }
 
 /* Relógio do pedido (tempo desde que o cliente pediu) */
 .crono { display: flex; align-items: center; gap: 4px; margin-top: 6px; padding: 4px 10px; border-radius: 999px; font-weight: 800; font-size: 1rem; font-variant-numeric: tabular-nums; width: fit-content; }
@@ -426,3 +426,11 @@ a.btn.principal-p { color: #fff; justify-content: center; }
 .crono-fim { background: #f0efea; color: #555; font-weight: 700; font-size: .85rem; }
 
 .av-avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid #f2c200; display: block; margin-bottom: 6px; }
+
+.rel-grupo { border: 1px solid var(--linha); border-radius: 12px; padding: 0 12px; margin-top: 10px; }
+.rel-grupo summary { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 12px 0; cursor: pointer; list-style: none; }
+.rel-grupo summary::-webkit-details-marker { display: none; }
+.rel-grupo summary::before { content: "▸"; position: absolute; margin-left: -10px; }
+.rel-grupo[open] .rel-gastos { padding-bottom: 6px; }
+.rel-acoes { display: flex; gap: 6px; align-items: center; }
+.rel-acoes select { font-size: 0.8rem; padding: 4px 6px; border-radius: 8px; border: 1px solid var(--linha); background: transparent; color: inherit; max-width: 96px; }

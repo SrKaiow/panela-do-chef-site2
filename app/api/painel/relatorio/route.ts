@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { logado } from "@/lib/auth";
-import { apagarGasto, relatorioSemana, salvarGasto, segundaDe } from "@/lib/db";
+import { apagarGasto, mudarCategoriaGasto, relatorioSemana, salvarGasto, segundaDe } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -18,11 +18,15 @@ export async function POST(req: Request) {
   const b = await req.json().catch(() => ({}));
   if (b.acao === "apagar") {
     await apagarGasto(Number(b.id));
+  } else if (b.acao === "categoria") {
+    const categoria = String(b.categoria || "").trim().slice(0, 40);
+    if (!categoria) return NextResponse.json({ erro: "Escolha a categoria." }, { status: 400 });
+    await mudarCategoriaGasto(Number(b.id), categoria);
   } else {
     const valor = Math.round(Number(String(b.valor).replace(",", ".")) * 100);
     if (!(valor > 0 && valor <= 1000000)) return NextResponse.json({ erro: "Valor inválido." }, { status: 400 });
     const data = /^\d{4}-\d{2}-\d{2}$/.test(String(b.data)) ? String(b.data) : new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
-    const categoria = String(b.categoria || "Outros").slice(0, 40);
+    const categoria = String(b.categoria || "Outros").trim().slice(0, 40) || "Outros";
     await salvarGasto({ data, categoria, descricao: String(b.descricao || "").trim().slice(0, 120), valor });
   }
   return NextResponse.json(await relatorioSemana(segundaDe(b.semana)));
