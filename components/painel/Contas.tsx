@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Conta, Lancamento } from "@/lib/db";
+import type { Conta } from "@/lib/db";
 import { linkWhatsapp } from "@/lib/whatsapp";
+import { emAberto } from "@/lib/contas";
 
 /**
  * Clientes a pagar: fiado e clientes semanais.
@@ -13,19 +14,6 @@ const hoje = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Lo
 const dataBR = (d: string) => d.split("-").reverse().slice(0, 2).join("/");
 type Aviso = (a: { tipo: "ok" | "erro"; texto: string }) => void;
 type Filtro = "devendo" | "semanais" | "todos";
-
-/** Compras ainda em aberto: as mais recentes até somar o saldo devido. */
-function emAberto(c: Conta): Lancamento[] {
-  let falta = c.saldo;
-  const lista: Lancamento[] = [];
-  for (const l of c.lancamentos) {
-    if (falta <= 0) break;
-    if (l.tipo !== "compra") continue;
-    lista.push(l);
-    falta -= l.valor;
-  }
-  return lista.reverse();
-}
 
 function mensagemCobranca(c: Conta) {
   const nome = c.nome.trim().split(/\s+/)[0];
@@ -183,6 +171,9 @@ export default function Contas({ avisar }: { avisar: Aviso }) {
                     <button className="sq-btn" onClick={() => setLancando({ contaId: c.id, tipo: "pagamento", valor: "", descricao: "", data: hoje() })}>Recebi pagamento</button>
                     {c.saldo > 0 && c.telefone && (
                       <a className="sq-btn btn-zap" href={linkWhatsapp(c.telefone, mensagemCobranca(c))} target="_blank" rel="noreferrer">Cobrar no WhatsApp</a>
+                    )}
+                    {c.saldo > 0 && (
+                      <a className="sq-btn btn-fatura" href={`/painel/contas/${c.id}/fatura`} target="_blank" rel="noreferrer">📄 Fatura em PDF</a>
                     )}
                   </div>
                 )}
