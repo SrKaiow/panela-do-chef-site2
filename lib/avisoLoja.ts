@@ -2,7 +2,7 @@ import { buscarPorNumero, lerConfig, marcarAvisoLoja, salvarConfig, type Pedido 
 import { getAjustes } from "./dados";
 import { telefoneInternacional } from "./whatsapp";
 import { rotuloAgendado } from "./horario";
-import { siteUrl } from "./stripe";
+import { siteUrl } from "./site";
 
 /**
  * Aviso de pedido novo no WhatsApp da empresa.

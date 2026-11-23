@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   const assinatura = req.headers.get("stripe-signature") || "";
   let evento;
   try {
-    evento = await stripe().webhooks.constructEventAsync(corpo, assinatura, segredo, undefined, Stripe.createSubtleCryptoProvider());
+    evento = await (await stripe()).webhooks.constructEventAsync(corpo, assinatura, segredo, undefined, Stripe.createSubtleCryptoProvider());
   } catch {
     return NextResponse.json({ erro: "Assinatura inválida" }, { status: 400 });
   }

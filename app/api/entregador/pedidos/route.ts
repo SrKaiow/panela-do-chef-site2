@@ -4,7 +4,7 @@ import { entregaAtualDe, listarPorStatus, lerLocal, pedidosNaConta } from "@/lib
 import { rotaCarro, rotaEstimada } from "@/lib/rota";
 import { getAjustes } from "@/lib/dados";
 import { linkWhatsapp, mensagens, whatsappAutomatico } from "@/lib/whatsapp";
-import { siteUrl } from "@/lib/stripe";
+import { siteUrl } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 

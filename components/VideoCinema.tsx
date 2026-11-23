@@ -7,10 +7,11 @@ export default function VideoCinema() {
   const ref = useRef<HTMLVideoElement>(null);
   const [som, setSom] = useState(false);
 
-  // Só toca quando aparece na tela (economiza bateria e dados no celular).
+  // Só baixa e toca quando aparece na tela: são 4 MB que o celular não precisa gastar se o cliente nem rolar até aqui.
   useEffect(() => {
     const v = ref.current;
-    if (!v || !("IntersectionObserver" in window)) return;
+    if (!v) return;
+    if (!("IntersectionObserver" in window)) { v.play().catch(() => {}); return; }
     const obs = new IntersectionObserver(([e]) => {
       if (e.isIntersecting) v.play().catch(() => {});
       else v.pause();
@@ -35,8 +36,7 @@ export default function VideoCinema() {
         muted
         loop
         playsInline
-        autoPlay
-        preload="metadata"
+        preload="none"
         aria-label="Vídeo da Panela do Chef: açaí, batidinhas, copos e o Chef Kaio na cozinha"
       >
         <source src="/videos/panela-cinematic.webm" type="video/webm" />

@@ -3,7 +3,7 @@ import { buscarPorToken, confirmarPagamentoCartao, salvarPagamentoSquare } from 
 import { criarPedidoCarteira, ErroSquare, pagarComCarteira, registrarErroSquare, squareConfigurado } from "@/lib/square";
 import { avisarLojaNovoPedido } from "@/lib/avisoLoja";
 import { permitir } from "@/lib/seguranca";
-import { siteUrl } from "@/lib/stripe";
+import { siteUrl } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 

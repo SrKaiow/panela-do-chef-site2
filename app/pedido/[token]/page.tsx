@@ -29,7 +29,7 @@ export default async function PaginaPedido(props: { params: Promise<{ token: str
   // Voltou do Stripe: confere o pagamento direto com o Stripe (não depende só do webhook).
   if (pedido.pagamento === "cartao" && !pedido.pago && searchParams.sessao && searchParams.sessao === pedido.stripeSessao) {
     try {
-      const s = await stripe().checkout.sessions.retrieve(searchParams.sessao);
+      const s = await (await stripe()).checkout.sessions.retrieve(searchParams.sessao);
       if (s.payment_status === "paid") {
         await confirmarPagamentoCartao(pedido.numero);
         await avisarLojaNovoPedido(pedido.numero);

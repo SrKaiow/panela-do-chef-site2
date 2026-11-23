@@ -3,7 +3,7 @@ import { timingSafeEqual } from "node:crypto";
 import { apiTelegram, chatDoTelegram, salvarChatTelegram, segredoTelegram } from "@/lib/avisoLoja";
 import { buscarPorNumero, mudarStatus, pedirImpressao } from "@/lib/db";
 import { aoMudarStatus } from "@/lib/avisos";
-import { siteUrl } from "@/lib/stripe";
+import { siteUrl } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 

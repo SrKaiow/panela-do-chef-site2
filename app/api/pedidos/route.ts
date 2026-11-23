@@ -4,7 +4,8 @@ import { getAjustes, getCardapio, cartaoConfigurado, provedorCartao } from "@/li
 import { criarPagamentoSquare } from "@/lib/square";
 import { estadoLoja, horariosParaAgendar } from "@/lib/horario";
 import { criarPedido, salvarPagamentoSquare, salvarSessaoStripe } from "@/lib/db";
-import { stripe, siteUrl } from "@/lib/stripe";
+import { stripe } from "@/lib/stripe";
+import { siteUrl } from "@/lib/site";
 import { avisarLojaNovoPedido } from "@/lib/avisoLoja";
 import { conferirColeta, coordenadasDoPostcode, cotarEntrega, distanciaMetros, entregaEspecial } from "@/lib/entrega";
 import { mensagemSegura, permitir, respostaLimite } from "@/lib/seguranca";
@@ -153,7 +154,7 @@ export async function POST(req: Request) {
     }));
     if (taxa) lineItems.push({ quantity: 1, price_data: { currency: "gbp", unit_amount: taxa, product_data: { name: "Taxa de entrega" } } });
 
-    const sessao = await stripe().checkout.sessions.create({
+    const sessao = await (await stripe()).checkout.sessions.create({
       mode: "payment",
       line_items: lineItems,
       metadata: { numero: String(numero) },

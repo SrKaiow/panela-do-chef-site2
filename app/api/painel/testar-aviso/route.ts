@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { logado } from "@/lib/auth";
 import { testarAvisos } from "@/lib/avisoLoja";
-import { siteUrl } from "@/lib/stripe";
+import { siteUrl } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 

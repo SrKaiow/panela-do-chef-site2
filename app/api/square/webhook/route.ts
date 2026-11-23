@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { buscarPorNumero, buscarPorPedidoSquare, confirmarPagamentoCartao } from "@/lib/db";
 import { assinaturaSquareValida, infoPedidoSquare } from "@/lib/square";
 import { avisarLojaNovoPedido } from "@/lib/avisoLoja";
-import { siteUrl } from "@/lib/stripe";
+import { siteUrl } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 

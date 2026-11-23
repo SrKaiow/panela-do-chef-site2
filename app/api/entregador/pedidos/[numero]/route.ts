@@ -1,4 +1,4 @@
-import { siteUrl } from "@/lib/stripe";
+import { siteUrl } from "@/lib/site";
 import { NextResponse } from "next/server";
 import { logado } from "@/lib/auth";
 import { marcarAviso, marcarPago, mudarStatus, buscarPorNumero, iniciarEntrega } from "@/lib/db";

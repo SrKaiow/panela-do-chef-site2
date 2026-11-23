@@ -2,7 +2,7 @@ import { buscarPorNumero, entregaAtualDe, listarPorStatus, marcarAviso, type Loc
 import { distanciaMetros } from "./entrega";
 import { getAjustes } from "./dados";
 import { whatsappAutomatico, enviarModelo } from "./whatsapp";
-import { siteUrl } from "./stripe";
+import { siteUrl } from "./site";
 import { enviarPushPedido } from "./push";
 import { marcarPushChegando } from "./db";
 
