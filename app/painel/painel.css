@@ -466,6 +466,10 @@ a.btn.principal-p { color: #fff; justify-content: center; }
 .ef-tool:disabled { opacity: .4; }
 .ef-cor { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #ccc; cursor: pointer; }
 .ef-cor.on { border-color: #f2c200; box-shadow: 0 0 0 2px #f2c200; }
-.ef-area { flex: 1; min-height: 0; overflow: auto; background: #222; display: grid; place-items: center; padding: 8px; color: #fff; }
-.ef-canvas { max-width: 100%; max-height: 62vh; width: auto; height: auto; touch-action: none; cursor: crosshair; border-radius: 6px; }
+.ef-area { flex: 1 1 auto; min-height: 45vh; height: 58vh; overflow: auto; background: #222; display: grid; place-items: center; padding: 8px; color: #fff; overscroll-behavior: contain; }
+.ef-canvas { height: auto; max-width: none; touch-action: none; border-radius: 6px; }
+.ef-zoom { display: flex; align-items: center; gap: 8px; padding: 0 14px 8px; }
+.ef-zoom input { flex: 1; accent-color: #f2c200; }
+.ef-zoom .ef-tool { width: 40px; padding: 6px 0; font-size: 1.1rem; }
+.ef-zoom span { min-width: 44px; text-align: right; font-weight: 700; font-size: .9rem; }
 .ef-rodape { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 14px; }
