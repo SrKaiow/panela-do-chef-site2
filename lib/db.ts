@@ -548,6 +548,15 @@ function linhaParaAvaliacao(r: Record<string, unknown>): Avaliacao {
   };
 }
 
+/** Troca a foto de uma avaliação (ex.: versão com o endereço escondido) e apaga a original do banco. */
+export async function trocarFotoAvaliacao(id: number, url: string) {
+  const r = await exec("SELECT foto FROM avaliacoes WHERE id = ?", [id]);
+  const antiga = r.rows[0]?.foto ? String(r.rows[0].foto) : null;
+  await exec("UPDATE avaliacoes SET foto = ? WHERE id = ?", [url, id]);
+  const m = antiga?.match(/^\/api\/fotos\/([A-Za-z0-9_-]{6,40})$/);
+  if (m && antiga !== url) await apagarFoto(m[1]);
+}
+
 export async function criarAvaliacao(a: { nome: string; local: string | null; nota: number; texto: string; pedidoNumero: number | null; foto?: string | null; avatar?: string | null }) {
   await exec("INSERT INTO avaliacoes (criado_em, nome, local, nota, texto, pedido_numero, status, foto, avatar) VALUES (?, ?, ?, ?, ?, ?, 'pendente', ?, ?)",
     [new Date().toISOString(), a.nome, a.local, a.nota, a.texto, a.pedidoNumero, a.foto ?? null, a.avatar ?? null]);

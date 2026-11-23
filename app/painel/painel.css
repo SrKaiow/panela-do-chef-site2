@@ -451,3 +451,21 @@ a.btn.principal-p { color: #fff; justify-content: center; }
 .cx-tabela td:last-child strong { color: #0b6b37; }
 .rel-tabela.cx-tabela { min-width: 0; }
 @media (max-width: 560px) { .cx-hora { display: none; } .cx-tabela { font-size: .85rem; } .cx-tabela th, .cx-tabela td { padding: 7px 5px; } .cx-tabela .sq-sub { display: block; } }
+
+/* Editor de foto da avaliação */
+.av-foto-bloco { display: grid; gap: 8px; justify-items: start; }
+.av-editar { font-size: .85rem; }
+.ef-fundo { position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,.7); display: grid; place-items: center; padding: 10px; }
+.ef-caixa { background: #fff; color: #1c1c1c; border-radius: 16px; width: min(720px, 100%); max-height: 96vh; display: flex; flex-direction: column; overflow: hidden; }
+.ef-topo { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px 0; font-size: 1.05rem; }
+.ef-x { border: 0; background: none; font-size: 1.8rem; line-height: 1; cursor: pointer; color: inherit; }
+.ef-dica { margin: 4px 14px 8px; font-size: .88rem; color: #555; }
+.ef-ferramentas { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 10px; align-items: center; }
+.ef-tool { padding: 8px 12px; border-radius: 999px; border: 1.5px solid #ccc; background: #fff; font-weight: 700; cursor: pointer; color: #1c1c1c; }
+.ef-tool.on { background: #1c1c1c; color: #fff; border-color: #1c1c1c; }
+.ef-tool:disabled { opacity: .4; }
+.ef-cor { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #ccc; cursor: pointer; }
+.ef-cor.on { border-color: #f2c200; box-shadow: 0 0 0 2px #f2c200; }
+.ef-area { flex: 1; min-height: 0; overflow: auto; background: #222; display: grid; place-items: center; padding: 8px; color: #fff; }
+.ef-canvas { max-width: 100%; max-height: 62vh; width: auto; height: auto; touch-action: none; cursor: crosshair; border-radius: 6px; }
+.ef-rodape { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 14px; }

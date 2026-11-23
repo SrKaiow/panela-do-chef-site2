@@ -4,6 +4,7 @@ import { conferirVersao } from "@/lib/versao";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Avaliacao, Pedido, Status } from "@/lib/db";
 import { rotuloAgendado } from "@/lib/horario";
+import EditarFoto from "./painel/EditarFoto";
 
 const NOMES: Record<Status, string> = {
   aguardando_pagamento: "Aguardando pagamento",
@@ -158,6 +159,19 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
     } catch {}
   }, []);
   useEffect(() => { carregarAvaliacoes(); const t = setInterval(carregarAvaliacoes, 60000); return () => clearInterval(t); }, [carregarAvaliacoes]);
+
+  const [editandoFoto, setEditandoFoto] = useState<Avaliacao | null>(null);
+  async function salvarFotoEditada(a: Avaliacao, blob: Blob) {
+    const fd = new FormData();
+    fd.append("foto", blob, "avaliacao.jpg");
+    const up = await fetch("/api/painel/fotos", { method: "POST", body: fd });
+    const d = await up.json();
+    if (!up.ok) throw new Error(d.erro);
+    const r = await fetch(`/api/painel/avaliacoes/${a.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ foto: d.url }) });
+    if (!r.ok) throw new Error("Não consegui salvar a foto.");
+    setAvaliacoes((as) => as.map((x) => (x.id === a.id ? { ...x, foto: d.url } : x)));
+    setEditandoFoto(null);
+  }
 
   async function moderar(id: number, status: Avaliacao["status"]) {
     setAvaliacoes((as) => as.map((a) => (a.id === id ? { ...a, status } : a)));
@@ -334,7 +348,12 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
                   </span>
                 </header>
                 <p style={{ margin: 0 }}>{a.texto}</p>
-                {a.foto && <a href={a.foto} target="_blank" rel="noreferrer"><img className="av-foto" src={a.foto} alt={`Foto enviada por ${a.nome}`} /></a>}
+                {a.foto && (
+                  <div className="av-foto-bloco">
+                    <a href={a.foto} target="_blank" rel="noreferrer"><img className="av-foto" src={a.foto} alt={`Foto enviada por ${a.nome}`} /></a>
+                    <button className="btn av-editar" onClick={() => setEditandoFoto(a)}>✏️ Esconder endereço / dados da foto</button>
+                  </div>
+                )}
                 <footer>
                   {a.status !== "aprovada" && <button className="btn principal-p" onClick={() => moderar(a.id, "aprovada")}>Aprovar e mostrar no site</button>}
                   {a.status !== "oculta" && <button className="btn" onClick={() => moderar(a.id, "oculta")}>{a.status === "aprovada" ? "Tirar do site" : "Não mostrar"}</button>}
@@ -342,6 +361,9 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
               </article>
             ))}
           </div>
+        )}
+        {editandoFoto?.foto && (
+          <EditarFoto src={editandoFoto.foto} fechar={() => setEditandoFoto(null)} salvar={(b) => salvarFotoEditada(editandoFoto, b)} />
         )}
 
         {aba !== "avaliacoes" && carregado && visiveis.length === 0 && (
