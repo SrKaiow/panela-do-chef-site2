@@ -876,6 +876,42 @@ export async function relatorioSemana(inicio: string): Promise<Relatorio> {
   };
 }
 
+/* ------------------------------ Caixa Square ------------------------------ */
+
+/** Taxa da Square por venda online no cartão: 1.4% + £0.25 (em pence, arredondada como a Square faz). */
+export const taxaSquare = (total: number) => Math.round(total * 0.014) + 25;
+
+export type VendaSquare = { numero: number; nome: string; hora: string; total: number; taxa: number; liquido: number };
+export type DiaSquare = { data: string; vendas: VendaSquare[]; bruto: number; taxas: number; liquido: number };
+
+/** Vendas pagas no cartão pelo site, dia a dia (segunda a domingo), com a taxa da Square já descontada. */
+export async function caixaSquare(inicio: string): Promise<{ inicio: string; fim: string; dias: DiaSquare[]; bruto: number; taxas: number; liquido: number; vendas: number }> {
+  const d0 = new Date(inicio + "T12:00:00Z");
+  const datas = Array.from({ length: 7 }, (_, i) => new Date(d0.getTime() + i * 86400000).toISOString().slice(0, 10));
+  const de = new Date(d0.getTime() - 36 * 3600000).toISOString();
+  const ate = new Date(d0.getTime() + 8 * 86400000).toISOString();
+  const [ped, naConta] = await Promise.all([
+    exec("SELECT numero, nome, criado_em, total FROM pedidos WHERE pagamento = 'cartao' AND criado_em >= ? AND criado_em < ? AND status NOT IN ('cancelado', 'aguardando_pagamento') ORDER BY criado_em", [de, ate]),
+    pedidosNaConta(),
+  ]);
+  const dias: DiaSquare[] = datas.map((data) => ({ data, vendas: [], bruto: 0, taxas: 0, liquido: 0 }));
+  for (const r of ped.rows) {
+    const numero = Number(r.numero);
+    if (naConta.has(numero)) continue;
+    const d = dias.find((x) => x.data === diaDeLondres(String(r.criado_em)));
+    if (!d) continue;
+    const total = Number(r.total);
+    const taxa = taxaSquare(total);
+    const hora = new Date(String(r.criado_em)).toLocaleTimeString("pt-BR", { timeZone: "Europe/London", hour: "2-digit", minute: "2-digit" });
+    d.vendas.push({ numero, nome: String(r.nome), hora, total, taxa, liquido: total - taxa });
+    d.bruto += total;
+    d.taxas += taxa;
+    d.liquido += total - taxa;
+  }
+  const soma = (k: "bruto" | "taxas" | "liquido") => dias.reduce((s, d) => s + d[k], 0);
+  return { inicio, fim: datas[6], dias, bruto: soma("bruto"), taxas: soma("taxas"), liquido: soma("liquido"), vendas: dias.reduce((s, d) => s + d.vendas.length, 0) };
+}
+
 export async function salvarGasto(g: { data: string; categoria: string; descricao: string; valor: number }) {
   await exec("INSERT INTO gastos (data, categoria, descricao, valor, criado_em) VALUES (?, ?, ?, ?, ?)", [g.data, g.categoria, g.descricao, g.valor, new Date().toISOString()]);
 }
