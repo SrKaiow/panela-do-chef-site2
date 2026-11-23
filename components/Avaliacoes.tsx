@@ -57,9 +57,14 @@ export default function Avaliacoes({ lista, clientes }: { lista: Depoimento[]; c
       <div className="depo-trilho" ref={trilho} tabIndex={0} aria-label="Avaliações, role para o lado para ver mais">
         {lista.map((d, i) => (
           <blockquote key={i} className="depo-cartao">
-            {d.fotoPedido && <img className="depo-foto" src={d.fotoPedido} alt={`Pedido de ${d.nome}`} loading="lazy" />}
-            <Estrelas n={d.nota} />
-            <p>{d.texto}</p>
+            {/* Todo cartão tem o mesmo desenho: em cima a foto do pedido ou, sem foto, a frase em destaque. */}
+            {d.fotoPedido ? (
+              <img className="depo-foto" src={d.fotoPedido} alt={`Pedido de ${d.nome}`} loading="lazy" />
+            ) : (
+              <div className="depo-frase" aria-hidden="true"><span>“</span><p>{d.texto}</p></div>
+            )}
+            <p className={"depo-texto" + (d.fotoPedido ? "" : " so-leitor")}>{d.texto}</p>
+            <div className="depo-base"><Estrelas n={d.nota} /></div>
             <footer>
               {d.foto ? <img className="avatar" src={d.foto} alt="" loading="lazy" /> : <span className="avatar" aria-hidden="true">{d.nome.trim().charAt(0).toUpperCase()}</span>}
               <cite>
