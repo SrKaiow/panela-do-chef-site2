@@ -958,7 +958,9 @@ export async function infoMeta(): Promise<InfoMeta> {
   }
   for (const s of porSemana.values()) s.batida = s.vendas >= s.meta;
   const atual = porSemana.get(seg)!;
-  const passadas = [...porSemana.values()].filter((s) => s.inicio < seg && s.vendas > 0);
+  // Semanas quase vazias (antes do site começar, pedidos de teste) não contam: nem no ritmo nem no histórico.
+  const valeu = (s: SemanaMeta) => s.vendas >= s.meta * 0.1;
+  const passadas = [...porSemana.values()].filter((s) => s.inicio < seg && valeu(s));
   // Ritmo: média das proporções de cada dia nas semanas passadas, meio a meio com o padrão.
   const ritmo = RITMO_PADRAO.map((p, i) => {
     if (!passadas.length) return p;
@@ -970,7 +972,7 @@ export async function infoMeta(): Promise<InfoMeta> {
   const idxHoje = Math.round((new Date(hoje + "T12:00:00Z").getTime() - new Date(seg + "T12:00:00Z").getTime()) / 86400000);
   const esperadoAteHoje = Math.round(atual.meta * norm.slice(0, idxHoje + 1).reduce((a, b) => a + b, 0));
   const alvoHoje = Math.round(atual.meta * norm[idxHoje]);
-  const historico = [...porSemana.values()].filter((s) => s.inicio < seg).reverse();
+  const historico = [...porSemana.values()].filter((s) => s.inicio < seg && valeu(s)).reverse();
   return { meta: atual.meta, hoje, atual, esperadoAteHoje, alvoHoje, ritmo: norm, historico };
 }
 
