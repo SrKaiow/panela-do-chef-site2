@@ -59,7 +59,7 @@ export default async function Recibo(props: { params: Promise<{ numero: string }
       {linha}
 
       <div className="r-lr"><span>SUBTOTAL</span><span>{valor(p.subtotal)}</span></div>
-      <div className="r-lr"><span>{p.retirada ? "COLETA" : "ENTREGA"}</span><span>{p.taxa ? valor(p.taxa) : "GRATIS"}</span></div>
+      <div className="r-lr"><span>{p.retirada ? "COLETA" : "ENTREGA"}</span><span>{p.freteRemovido > 0 ? <><s>{valor(p.freteRemovido)}</s> FREE</> : p.taxa ? valor(p.taxa) : "GRATIS"}</span></div>
       <div className="r-lr r-b r-tot"><span>TOTAL</span><span>{gbp(p.total)}</span></div>
       {linhaDupla}
 

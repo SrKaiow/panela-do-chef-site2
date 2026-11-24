@@ -473,3 +473,6 @@ a.btn.principal-p { color: #fff; justify-content: center; }
 .ef-zoom .ef-tool { width: 40px; padding: 6px 0; font-size: 1.1rem; }
 .ef-zoom span { min-width: 44px; text-align: right; font-weight: 700; font-size: .9rem; }
 .ef-rodape { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 14px; }
+
+.btn-frete { border-color: #b8c7f0; }
+.btn-frete.feito { background: #e3f6ea; border-color: #b8e6c9; color: #0b6b37; font-weight: 700; }

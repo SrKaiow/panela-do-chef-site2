@@ -115,7 +115,7 @@ export default async function PaginaPedido(props: { params: Promise<{ token: str
           </div>
           <div className="totais preco" style={{ marginTop: 8 }}>
             <div><span>Subtotal</span><span>{formatar(pedido.subtotal)}</span></div>
-            <div><span>{pedido.retirada ? "Coleta na porta" : "Entrega"}</span><span>{pedido.taxa ? formatar(pedido.taxa) : "Grátis"}</span></div>
+            <div><span>{pedido.retirada ? "Coleta na porta" : "Entrega"}</span><span>{pedido.freteRemovido > 0 ? <><s style={{ opacity: 0.6, marginRight: 6 }}>{formatar(pedido.freteRemovido)}</s>Grátis</> : pedido.taxa ? formatar(pedido.taxa) : "Grátis"}</span></div>
             <div className="total"><span>Total</span><span>{formatar(pedido.total)}</span></div>
             <div style={{ color: "var(--texto-2)" }}><span>Pagamento</span><span>{pedido.pagamento === "dinheiro" ? (pedido.retirada ? "Dinheiro na coleta" : "Dinheiro na entrega") : pedido.pago ? "Pago no site" : "Pagamento pendente"}</span></div>
           </div>

@@ -267,6 +267,14 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
     }
   }
 
+  async function mudarFrete(p: Pedido, tirar: boolean) {
+    if (tirar && !window.confirm(`Tirar o frete de ${gbp(p.taxa)} do pedido #${p.numero}? O total fica ${gbp(p.total - p.taxa)}.`)) return;
+    const r = await fetch(`/api/painel/pedidos/${p.numero}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ frete: tirar ? "tirar" : "devolver" }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) setErro(d.erro || "Não consegui mudar o frete.");
+    carregar();
+  }
+
   async function atualizar(numero: number, dados: { status?: Status; pago?: boolean; avisoManual?: "saiu" | "chegando"; imprimirNaLoja?: boolean }) {
     setPedidos((ps) => ps.map((p) => (p.numero === numero ? { ...p, ...dados } : p)));
     const r = await fetch(`/api/painel/pedidos/${numero}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dados) });
@@ -449,6 +457,11 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
                 )}
                 {p.status !== "aguardando_pagamento" && p.status !== "cancelado" && (
                   <a className="btn" href={`/pedido/${p.token}`} target="_blank" rel="noreferrer">Ver rastreio</a>
+                )}
+                {!p.retirada && p.status !== "cancelado" && !(p.pagamento === "cartao" && p.pago) && (
+                  p.freteRemovido > 0
+                    ? <button className="btn btn-frete feito" onClick={() => mudarFrete(p, false)} title="Volta a cobrar o frete">🚚 Frete grátis (era {gbp(p.freteRemovido)}) · desfazer</button>
+                    : p.taxa > 0 && <button className="btn btn-frete" onClick={() => mudarFrete(p, true)}>🚚 Tirar frete ({gbp(p.taxa)})</button>
                 )}
                 {p.pagamento === "dinheiro" && !p.naConta && p.status !== "cancelado" && (
                   <button className="btn btn-conta" onClick={() => porNaConta(p)} title="Lança este pedido em Clientes a pagar">📒 Pôr na conta (a pagar)</button>

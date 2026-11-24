@@ -36,6 +36,8 @@ async function preparar(c: Client) {
     "imprimir_pedido TEXT",
     "push_chegando INTEGER NOT NULL DEFAULT 0",
     "atraso_min INTEGER NOT NULL DEFAULT 0", "atraso_motivo TEXT", "atraso_em TEXT", "atraso_lat REAL", "atraso_lng REAL",
+    // Frete tirado pela loja (pence): o pedido fica com entrega grátis e o ticket mostra o valor riscado.
+    "frete_removido INTEGER NOT NULL DEFAULT 0",
   ]) {
     try { await c.execute(`ALTER TABLE pedidos ADD COLUMN ${col}`); } catch {}
   }
@@ -142,7 +144,7 @@ async function preparar(c: Client) {
  * Com a versão em dia, um servidor novo da Cloudflare só faz 1 consulta para começar (antes eram ~30,
  * e o "Error 1102 - Worker exceeded resource limits" aparecia quando muitos começavam ao mesmo tempo).
  */
-const VERSAO_ESQUEMA = "2026-11-22-frete-conta";
+const VERSAO_ESQUEMA = "2026-11-24-frete-pedido";
 
 async function prepararRapido(c: Client) {
   try {
@@ -222,6 +224,8 @@ export type Pedido = {
   itens: LinhaPedido[];
   subtotal: number;
   taxa: number;
+  /** Frete que a loja tirou deste pedido (pence); 0 = cobrado normal. */
+  freteRemovido: number;
   total: number;
   pagamento: "dinheiro" | "cartao";
   trocoPara: number | null;
@@ -270,6 +274,7 @@ function linhaParaPedido(r: Record<string, unknown>): Pedido {
     itens: JSON.parse(String(r.itens)),
     subtotal: Number(r.subtotal),
     taxa: Number(r.taxa),
+    freteRemovido: Number(r.frete_removido ?? 0),
     total: Number(r.total),
     pagamento: r.pagamento as Pedido["pagamento"],
     trocoPara: numOuNull(r.troco_para),
@@ -298,7 +303,7 @@ function linhaParaPedido(r: Record<string, unknown>): Pedido {
   };
 }
 
-type NovoPedido = Omit<Pedido, "numero" | "token" | "criadoEm" | "stripeSessao" | "squarePedido" | "linkPagamento" | "statusEm" | "avisadoSaiu" | "avisadoChegando" | "aceitoEm" | "preparoEm" | "saiuEm" | "entregueEm" | "aCaminhoEm" | "atraso" | "imprimirPedido" | "naConta">;
+type NovoPedido = Omit<Pedido, "numero" | "token" | "criadoEm" | "stripeSessao" | "squarePedido" | "linkPagamento" | "statusEm" | "avisadoSaiu" | "avisadoChegando" | "aceitoEm" | "preparoEm" | "saiuEm" | "entregueEm" | "aCaminhoEm" | "atraso" | "imprimirPedido" | "naConta" | "freteRemovido">;
 
 export async function criarPedido(p: NovoPedido) {
   const token = randomBytes(12).toString("base64url");
@@ -399,6 +404,27 @@ export async function lerFoto(id: string) {
 
 export async function apagarFoto(id: string) {
   await exec("DELETE FROM fotos WHERE id = ?", [id]);
+}
+
+/**
+ * Tira (ou devolve) o frete de um pedido de entrega: total vira só o valor dos itens.
+ * Pedido já pago no cartão não muda (o dinheiro já foi cobrado; aí é reembolso na Square).
+ * Se o pedido estiver na conta de um cliente a pagar, o lançamento acompanha.
+ */
+export async function fretePedido(numero: number, tirar: boolean) {
+  const r = await exec("SELECT taxa, frete_removido, retirada, pagamento, pago FROM pedidos WHERE numero = ?", [numero]);
+  const p = r.rows[0];
+  if (!p) throw new Error("Pedido não encontrado.");
+  if (p.pagamento === "cartao" && Number(p.pago) === 1) throw new Error("Esse pedido já foi pago no cartão. Para devolver o frete, faça um reembolso parcial na Square.");
+  const taxa = Number(p.taxa), ja = Number(p.frete_removido ?? 0);
+  if (tirar) {
+    if (Number(p.retirada) === 1 || taxa <= 0) throw new Error("Esse pedido não tem frete.");
+    await exec("UPDATE pedidos SET frete_removido = ?, taxa = 0, total = total - ? WHERE numero = ? AND frete_removido = 0", [taxa, taxa, numero]);
+    await exec("UPDATE contas_lancamentos SET valor = valor - ? WHERE pedido = ? AND tipo = 'compra' AND frete_removido = 0 AND valor > ?", [taxa, numero, taxa]).catch(() => {});
+  } else if (ja > 0) {
+    await exec("UPDATE pedidos SET taxa = ?, total = total + ?, frete_removido = 0 WHERE numero = ? AND frete_removido = ?", [ja, ja, numero, ja]);
+    await exec("UPDATE contas_lancamentos SET valor = valor + ? WHERE pedido = ? AND tipo = 'compra' AND frete_removido = 0", [ja, numero]).catch(() => {});
+  }
 }
 
 export async function marcarPago(numero: number, pago: boolean) {
