@@ -911,6 +911,78 @@ export async function relatorioSemana(inicio: string): Promise<Relatorio> {
   };
 }
 
+/* ------------------------------ Meta da semana ------------------------------ */
+
+/** Ritmo padrão da semana (seg..dom): começo fraco, quinta a domingo forte. */
+const RITMO_PADRAO = [0.06, 0.06, 0.1, 0.14, 0.18, 0.26, 0.2];
+
+export type SemanaMeta = { inicio: string; fim: string; vendas: number; pedidos: number; meta: number; batida: boolean; porDia: number[] };
+export type InfoMeta = {
+  meta: number;
+  hoje: string;
+  atual: SemanaMeta;
+  /** Quanto o ritmo diz que já devia ter vendido até o fim de hoje, e o alvo só de hoje. */
+  esperadoAteHoje: number;
+  alvoHoje: number;
+  ritmo: number[];
+  historico: SemanaMeta[];
+};
+
+/**
+ * Meta semanal (segunda a domingo): soma as vendas (pedidos não cancelados, como no relatório)
+ * da semana atual e das 8 anteriores. O ritmo de cada dia vem das semanas passadas,
+ * misturado meio a meio com o padrão, para não oscilar demais.
+ */
+export async function infoMeta(): Promise<InfoMeta> {
+  const cfg = (await lerConfig<{ valor: number; porSemana?: Record<string, number> }>("meta-semanal")) ?? { valor: 150000 };
+  const hoje = diaDeLondres(new Date().toISOString());
+  const seg = segundaDe(hoje);
+  const semanas = Array.from({ length: 9 }, (_, i) => new Date(new Date(seg + "T12:00:00Z").getTime() - (8 - i) * 7 * 86400000).toISOString().slice(0, 10));
+  const de = new Date(new Date(semanas[0] + "T12:00:00Z").getTime() - 36 * 3600000).toISOString();
+  const r = await exec("SELECT criado_em, total FROM pedidos WHERE criado_em >= ? AND status NOT IN ('cancelado', 'aguardando_pagamento')", [de]);
+  const porSemana = new Map<string, SemanaMeta>();
+  for (const ini of semanas) {
+    const fim = new Date(new Date(ini + "T12:00:00Z").getTime() + 6 * 86400000).toISOString().slice(0, 10);
+    const meta = cfg.porSemana?.[ini] ?? cfg.valor;
+    porSemana.set(ini, { inicio: ini, fim, vendas: 0, pedidos: 0, meta, batida: false, porDia: [0, 0, 0, 0, 0, 0, 0] });
+  }
+  for (const row of r.rows) {
+    const dia = diaDeLondres(String(row.criado_em));
+    const s = porSemana.get(segundaDe(dia));
+    if (!s) continue;
+    const i = Math.round((new Date(dia + "T12:00:00Z").getTime() - new Date(s.inicio + "T12:00:00Z").getTime()) / 86400000);
+    if (i < 0 || i > 6) continue;
+    s.porDia[i] += Number(row.total);
+    s.vendas += Number(row.total);
+    s.pedidos++;
+  }
+  for (const s of porSemana.values()) s.batida = s.vendas >= s.meta;
+  const atual = porSemana.get(seg)!;
+  const passadas = [...porSemana.values()].filter((s) => s.inicio < seg && s.vendas > 0);
+  // Ritmo: média das proporções de cada dia nas semanas passadas, meio a meio com o padrão.
+  const ritmo = RITMO_PADRAO.map((p, i) => {
+    if (!passadas.length) return p;
+    const media = passadas.reduce((t, s) => t + s.porDia[i] / s.vendas, 0) / passadas.length;
+    return 0.5 * p + 0.5 * media;
+  });
+  const soma = ritmo.reduce((a, b) => a + b, 0);
+  const norm = ritmo.map((x) => x / soma);
+  const idxHoje = Math.round((new Date(hoje + "T12:00:00Z").getTime() - new Date(seg + "T12:00:00Z").getTime()) / 86400000);
+  const esperadoAteHoje = Math.round(atual.meta * norm.slice(0, idxHoje + 1).reduce((a, b) => a + b, 0));
+  const alvoHoje = Math.round(atual.meta * norm[idxHoje]);
+  const historico = [...porSemana.values()].filter((s) => s.inicio < seg).reverse();
+  return { meta: atual.meta, hoje, atual, esperadoAteHoje, alvoHoje, ritmo: norm, historico };
+}
+
+/** Muda a meta (vale para a semana atual e as próximas; as passadas guardam a meta que tinham). */
+export async function salvarMeta(valor: number) {
+  const cfg = (await lerConfig<{ valor: number; porSemana?: Record<string, number> }>("meta-semanal")) ?? { valor: 150000 };
+  const info = await infoMeta();
+  const porSemana = { ...(cfg.porSemana ?? {}) };
+  for (const s of info.historico) if (porSemana[s.inicio] == null) porSemana[s.inicio] = s.meta;
+  await salvarConfig("meta-semanal", { valor, porSemana });
+}
+
 /* ------------------------------ Caixa Square ------------------------------ */
 
 /** Taxa da Square por venda online no cartão: 1.4% + £0.25 (em pence, arredondada como a Square faz). */

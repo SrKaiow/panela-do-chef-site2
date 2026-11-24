@@ -12,6 +12,8 @@ import { Clientes, Visitas } from "./Clientes";
 import Contas from "./Contas";
 import Relatorio from "./Relatorio";
 import CaixaSquare from "./CaixaSquare";
+import MetaSemana from "./MetaSemana";
+import Metas from "./Metas";
 import { estadoLoja } from "@/lib/horario";
 
 export type Salvar<T> = (novo: T) => Promise<boolean>;
@@ -23,6 +25,7 @@ const MENU = [
   { id: "contas", nome: "Clientes a pagar", icone: "M3 6h18v12H3zM3 10h18M7 15h4" },
   { id: "relatorio", nome: "Relatório semanal", icone: "M4 20V10M10 20V4M16 20v-7M22 20H2" },
   { id: "caixa", nome: "Caixa Square", icone: "M2 6h20v12H2zM2 10h20M6 15h3" },
+  { id: "metas", nome: "Metas", icone: "M12 2l3 7h7l-5.5 4 2 7-6.5-4.5L5.5 20l2-7L2 9h7z" },
   { id: "visitas", nome: "Visitas do site", icone: "M3 20h18M6 16v-4M11 16V8M16 16v-6M21 16V5" },
   { titulo: "Itens e cardápio" },
   { id: "itens", nome: "Biblioteca de itens", icone: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" },
@@ -33,7 +36,7 @@ const MENU = [
   { id: "avaliacoes", nome: "Avaliações", icone: "M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" },
 ] as const;
 
-type Secao = "inicio" | "pedidos" | "clientes" | "contas" | "relatorio" | "caixa" | "visitas" | "itens" | "modificadores" | "categorias" | "horarios" | "avaliacoes";
+type Secao = "inicio" | "pedidos" | "clientes" | "contas" | "relatorio" | "caixa" | "metas" | "visitas" | "itens" | "modificadores" | "categorias" | "horarios" | "avaliacoes";
 
 function lerHash(): { secao: Secao; sub: string | null } {
   const [s, sub] = (typeof window === "undefined" ? "" : window.location.hash.slice(1)).split("/");
@@ -150,6 +153,7 @@ export default function Admin() {
           {ajustes && <EstadoLoja ajustes={ajustes} />}
         </header>
 
+        <MetaSemana ir={(s) => ir(s as Secao)} />
         {!somPronto && (
           <button type="button" className="sq-faixa-som">🔔 Toque aqui para ligar o alarme de pedidos novos</button>
         )}
@@ -170,8 +174,9 @@ export default function Admin() {
           {rota.secao === "contas" && <Contas avisar={setAviso} />}
           {rota.secao === "relatorio" && <Relatorio avisar={setAviso} />}
           {rota.secao === "caixa" && <CaixaSquare avisar={setAviso} />}
+          {rota.secao === "metas" && <Metas avisar={setAviso} />}
           {rota.secao === "visitas" && <Visitas />}
-          {!pronto && !["pedidos", "avaliacoes", "clientes", "contas", "relatorio", "caixa", "visitas"].includes(rota.secao) && <p className="sq-carregando">Carregando...</p>}
+          {!pronto && !["pedidos", "avaliacoes", "clientes", "contas", "relatorio", "caixa", "metas", "visitas"].includes(rota.secao) && <p className="sq-carregando">Carregando...</p>}
           {pronto && rota.secao === "inicio" && <Inicio cardapio={cardapio} ajustes={ajustes} salvarAjustes={salvarAjustes} ir={ir} />}
           {pronto && rota.secao === "itens" && <Itens cardapio={cardapio} salvar={salvarCardapio} aberto={rota.sub} ir={ir} avisar={setAviso} />}
           {pronto && rota.secao === "modificadores" && <Modificadores cardapio={cardapio} salvar={salvarCardapio} />}
