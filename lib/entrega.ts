@@ -72,6 +72,24 @@ export async function coordenadasDoPostcode(postcode: string): Promise<{ lat: nu
   }
 }
 
+/** Bairro (ward) do postcode, ex.: KT17 1JW -> "Ewell Village". Só o bairro: sem número nem postcode. */
+export async function bairroDoPostcode(postcode: string): Promise<string | null> {
+  const pc = postcode.replace(/\s+/g, "").toUpperCase();
+  if (!/^[A-Z]{1,2}\d[A-Z\d]?\d[A-Z]{2}$/.test(pc)) return null;
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 3500);
+    const r = await fetch(`${process.env.POSTCODES_API_URL || "https://api.postcodes.io"}/postcodes/${pc}`, { signal: ctrl.signal, cache: "no-store" });
+    clearTimeout(t);
+    if (!r.ok) return null;
+    const d = (await r.json()).result ?? {};
+    const nome = String(d.admin_ward || d.admin_district || "").trim();
+    return nome ? nome.slice(0, 40) : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Entregas liberadas fora do raio (clientes amigos), com taxa fixa. Vale só para aquele postcode E aquele número da casa.
  * Para liberar outro: { postcode: "XX00XX", numero: "12", taxa: 1500 } (taxa em pence).

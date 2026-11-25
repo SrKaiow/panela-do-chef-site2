@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { fotoPerfil, reduzirFoto } from "@/lib/reduzirFoto";
 
 export const ROTULOS_NOTA = ["", "Satisfeito", "Muito bom", "Ótimo", "Excelente", "AMEIIIIIII"];
@@ -12,8 +12,12 @@ const CARINHAS = ["", "🙂", "😊", "😄", "🤩", "😍"];
  */
 export default function Avaliar({ token, nomeInicial = "", onFechar }: { token?: string; nomeInicial?: string; onFechar?: () => void }) {
   const [nota, setNota] = useState(5);
-  const [nome, setNome] = useState(nomeInicial);
-  const [local, setLocal] = useState("");
+  // Quem avalia: vem sempre do pedido (nome e bairro), nunca digitado.
+  const [ident, setIdent] = useState<{ nome: string; local: string | null; numero: number } | null>(null);
+  const [conferindo, setConferindo] = useState(!!token);
+  const [numeroPedido, setNumeroPedido] = useState("");
+  const [telefone, setTelefone] = useState("");
+  const nome = ident?.nome ?? nomeInicial;
   const [texto, setTexto] = useState("");
   const [site, setSite] = useState(""); // campo-isca contra robôs (fica escondido)
   const [foto, setFoto] = useState<string | null>(null);
@@ -23,6 +27,25 @@ export default function Avaliar({ token, nomeInicial = "", onFechar }: { token?:
   const input = useRef<HTMLInputElement>(null);
   const inputAvatar = useRef<HTMLInputElement>(null);
   const [avatar, setAvatar] = useState<string | null>(null);
+
+  async function conferir(dados: object) {
+    setErro("");
+    setConferindo(true);
+    try {
+      const r = await fetch("/api/avaliacoes/pedido", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dados) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.erro || "Não achamos esse pedido.");
+      setIdent(d);
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Não achamos esse pedido.");
+    } finally {
+      setConferindo(false);
+    }
+  }
+  useEffect(() => {
+    if (token) conferir({ token });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   async function escolherFoto(arquivo?: File | null, perfil = false) {
     if (!arquivo) return;
@@ -54,7 +77,7 @@ export default function Avaliar({ token, nomeInicial = "", onFechar }: { token?:
       const r = await fetch("/api/avaliacoes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nota, nome, local, texto, token, site, foto, avatar }),
+        body: JSON.stringify({ nota, texto, token, numero: numeroPedido, telefone, site, foto, avatar }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.erro || "Não foi possível enviar.");
@@ -73,6 +96,31 @@ export default function Avaliar({ token, nomeInicial = "", onFechar }: { token?:
         <span>Sua avaliação chegou para o Chef Kaio e aparece no site assim que ele aprovar.</span>
         {onFechar && <button type="button" className="secundario" onClick={onFechar}>Fechar</button>}
       </div>
+    );
+  }
+
+  // Ainda não sabemos qual pedido: pela página do pedido confere sozinho; na página inicial pede nº + telefone.
+  if (!ident) {
+    if (token) {
+      return <div className="avaliar">{conferindo ? <p className="dica">Carregando seu pedido...</p> : <p className="erro" role="alert">{erro || "Não foi possível avaliar este pedido."}</p>}</div>;
+    }
+    return (
+      <form className="avaliar" onSubmit={(e) => { e.preventDefault(); conferir({ numero: numeroPedido, telefone }); }}>
+        <p className="dica">As avaliações são só de quem pediu pelo site. Confirme o seu pedido: o seu nome e o bairro aparecem como estão nele (sem endereço, número ou postcode).</p>
+        <div className="avaliar-linha">
+          <label className="campo" htmlFor="av-num">Nº do pedido
+            <input id="av-num" required inputMode="numeric" maxLength={8} value={numeroPedido} onChange={(e) => setNumeroPedido(e.target.value)} placeholder="Ex.: 93" />
+          </label>
+          <label className="campo" htmlFor="av-tel">Telefone do pedido
+            <input id="av-tel" required type="tel" autoComplete="tel" maxLength={20} value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="07..." />
+          </label>
+        </div>
+        {erro && <p className="erro" role="alert">{erro}</p>}
+        <button className="principal" type="submit" disabled={conferindo}>
+          <span>{conferindo ? "Conferindo..." : "Confirmar pedido"}</span><span aria-hidden="true">→</span>
+        </button>
+        <p className="dica">O nº do pedido está na mensagem de confirmação e na página de acompanhamento.</p>
+      </form>
     );
   }
 
@@ -134,13 +182,9 @@ export default function Avaliar({ token, nomeInicial = "", onFechar }: { token?:
         </div>
         <input ref={inputAvatar} type="file" accept="image/*" hidden onChange={(e) => { escolherFoto(e.target.files?.[0], true); e.target.value = ""; }} />
       </div>
-      <div className="avaliar-linha">
-        <label className="campo" htmlFor="av-nome">Seu nome
-          <input id="av-nome" required maxLength={40} value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Ana T." />
-        </label>
-        <label className="campo" htmlFor="av-local">Cidade ou bairro <span className="dica">(opcional)</span>
-          <input id="av-local" maxLength={40} value={local} onChange={(e) => setLocal(e.target.value)} placeholder="Ex.: Epsom" />
-        </label>
+      <div className="avaliar-quem">
+        <span aria-hidden="true">🔒</span>
+        <span>Vai aparecer como <strong>{ident.nome}{ident.local ? ` · ${ident.local}` : ""}</strong> <span className="dica">(do seu pedido #{ident.numero})</span></span>
       </div>
       <input className="isca" tabIndex={-1} autoComplete="off" aria-hidden="true" value={site} onChange={(e) => setSite(e.target.value)} name="site" />
       {erro && <p className="erro" role="alert">{erro}</p>}

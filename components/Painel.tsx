@@ -173,6 +173,13 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
     setEditandoFoto(null);
   }
 
+  async function usarDadosPedido(a: Avaliacao) {
+    const r = await fetch(`/api/painel/avaliacoes/${a.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ usarPedido: true }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) return setErro(d.erro || "Não consegui trocar.");
+    setAvaliacoes((as) => as.map((x) => (x.id === a.id ? { ...x, nome: d.nome, local: d.local } : x)));
+  }
+
   async function moderar(id: number, status: Avaliacao["status"]) {
     setAvaliacoes((as) => as.map((a) => (a.id === id ? { ...a, status } : a)));
     const r = await fetch(`/api/painel/avaliacoes/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
@@ -350,6 +357,9 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
                     {a.avatar && <img className="av-avatar" src={a.avatar} alt={`Foto de perfil de ${a.nome}`} />}
                     <h2>{"★".repeat(a.nota)}<span style={{ opacity: 0.25 }}>{"★".repeat(5 - a.nota)}</span> · {a.nome}</h2>
                     <span className="sub">{a.local ? a.local + " · " : ""}{dia(a.criadoEm)} às {hora(a.criadoEm)}{a.pedidoNumero ? ` · pedido #${a.pedidoNumero}` : ""}</span>
+                    {a.pedidoNumero && (
+                      <button className="btn av-editar" onClick={() => usarDadosPedido(a)}>🔒 Usar nome e bairro do pedido #{a.pedidoNumero}</button>
+                    )}
                   </div>
                   <span className={"selo " + (a.status === "aprovada" ? "st-entregue" : a.status === "pendente" ? "st-novo" : "")}>
                     {a.status === "aprovada" ? "No site" : a.status === "pendente" ? "Esperando você" : "Escondida"}

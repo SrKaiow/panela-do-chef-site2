@@ -599,6 +599,10 @@ export async function mudarStatusAvaliacao(id: number, status: Avaliacao["status
   await exec("UPDATE avaliacoes SET status = ? WHERE id = ?", [status, id]);
 }
 
+export async function identidadeAvaliacao(id: number, nome: string, local: string | null) {
+  await exec("UPDATE avaliacoes SET nome = ?, local = ? WHERE id = ?", [nome, local, id]);
+}
+
 export async function pedidoJaAvaliado(numero: number) {
   const r = await exec("SELECT 1 FROM avaliacoes WHERE pedido_numero = ? LIMIT 1", [numero]);
   return r.rows.length > 0;

@@ -903,3 +903,5 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .perfil-bolinha img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 .perfil-bolinha i { position: absolute; right: -4px; bottom: -4px; width: 26px; height: 26px; border-radius: 50%; background: var(--ouro); color: #111; font-style: normal; font-size: 1rem; font-weight: 900; display: grid; place-items: center; border: 2px solid #111; }
 .perfil-tirar { justify-self: start; background: none; border: 0; padding: 2px 0; color: var(--ouro); font-weight: 700; text-decoration: underline; cursor: pointer; }
+
+.avaliar-quem { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 12px; background: rgba(255, 216, 20, 0.1); border: 1px solid rgba(255, 216, 20, 0.35); font-size: 0.95rem; }
