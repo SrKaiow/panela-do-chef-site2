@@ -6,7 +6,8 @@ import { bairroDoPostcode } from "./entrega";
  * Nome: primeiro nome + inicial do sobrenome (ex.: "Juan P."). Bairro: só o nome do bairro pelo postcode.
  */
 export function nomePublico(nome: string) {
-  const partes = nome.trim().split(/\s+/).filter(Boolean);
+  // Só palavras com letras (emoji e símbolos no nome ficam de fora).
+  const partes = nome.trim().split(/\s+/).map((w) => w.replace(/[^\p{L}'-]/gu, "")).filter((w) => /\p{L}/u.test(w));
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
   if (!partes.length) return "Cliente";
   const primeiro = cap(partes[0]).slice(0, 24);

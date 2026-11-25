@@ -83,7 +83,11 @@ export async function bairroDoPostcode(postcode: string): Promise<string | null>
     clearTimeout(t);
     if (!r.ok) return null;
     const d = (await r.json()).result ?? {};
-    const nome = String(d.admin_ward || d.admin_district || "").trim();
+    // Alguns bairros têm nome genérico ("Town", "Court"): aí usa a cidade (ex.: "Epsom and Ewell" -> "Epsom").
+    const cidade = String(d.admin_district || "").split(/ and | upon /)[0].trim();
+    const ward = String(d.admin_ward || "").trim();
+    const generico = !ward || /^(town|court|central|village|north|south|east|west|centre|park)$/i.test(ward);
+    const nome = generico ? cidade : ward;
     return nome ? nome.slice(0, 40) : null;
   } catch {
     return null;
