@@ -1024,8 +1024,8 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .natal-pessoa.top { color: #f6eedf; }
 .natal-pessoa.top strong { color: #ffd814; font-size: 1.05rem; }
 .natal-pessoa em { display: block; margin-top: 2px; font-style: normal; font-size: 0.78rem; color: #7ef0b0; font-weight: 700; }
-.natal-cartao.kit.melhor { border: 2px solid #ffd814; box-shadow: 0 0 0 4px rgba(255, 216, 20, 0.12), 0 18px 40px rgba(0, 0, 0, 0.35); transform: translateY(-4px); }
-.natal-melhor { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); white-space: nowrap; padding: 4px 12px; border-radius: 999px; background: #ffd814; color: #3a0a0f; font-weight: 900; font-size: 0.76rem; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3); animation: natal-pulsa 1.8s ease-in-out infinite; }
+.natal-cartao.kit.melhor { border: 2px solid #ffd814; box-shadow: 0 0 0 4px rgba(255, 216, 20, 0.12), 0 18px 40px rgba(0, 0, 0, 0.35); }
+.natal-melhor { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); white-space: nowrap; padding: 4px 12px; border-radius: 999px; background: #ffd814; color: #3a0a0f; font-weight: 900; font-size: 0.76rem; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3); }
 .opcao-nome .extra s.avulso { opacity: 0.55; margin-right: 6px; font-weight: 400; }
 .natal-cartao.kit { position: relative; }
 
@@ -1057,7 +1057,7 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .natal-quiz-resposta button { padding: 8px 16px; border-radius: 999px; border: 0; background: #2bd67b; color: #062014; font-weight: 900; font: inherit; font-weight: 900; cursor: pointer; animation: natal-pulsa 1.4s ease-in-out infinite; }
 @keyframes natal-entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .natal-cartao.kit { scroll-margin-top: 90px; }
-.natal-cartao.kit.indicado { border: 2px solid #2bd67b; box-shadow: 0 0 0 5px rgba(43, 214, 123, 0.18), 0 18px 44px rgba(0, 0, 0, 0.4); transform: translateY(-6px) scale(1.02); }
+.natal-cartao.kit.indicado { border: 2px solid #2bd67b; box-shadow: 0 0 0 5px rgba(43, 214, 123, 0.18), 0 18px 44px rgba(0, 0, 0, 0.4); }
 .natal-melhor.indicado { background: #2bd67b; color: #062014; }
 .natal-economia { align-self: flex-start; padding: 3px 10px; border-radius: 999px; background: #d62828; color: #fff; font-weight: 900; font-size: 0.78rem; box-shadow: 0 4px 12px rgba(214, 40, 40, 0.35); }
 .natal-por { display: block; font-size: 0.7rem !important; text-transform: uppercase; letter-spacing: 0.06em; color: #ffd814; font-weight: 800; margin-bottom: 1px; }
@@ -1065,6 +1065,18 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .natal-chamar::after { content: ""; position: absolute; top: 0; bottom: 0; width: 40%; left: -60%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent); animation: natal-brilho 2.6s ease-in-out infinite; pointer-events: none; }
 .natal-chamar-textos { display: grid; text-align: left; line-height: 1.15; }
 .natal-chamar-textos small { font-size: 0.72rem; font-weight: 700; opacity: 0.8; }
-@keyframes natal-chama { 0%, 70%, 100% { transform: none; } 75% { transform: scale(1.04) rotate(-1deg); } 80% { transform: scale(1.04) rotate(1deg); } 85% { transform: scale(1.04) rotate(-1deg); } 90% { transform: none; } }
+@keyframes natal-chama { 0%, 100% { box-shadow: 0 10px 30px rgba(255, 216, 20, 0.3); } 50% { box-shadow: 0 10px 38px rgba(255, 216, 20, 0.75), 0 0 0 4px rgba(255, 216, 20, 0.25); } }
 @keyframes natal-brilho { 0%, 55% { left: -60%; } 100% { left: 130%; } }
 @media (prefers-reduced-motion: reduce) { .natal-chamar, .natal-chamar::after, .natal-melhor, .natal-quiz-resposta button { animation: none; } }
+
+/* Kits em pódio: melhor custo-benefício no meio e mais alto */
+@media (min-width: 900px) {
+  .natal-kits.podio { grid-template-columns: 1fr 1.12fr 1fr; align-items: end; padding-top: 44px; }
+  .natal-kits.podio .natal-cartao.centro { padding-top: 26px; padding-bottom: 20px; min-height: calc(100% + 28px); margin-top: -28px; }
+  .natal-kits.podio .natal-cartao.centro .natal-cartao-topo strong { font-size: 2.4rem; }
+  .natal-kits.podio .natal-cartao.baixo { grid-column: 1 / -1; }
+  .natal-kits.podio .natal-cartao.baixo .natal-lista { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+}
+@media (max-width: 899px) {
+  .natal-kits.podio .natal-cartao.centro { order: -1; margin-top: 12px; }
+}

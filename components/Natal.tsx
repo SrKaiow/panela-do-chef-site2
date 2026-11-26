@@ -49,6 +49,14 @@ function useContagem(fim: string) {
   return { d: Math.floor(seg / 86400), h: Math.floor((seg % 86400) / 3600), m: Math.floor((seg % 3600) / 60), s: seg % 60 };
 }
 
+/** [anterior, melhor, seguinte, ...resto] pela ordem original dos kits. */
+function ordemPodio(itens: Item[], melhorId: string) {
+  const i = itens.findIndex((x) => x.id === melhorId);
+  if (i < 1 || i >= itens.length - 1) return itens;
+  const podio = [itens[i - 1], itens[i], itens[i + 1]];
+  return [...podio, ...itens.filter((x) => !podio.includes(x))];
+}
+
 const temDoce = (linhas: LinhaCarrinho[]) => linhas.some((l) => l.itemId.startsWith("natal-doce-"));
 
 export default function Natal({
@@ -189,7 +197,10 @@ export default function Natal({
           </section>
         )}
         {SECOES.map((s, n) => {
-          const itens = cardapio.itens.filter((i) => i.id.startsWith(s.prefixo));
+          const brutos = cardapio.itens.filter((i) => i.id.startsWith(s.prefixo));
+          // Kits em pódio: o de melhor custo-benefício no meio, o anterior à esquerda, o seguinte à direita; o resto embaixo.
+          const itens = s.prefixo === "natal-kit-" && melhorKit ? ordemPodio(brutos, melhorKit.id) : brutos;
+          const podio = s.prefixo === "natal-kit-" && melhorKit && itens.length >= 3;
           if (!itens.length) return null;
           const kits = s.prefixo === "natal-kit-";
           return (
@@ -202,12 +213,12 @@ export default function Natal({
                   <span aria-hidden="true">♥</span> Doces artesanais por <b>@dlauradocesartesanais</b>
                 </a>
               )}
-              <div className={kits ? "natal-kits" : "natal-grade"}>
-                {itens.map((i) => {
+              <div className={kits ? "natal-kits" + (podio ? " podio" : "") : "natal-grade"}>
+                {itens.map((i, pos) => {
                   const [nome, pessoas] = i.nome.split(" · ");
                   const premium = /premium/i.test(i.nome);
                   return (
-                    <button key={i.id} id={kits ? "kit-" + i.id : undefined} type="button" className={"natal-cartao" + (kits ? " kit" : "") + (kits && melhorKit?.id === i.id ? " melhor" : "") + (kits && indicado === i.id ? " indicado" : "") + (premium ? " premium" : "") + (s.doces ? " doce" : "") + (i.destaque ? " mais-pedido" : "")} onClick={() => {
+                    <button key={i.id} id={kits ? "kit-" + i.id : undefined} type="button" className={"natal-cartao" + (kits ? " kit" : "") + (kits && melhorKit?.id === i.id ? " melhor" : "") + (kits && indicado === i.id ? " indicado" : "") + (podio && pos === 1 ? " centro" : "") + (podio && pos > 2 ? " baixo" : "") + (premium ? " premium" : "") + (s.doces ? " doce" : "") + (i.destaque ? " mais-pedido" : "")} onClick={() => {
                       if (!aberta) return;
                       if (s.porKg && semPreco(cardapio, i)) { window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(`Oi! Quero saber o preço do ${i.nome} para a Ceia de Natal.`)}`, "_blank"); return; }
                       setAberto(i);
