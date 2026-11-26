@@ -7,6 +7,11 @@ import { NextResponse, type NextRequest } from "next/server";
  */
 export function middleware(req: NextRequest) {
   const metodo = req.method.toUpperCase();
+  // riders.paneladochef.co.uk: endereço do entregador. A página inicial dele é a tela de entregas.
+  const hostPedido = (req.headers.get("x-forwarded-host") || req.headers.get("host") || "").toLowerCase();
+  if (hostPedido.startsWith("riders.") && req.nextUrl.pathname === "/") {
+    return NextResponse.redirect(new URL("/entregador", req.url));
+  }
   if (metodo === "GET" || metodo === "HEAD" || metodo === "OPTIONS") {
     // Versão do site: as telas que ficam abertas o dia todo (painel, entregador, pedido) recarregam sozinhas quando sai atualização.
     const r = NextResponse.next();
@@ -32,4 +37,4 @@ export function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-export const config = { matcher: ["/api/:path*"] };
+export const config = { matcher: ["/", "/api/:path*"] };
