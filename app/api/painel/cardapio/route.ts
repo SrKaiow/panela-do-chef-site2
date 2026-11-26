@@ -1,3 +1,4 @@
+import { ehItemNatal } from "@/lib/natal";
 import { IDS_ALERGENICOS } from "@/lib/alergenicos";
 import { NextResponse } from "next/server";
 import { logado } from "@/lib/auth";
@@ -41,7 +42,9 @@ function validar(c: Cardapio): string | null {
     if (!i.id || ids.has(i.id)) return `Item com código repetido: ${i.nome || i.id}.`;
     ids.add(i.id);
     if (!i.nome?.trim()) return "Todo item precisa de nome.";
-    if (!(typeof i.preco === "number" && i.preco > 0 && i.preco < 1000)) return `Preço inválido em ${i.nome}.`;
+    // Na Ceia de Natal, preço 0 = "sob consulta" (ex.: leitão): aparece no site, mas não entra em pedido.
+    const minimo = ehItemNatal(i.categoria) ? 0 : 0.01;
+    if (!(typeof i.preco === "number" && i.preco >= minimo && i.preco < 1000)) return `Preço inválido em ${i.nome}.`;
     if (i.precoAntigo != null && !(typeof i.precoAntigo === "number" && i.precoAntigo > 0)) return `Preço antigo inválido em ${i.nome}.`;
     if (!cats.has(i.categoria)) return `${i.nome} está numa categoria que não existe.`;
     if (i.imagem && !/^\/(api\/fotos|fotos)\//.test(i.imagem)) return `Foto inválida em ${i.nome}.`;

@@ -185,7 +185,8 @@ function EditorItem({ cardapio, item, salvar, voltar, avisar }: { cardapio: Card
     const p = parseFloat(preco.replace(",", "."));
     const pa = precoAntigo.trim() ? parseFloat(precoAntigo.replace(",", ".")) : undefined;
     if (!f.nome.trim()) return avisar({ tipo: "erro", texto: "Dê um nome para o item." });
-    if (!(p > 0)) return avisar({ tipo: "erro", texto: "Coloque o preço (ex.: 12.50)." });
+    // Ceia de Natal aceita 0 = "sob consulta" (ex.: leitão).
+    if (!(p > 0) && !(f.categoria === "natal" && p === 0)) return avisar({ tipo: "erro", texto: "Coloque o preço (ex.: 12.50)." });
     if (pa != null && !(pa > p)) return avisar({ tipo: "erro", texto: "O preço antigo precisa ser maior que o preço atual." });
     let id = f.id;
     if (novo) {
