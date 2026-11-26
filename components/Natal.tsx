@@ -16,10 +16,9 @@ type Cotacao = { ok: true; milhas: number } | { ok: false; motivo: string } | nu
 const CHAVE = "panela-carrinho-natal-v1";
 const CHAVE_CLIENTE = "panela-cliente";
 
-const SECOES = [
+const SECOES: { prefixo: string; titulo: string; sub: string; porKg?: boolean }[] = [
   { prefixo: "natal-kit-", titulo: "Kits completos", sub: "A base da ceia pronta. Escolha o tamanho pela quantidade de pessoas e some as carnes que quiser." },
-  { prefixo: "natal-carne-", titulo: "Carnes especiais recheadas", sub: "Escolha o recheio: calabresa, bacon, queijo, cenoura, linguicinha ou o tempero do Chef." },
-  { prefixo: "natal-assado-", titulo: "Assados da ceia", sub: "Peru, frango, costela e pernil, temperados e assados para chegar prontos." },
+  { prefixo: "natal-recheado-", titulo: "Recheados de Natal", sub: "Preço por kg: no + e − você escolhe quantos kg. Nos recheados, escolha o recheio: calabresa, bacon, queijo, cenoura, linguicinha ou o tempero do Chef.", porKg: true },
   { prefixo: "natal-porcao-", titulo: "Porções extras", sub: "Quer mais? Escolha a porção e o tamanho." },
 ];
 
@@ -98,7 +97,11 @@ export default function Natal({
                   const [nome, pessoas] = i.nome.split(" · ");
                   const premium = /premium/i.test(i.nome);
                   return (
-                    <button key={i.id} type="button" className={"natal-cartao" + (kits ? " kit" : "") + (premium ? " premium" : "")} onClick={() => aberta && setAberto(i)} disabled={!aberta || !i.disponivel}>
+                    <button key={i.id} type="button" className={"natal-cartao" + (kits ? " kit" : "") + (premium ? " premium" : "")} onClick={() => {
+                      if (!aberta) return;
+                      if (s.porKg && semPreco(cardapio, i)) { window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(`Oi! Quero saber o preço do ${i.nome} para a Ceia de Natal.`)}`, "_blank"); return; }
+                      setAberto(i);
+                    }} disabled={!aberta || !i.disponivel}>
                       <span className="natal-cartao-topo">
                         <strong>{kits ? nome : i.nome}</strong>
                         {kits && pessoas && <span className={"natal-pessoas" + (premium ? " premium" : "")}>{pessoas}</span>}
@@ -109,7 +112,10 @@ export default function Natal({
                         <span className="natal-desc">{i.descricao}</span>
                       )}
                       <span className="natal-cartao-base">
-                        <span className={"natal-preco" + (semPreco(cardapio, i) ? " a-definir" : "")}>{semPreco(cardapio, i) ? "Preço a definir" : formatar(precoUnitario(cardapio, i, {}))}</span>
+                        <span className={"natal-preco" + (semPreco(cardapio, i) ? " a-definir" : "")}>
+                          {semPreco(cardapio, i) ? (s.porKg ? "Sob consulta" : "Preço a definir") : formatar(precoUnitario(cardapio, i, {}))}
+                          {s.porKg && !semPreco(cardapio, i) && <small>/kg</small>}
+                        </span>
                         <span className="natal-mais" aria-hidden="true">+</span>
                       </span>
                     </button>
@@ -125,7 +131,7 @@ export default function Natal({
       {qtdItens > 0 && (
         <div className="natal-barra">
           <button type="button" className="principal" onClick={() => setFechando(true)}>
-            <span>🎄 Minha ceia · {qtdItens} {qtdItens === 1 ? "item" : "itens"}</span>
+            <span>🎄 Minha ceia · {carrinho.length} {carrinho.length === 1 ? "item" : "itens"}</span>
             <span>{faltaPreco ? "Ver" : formatar(total)}</span>
           </button>
         </div>
@@ -233,7 +239,7 @@ function Finalizar({
           {linhas.map(({ l, it, unit, det }) => (
             <li key={l.chave} className="linha">
               <div>
-                <span className="nome">{l.qtd}× {it?.nome ?? l.itemId}</span>
+                <span className="nome">{l.itemId.startsWith("natal-recheado-") ? `${l.qtd}kg` : `${l.qtd}×`} {it?.nome ?? l.itemId}</span>
                 {det && <span className="dica"> · {det}</span>}
               </div>
               <div className="natal-linha-dir">

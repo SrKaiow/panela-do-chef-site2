@@ -978,3 +978,4 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .natal-tirar { border: 0; background: var(--superficie-2); color: var(--texto-2); width: 28px; height: 28px; border-radius: 50%; cursor: pointer; }
 .natal-ok { margin: 0; padding: 10px 12px; border-radius: 10px; background: rgba(43, 214, 123, 0.12); color: #7ef0b0; font-weight: 700; font-size: 0.92rem; }
 .natal-finalizar .erro a { color: inherit; text-decoration: underline; }
+.natal-preco small { font-size: 0.75rem; font-weight: 700; color: #cdbf9f; margin-left: 2px; }
