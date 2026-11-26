@@ -368,6 +368,16 @@ function ceiaNatalV1(c: Cardapio): Cardapio {
   g("natal-arroz-premium", "Arroz", ["Arroz natalino", "Arroz branco"]);
   g("natal-vinagrete", "Vinagrete", ["Vinagrete tradicional", "Vinagrete de abacaxi"]);
   g("natal-recheio", "Recheio", ["Calabresa", "Bacon", "Queijo", "Cenoura", "Linguicinha", "Tempero do Chef"], true, 2);
+  // Doces de Natal: tamanhos e sabores.
+  const op = (nome: string, preco = 0, padrao = false) => ({ nome, ...(preco ? { preco } : {}), ...(padrao ? { padrao } : {}) });
+  const grupo = (id: string, nome: string, opcoes: ReturnType<typeof op>[]) => {
+    a[id] = { nome, nomeInterno: "Natal - " + nome, opcoes, regras: { obrigatorio: true, varios: false, max: 1, repetir: false } };
+  };
+  grupo("natal-doce-morango-tam", "Tamanho", [op("P · 4 a 6 pessoas", 0, true), op("G · 10 a 12 pessoas", 30)]);
+  grupo("natal-doce-brig-caixa", "Caixa", [op("Caixa com 4 unidades", 0, true), op("Caixa com 6 unidades", 2), op("Caixa com 8 unidades", 4)]);
+  grupo("natal-doce-chocopote", "Sabor", [op("Ninho com Nutella"), op("Doce de leite"), op("Brigadeiro")]);
+  grupo("natal-doce-chocotone", "Sabor", [op("Ninho com Nutella"), op("Doce de leite"), op("Brigadeiro"), op("Brigadeiro com Ninho")]);
+  grupo("natal-doce-mousse", "Sabor", [op("Maracujá"), op("Morango"), op("Uva"), op("Chocolate")]);
   // Carne do kit: cada toque = 1kg daquela carne, com preço de kit (avulso − £2/kg).
   a["natal-carne-kit"] = {
     nome: "Carne do kit (cada + = 1kg)",
@@ -388,6 +398,16 @@ function ceiaNatalV1(c: Cardapio): Cardapio {
       ...it("natal-recheado-" + id, nome, preco ? "Preço por kg: escolha quantos kg no + e −." : "Sob consulta: fale com a gente no WhatsApp.", recheio ? [e("natal-recheio", 1, 2)] : []),
       preco,
     }))),
+    // Doces de Natal.
+    { ...it("natal-doce-chocotone", "Chocotone recheado · 1kg", "O mais pedido! Chocotone de 1kg recheado: Ninho com Nutella, doce de leite, brigadeiro ou brigadeiro com Ninho.", [e("natal-doce-chocotone")]), preco: 50, destaque: true },
+    { ...it("natal-doce-morango", "Morango na travessa", "Tamanho P (4 a 6 pessoas) £30 · tamanho G (10 a 12 pessoas) £60.", [e("natal-doce-morango-tam")]), preco: 30 },
+    { ...it("natal-doce-pudim", "Pudim tradicional", "Tamanho único."), preco: 35 },
+    { ...it("natal-doce-mousse", "Mousse na travessa · 1kg", "Maracujá, morango, uva ou chocolate.", [e("natal-doce-mousse")]), preco: 30 },
+    { ...it("natal-doce-cesta", "Mini cesta de Natal", "1 caixa com 3 pães de mel · 1 Chocotone no pote com acessórios · 1 caixa com 6 brigadeiros", [e("natal-doce-chocopote")]), preco: 42 },
+    { ...it("natal-doce-chocopote", "Chocotone no pote · 230g", "Ninho com Nutella, doce de leite ou brigadeiro.", [e("natal-doce-chocopote")]), preco: 12 },
+    { ...it("natal-doce-brigadeiros", "Brigadeiros 20g · caixa", "Caixa com 4 (£8), 6 (£10) ou 8 unidades (£12).", [e("natal-doce-brig-caixa")]), preco: 8 },
+    { ...it("natal-doce-brigadeiro-40", "Brigadeiro artesanal 40g", "Preço por unidade."), preco: 3 },
+    { ...it("natal-doce-paodemel", "Pães de mel 80g · caixa com 3", "Caixa com 3 pães de mel."), preco: 16 },
     // Porções extras: preço fechado.
     ...([
       ["arroz-branco", "Arroz branco · 1kg", 10],

@@ -984,3 +984,27 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .natal-chamada { font-size: 0.82rem; line-height: 1.35; padding: 8px 10px; border-radius: 10px; background: rgba(163, 22, 28, 0.35); border: 1px dashed rgba(217, 178, 106, 0.6); color: #f6eedf; }
 .natal-chamada strong { color: #f0d49a; }
 .folha .desc { white-space: pre-line; }
+
+/* Doces de Natal: seção em destaque */
+.natal-doces { position: relative; padding: 22px 18px 20px; border-radius: 24px; background: radial-gradient(120% 120% at 0% 0%, rgba(255, 216, 20, 0.16), transparent 55%), linear-gradient(160deg, #7a0f1a, #4b0910); border: 2px solid #d9b26a; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35); }
+.natal-doces::before { content: ""; position: absolute; inset: 0; border-radius: 22px; background: url("/fotos/natal/flocos.jpg") center / cover; opacity: 0.18; mix-blend-mode: screen; pointer-events: none; }
+.natal-doces > * { position: relative; }
+.natal-doces h2 { color: #fff; font-size: 2.4rem; }
+.natal-doces > .dica { color: #f6dccb; }
+.natal-doces-selo { display: inline-block; margin-bottom: 6px; padding: 5px 12px; border-radius: 999px; background: #ffd814; color: #3a0a0f; font-weight: 900; font-size: 0.85rem; animation: natal-pulsa 1.6s ease-in-out infinite; }
+@keyframes natal-pulsa { 50% { transform: scale(1.05); } }
+.natal-cartao.doce { background: rgba(255, 255, 255, 0.08); border-color: rgba(240, 212, 154, 0.55); position: relative; }
+.natal-doce-emoji { font-size: 2.4rem; line-height: 1; }
+.natal-cartao.mais-pedido { border: 2px solid #ffd814; box-shadow: 0 0 28px rgba(255, 216, 20, 0.35); grid-column: span 2; }
+@media (max-width: 560px) { .natal-cartao.mais-pedido { grid-column: auto; } }
+.natal-mais-pedido { position: absolute; top: -12px; right: 14px; padding: 4px 10px; border-radius: 999px; background: #ffd814; color: #3a0a0f; font-weight: 900; font-size: 0.78rem; }
+/* Fechamento sem sobremesa */
+.natal-sem-doce { display: grid; gap: 6px; padding: 14px; border-radius: 16px; background: linear-gradient(160deg, #7a0f1a, #4b0910); border: 2px solid #ffd814; color: #fff; }
+.natal-sem-doce > strong { font-size: 1.1rem; }
+.natal-sem-doce > span { font-size: 0.9rem; color: #f6dccb; }
+.natal-sem-doce-lista { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 4px; }
+.natal-sem-doce-lista button { position: relative; display: grid; justify-items: start; gap: 2px; padding: 10px; border-radius: 12px; border: 1px solid rgba(240, 212, 154, 0.6); background: rgba(255, 255, 255, 0.08); color: #fff; text-align: left; cursor: pointer; font: inherit; }
+.natal-sem-doce-lista button span { font-size: 1.6rem; }
+.natal-sem-doce-lista button b { font-size: 0.9rem; }
+.natal-sem-doce-lista button em { font-style: normal; font-weight: 800; color: #ffd814; font-size: 0.9rem; }
+.natal-sem-doce-lista button small { position: absolute; top: 8px; right: 8px; padding: 2px 7px; border-radius: 999px; background: #ffd814; color: #3a0a0f; font-weight: 900; font-size: 0.68rem; }
