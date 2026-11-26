@@ -1012,3 +1012,19 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .natal-sem-doce-lista button b { font-size: 0.9rem; }
 .natal-sem-doce-lista button em { font-style: normal; font-weight: 800; color: #ffd814; font-size: 0.9rem; }
 .natal-sem-doce-lista button small { position: absolute; top: 8px; right: 8px; padding: 2px 7px; border-radius: 999px; background: #ffd814; color: #3a0a0f; font-weight: 900; font-size: 0.68rem; }
+
+/* Kits: gatilhos (preço por pessoa, melhor custo-benefício, preço de kit) */
+.natal-turbo { display: grid; gap: 3px; font-size: 0.82rem; line-height: 1.35; padding: 10px 12px; border-radius: 12px; background: linear-gradient(135deg, rgba(240, 212, 154, 0.18), rgba(240, 212, 154, 0.06)); border: 1px solid rgba(240, 212, 154, 0.55); color: #f6eedf; text-align: left; }
+.natal-turbo b { color: #ffd814; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.natal-turbo-ex { font-weight: 700; }
+.natal-turbo-ex s { opacity: 0.6; margin: 0 4px; }
+.natal-turbo-ex strong { color: #7ef0b0; font-size: 0.95rem; }
+.natal-pessoa { display: block; font-size: 0.85rem; color: #d9cbb2; text-align: left; }
+.natal-pessoa strong { color: #fff; }
+.natal-pessoa.top { color: #f6eedf; }
+.natal-pessoa.top strong { color: #ffd814; font-size: 1.05rem; }
+.natal-pessoa em { display: block; margin-top: 2px; font-style: normal; font-size: 0.78rem; color: #7ef0b0; font-weight: 700; }
+.natal-cartao.kit.melhor { border: 2px solid #ffd814; box-shadow: 0 0 0 4px rgba(255, 216, 20, 0.12), 0 18px 40px rgba(0, 0, 0, 0.35); transform: translateY(-4px); }
+.natal-melhor { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); white-space: nowrap; padding: 4px 12px; border-radius: 999px; background: #ffd814; color: #3a0a0f; font-weight: 900; font-size: 0.76rem; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3); animation: natal-pulsa 1.8s ease-in-out infinite; }
+.opcao-nome .extra s.avulso { opacity: 0.55; margin-right: 6px; font-weight: 400; }
+.natal-cartao.kit { position: relative; }

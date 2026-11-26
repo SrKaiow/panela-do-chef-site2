@@ -20,3 +20,5 @@ export const encomendaAberta = (agora = Date.now()) => agora < Date.parse(CEIA.e
 /** Itens de sobremesa da ceia (feitos pela parceira de doces). */
 export const ehDoceNatal = (itemId: string) => itemId.startsWith("natal-doce-");
 export const ehItemNatal = (categoria: string) => categoria === CEIA.categoria;
+/** Dentro do kit, cada kg de carne extra sai este tanto mais barato que avulso ("preço de kit"). */
+export const DESCONTO_KG_NO_KIT = 2;

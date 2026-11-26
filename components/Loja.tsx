@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { emPence, formatar, precoUnitario, resumirEscolhas, type Cardapio, type Item, type LinhaCarrinho } from "@/lib/cardapio";
 import type { AjustesPublicos } from "@/lib/ajustes";
 import { nomeAlergenico } from "@/lib/alergenicos";
+import { DESCONTO_KG_NO_KIT } from "@/lib/natal";
 import { estadoLoja, type Estado, type Horario } from "@/lib/horario";
 import Hero, { Faixa } from "./Hero";
 import QuantoPedir from "./QuantoPedir";
@@ -337,7 +338,7 @@ export function FolhaItem({ cardapio, item, onFechar, onAdicionar }: { cardapio:
                       <span className="opcao-nome">
                         {op.destaque && !op.esgotado && <span className="opcao-selo">Mais pedido</span>}
                         {op.nome}
-                        {op.preco ? <em className="extra">+{formatar(emPence(op.preco))}{e.grupo === "natal-carne-kit" ? "/kg" : ""}</em> : null}
+                        {op.preco ? <em className="extra">{e.grupo === "natal-carne-kit" && <s className="avulso">{formatar(emPence(op.preco + DESCONTO_KG_NO_KIT))}</s>}+{formatar(emPence(op.preco))}{e.grupo === "natal-carne-kit" ? "/kg" : ""}</em> : null}
                         {op.esgotado ? <em> esgotado</em> : null}
                       </span>
                       <span className="opcao-qtd">

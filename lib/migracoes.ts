@@ -380,18 +380,18 @@ function ceiaNatalV1(c: Cardapio): Cardapio {
   grupo("natal-doce-mousse", "Sabor", [op("Maracujá"), op("Morango"), op("Limão"), op("Chocolate")]);
   // Carne do kit: cada toque = 1kg daquela carne, com preço de kit (avulso − £2/kg).
   a["natal-carne-kit"] = {
-    nome: "Carne do kit (cada + = 1kg)",
+    nome: "🔓 Turbine com mais carne · preço de kit (cada + = 1kg)",
     nomeInterno: "Natal - Carne do kit (por kg, preço de kit)",
     opcoes: RECHEADOS.filter(([, , preco]) => preco > 0).map(([, nome, preco]) => ({ nome, preco: Math.round((preco - DESCONTO_KG_NO_KIT) * 100) / 100 })),
-    regras: { obrigatorio: true, varios: true, max: 8, repetir: true },
+    regras: { obrigatorio: false, varios: true, max: 8, repetir: true },
   };
   const e = (grupo: string, min = 1, max = 1) => ({ grupo, min, max });
   const it = (id: string, nome: string, descricao: string, escolhas: { grupo: string; min: number; max: number }[] = [], imagem?: string) =>
     ({ id, nome, categoria: "natal", descricao, preco: 0, disponivel: true, escolhas, ...(imagem ? { imagem } : {}) });
   const novos = [
-    { ...it("natal-kit-1", "Kit 1 · até 3/4 pessoas", "1 frango assado com batata e cebola · 1kg de arroz (à grega ou branco) · 500g de farofa · 500g de vinagrete · 500g de maionese completa", [e("natal-arroz"), e("natal-carne-kit", 1, 8), e("natal-recheio", 0, 2)]), preco: 150 },
-    { ...it("natal-kit-2", "Kit 2 · até 7/9 pessoas", "2kg de arroz (branco ou à grega) · 1kg de maionese completa · 1kg de farofa temperada · 1kg de vinagrete (abacaxi ou tradicional) · 1 Chester inteiro recheado com batatas e calabresa · Salpicão completo", [e("natal-arroz"), e("natal-vinagrete"), e("natal-carne-kit", 1, 8), e("natal-recheio", 0, 2)]), preco: 250 },
-    { ...it("natal-kit-3", "Kit 3 · 10/15 pessoas", "3kg de arroz (branco ou à grega) · 2kg de maionese completa · 2kg de purê de banana-da-terra cremoso · 2kg de vinagrete (tradicional ou de abacaxi) · Salpicão completo", [e("natal-arroz"), e("natal-vinagrete"), e("natal-carne-kit", 1, 8), e("natal-recheio", 0, 2)]), preco: 280 },
+    { ...it("natal-kit-1", "Kit 1 · até 3/4 pessoas", "1 frango assado com batata e cebola · 1kg de arroz (à grega ou branco) · 500g de farofa · 500g de vinagrete · 500g de maionese completa", [e("natal-arroz"), e("natal-carne-kit", 0, 8), e("natal-recheio", 0, 2)]), preco: 150 },
+    { ...it("natal-kit-2", "Kit 2 · até 7/9 pessoas", "2kg de arroz (branco ou à grega) · 1kg de maionese completa · 1kg de farofa temperada · 1kg de vinagrete (abacaxi ou tradicional) · 1 Chester inteiro recheado com batatas e calabresa · Salpicão completo", [e("natal-arroz"), e("natal-vinagrete"), e("natal-carne-kit", 0, 8), e("natal-recheio", 0, 2)]), preco: 250 },
+    { ...it("natal-kit-3", "Kit 3 · 10/15 pessoas", "1 Chester inteiro recheado · 1 frango recheado · 3kg de arroz (branco ou à grega) · 2kg de maionese completa · 2kg de purê de banana-da-terra cremoso · 2kg de vinagrete (tradicional ou de abacaxi) · Salpicão completo", [e("natal-arroz"), e("natal-vinagrete"), e("natal-carne-kit", 0, 8), e("natal-recheio", 0, 2)]), preco: 280 },
     { ...it("natal-kit-4", "Kit 4 · Premium", "Pernil com osso · 2kg de cupim recheado · 1kg de frango recheado · 2kg de farofa natalina com bacon · Salpicão completo · 3kg de arroz (natalino ou branco) · Pudim tradicional de 1kg incluso", [e("natal-arroz-premium"), e("natal-carne-kit", 0, 8), e("natal-recheio", 0, 2)]), preco: 399, precoAntigo: 410 },
     // Recheados de Natal: preço por kg (a quantidade é em kg).
     ...(RECHEADOS.map(([id, nome, preco, recheio]) => ({
@@ -480,6 +480,19 @@ function natalSalpicao40V1(c: Cardapio): Cardapio {
   return { ...c, itens: c.itens.map((i) => (i.id === "natal-porcao-salpicao" ? { ...i, preco: 40 } : i)) };
 }
 
+/** Ceia: carne extra vira opcional (o kit já vem com carne), Kit 3 com Chester e frango recheado. */
+function natalKitsV2(c: Cardapio): Cardapio {
+  const itens = c.itens.map((i) => {
+    if (!i.id.startsWith("natal-kit-")) return i;
+    let n = { ...i, escolhas: (i.escolhas ?? []).map((e) => (e.grupo === "natal-carne-kit" ? { ...e, min: 0 } : e)) };
+    if (i.id === "natal-kit-3" && !i.descricao.includes("Chester")) n = { ...n, descricao: "1 Chester inteiro recheado · 1 frango recheado · " + i.descricao };
+    return n;
+  });
+  const g = c.adicionais?.["natal-carne-kit"];
+  const adicionais = g ? { ...c.adicionais, "natal-carne-kit": { ...g, nome: "🔓 Turbine com mais carne · preço de kit (cada + = 1kg)", regras: g.regras ? { ...g.regras, obrigatorio: false } : g.regras } } : c.adicionais;
+  return { ...c, itens, adicionais };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
@@ -504,6 +517,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["natal-doces-v2", natalDocesV2],
   ["natal-kit1-frango-v1", natalKit1FrangoV1],
   ["natal-salpicao-40-v1", natalSalpicao40V1],
+  ["natal-kits-v2", natalKitsV2],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatar, precoUnitario, resumirEscolhas, type Cardapio, type Item, type LinhaCarrinho } from "@/lib/cardapio";
 import { FolhaItem, Fundo } from "./Loja";
+import { DESCONTO_KG_NO_KIT as DESCONTO_KG } from "@/lib/natal";
 
 /**
  * Ceia de Natal: o cliente monta a ceia (kits, carnes recheadas, assados e porções),
@@ -17,7 +18,7 @@ const CHAVE = "panela-carrinho-natal-v1";
 const CHAVE_CLIENTE = "panela-cliente";
 
 const SECOES: { prefixo: string; titulo: string; sub: string; porKg?: boolean; doces?: boolean }[] = [
-  { prefixo: "natal-kit-", titulo: "Kits completos", sub: "A base da ceia pronta. Escolha o tamanho pela quantidade de pessoas e some as carnes que quiser." },
+  { prefixo: "natal-kit-", titulo: "Kits completos", sub: "A ceia completa, já com as carnes. Escolha pelo número de pessoas e, se quiser, turbine com mais carne pagando preço de kit." },
   { prefixo: "natal-doce-", titulo: "Doces de Natal", sub: "A ceia não termina sem sobremesa: chocotone, pudim, morango na travessa, mousses e brigadeiros.", doces: true },
   { prefixo: "natal-recheado-", titulo: "Recheados de Natal", sub: "Preço por kg: no + e − você escolhe quantos kg. Nos recheados, escolha o recheio: calabresa, bacon, queijo, cenoura, linguicinha ou o tempero do Chef.", porKg: true },
   { prefixo: "natal-porcao-", titulo: "Porções extras", sub: "Quer mais acompanhamento? Some à sua ceia." },
@@ -27,7 +28,8 @@ const semPreco = (c: Cardapio, i: Item) => i.preco <= 0 && precoUnitario(c, i, {
 const GRUPO_CARNE_KIT = "natal-carne-kit";
 /** Quantos kg de carne foram para dentro dos kits (cada kg sai £2 mais barato que avulso). */
 const kgNoKit = (linhas: LinhaCarrinho[]) => linhas.reduce((s, l) => s + (l.selecoes[GRUPO_CARNE_KIT]?.length ?? 0) * l.qtd, 0);
-const DESCONTO_KG = 2;
+/** Maior número de pessoas do kit ("até 7/9 pessoas" -> 9). */
+const maxPessoas = (nome: string) => { const ns = (nome.split(" · ")[1] ?? "").match(/\d+/g); return ns ? Number(ns[ns.length - 1]) : 0; };
 const EMOJI_DOCE: Record<string, string> = {
   "natal-doce-chocotone": "🎂", "natal-doce-morango": "🍓", "natal-doce-pudim": "🍮", "natal-doce-mousse": "🍧",
   "natal-doce-cesta": "🧺", "natal-doce-chocopote": "🍫", "natal-doce-brigadeiros": "🟤", "natal-doce-brigadeiro-40": "🍬", "natal-doce-paodemel": "🍯",
@@ -71,6 +73,16 @@ export default function Natal({
     setAberto(null);
     if (voltar) { setVoltar(false); setFechando(true); }
   }
+
+  // Gatilhos dos kits: preço por pessoa, o kit que mais compensa e um exemplo real do "preço de kit".
+  const kitsLista = cardapio.itens.filter((i) => i.id.startsWith("natal-kit-") && i.disponivel);
+  const porPessoa = (i: Item) => { const n = maxPessoas(i.nome); return n ? Math.round(precoUnitario(cardapio, i, {}) / n) : 0; };
+  const melhorKit = kitsLista.filter((i) => porPessoa(i) > 0).sort((a, b) => porPessoa(a) - porPessoa(b))[0];
+  const anteriorDoMelhor = melhorKit
+    ? kitsLista.filter((i) => porPessoa(i) > 0 && precoUnitario(cardapio, i, {}) < precoUnitario(cardapio, melhorKit, {})).sort((a, b) => precoUnitario(cardapio, b, {}) - precoUnitario(cardapio, a, {}))[0]
+    : undefined;
+  const isca = cardapio.itens.find((i) => i.id === "natal-recheado-picanha") ?? cardapio.itens.find((i) => i.id.startsWith("natal-recheado-") && i.preco > 0);
+  const iscaCarne = isca && isca.preco > 0 ? { nome: isca.nome, avulso: Math.round(isca.preco * 100) } : null;
 
   const dataFim = ultimoDia.split("-").reverse().slice(0, 2).join("/");
 
@@ -116,13 +128,14 @@ export default function Natal({
                   const [nome, pessoas] = i.nome.split(" · ");
                   const premium = /premium/i.test(i.nome);
                   return (
-                    <button key={i.id} type="button" className={"natal-cartao" + (kits ? " kit" : "") + (premium ? " premium" : "") + (s.doces ? " doce" : "") + (i.destaque ? " mais-pedido" : "")} onClick={() => {
+                    <button key={i.id} type="button" className={"natal-cartao" + (kits ? " kit" : "") + (kits && melhorKit?.id === i.id ? " melhor" : "") + (premium ? " premium" : "") + (s.doces ? " doce" : "") + (i.destaque ? " mais-pedido" : "")} onClick={() => {
                       if (!aberta) return;
                       if (s.porKg && semPreco(cardapio, i)) { window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(`Oi! Quero saber o preço do ${i.nome} para a Ceia de Natal.`)}`, "_blank"); return; }
                       setAberto(i);
                     }} disabled={!aberta || !i.disponivel}>
                       {s.doces && <span className="natal-doce-emoji" aria-hidden="true">{EMOJI_DOCE[i.id] ?? "🍰"}</span>}
                       {i.destaque && <span className="natal-mais-pedido">⭐ Mais pedido</span>}
+                      {kits && melhorKit?.id === i.id && <span className="natal-melhor">💎 Melhor custo-benefício</span>}
                       <span className="natal-cartao-topo">
                         <strong>{kits ? nome : i.nome}</strong>
                         {kits && pessoas && <span className={"natal-pessoas" + (premium ? " premium" : "")}>{pessoas}</span>}
@@ -130,16 +143,27 @@ export default function Natal({
                       {kits ? (
                         <>
                         <ul className="natal-lista">{i.descricao.split(" · ").map((x) => <li key={x} className={/incluso/i.test(x) ? "brinde" : undefined}>{x}</li>)}</ul>
-                        <span className="natal-chamada">🥩 {(i.escolhas ?? []).some((x) => x.grupo === GRUPO_CARNE_KIT && x.min > 0) ? "Escolha a carne do kit:" : "Quer mais carne?"} no kit, cada kg sai <strong>£{DESCONTO_KG} mais barato</strong> que avulso</span>
+                        {iscaCarne && (
+                          <span className="natal-turbo">
+                            <b>🔓 Preço de kit liberado</b>
+                            <span>Quer ainda mais carne? Quem leva kit paga menos em cada kg extra:</span>
+                            <span className="natal-turbo-ex">{iscaCarne.nome.replace(" recheada", "")} <s>{formatar(iscaCarne.avulso)}</s> <strong>{formatar(iscaCarne.avulso - DESCONTO_KG * 100)}</strong>/kg</span>
+                          </span>
+                        )}
                         </>
                       ) : (
                         <span className="natal-desc">{i.descricao}</span>
+                      )}
+                      {kits && porPessoa(i) > 0 && (
+                        <span className={"natal-pessoa" + (melhorKit?.id === i.id ? " top" : "")}>
+                          sai a <strong>{formatar(porPessoa(i))}</strong> por pessoa
+                          {melhorKit?.id === i.id && anteriorDoMelhor && <em>Só {formatar(precoUnitario(cardapio, i, {}) - precoUnitario(cardapio, anteriorDoMelhor, {}))} a mais que o {anteriorDoMelhor.nome.split(" · ")[0]} e serve muito mais gente</em>}
+                        </span>
                       )}
                       <span className="natal-cartao-base">
                         <span className={"natal-preco" + (semPreco(cardapio, i) ? " a-definir" : "")}>
                           {semPreco(cardapio, i) ? (s.porKg ? "Sob consulta" : "Preço a definir") : formatar(precoUnitario(cardapio, i, {}))}
                           {s.porKg && !semPreco(cardapio, i) && <small>/kg</small>}
-                          {kits && (i.escolhas ?? []).some((x) => x.grupo === GRUPO_CARNE_KIT && x.min > 0) && <small> + carne</small>}
                           {i.precoAntigo ? <s className="natal-antigo">{formatar(Math.round(i.precoAntigo * 100))}</s> : null}
                         </span>
                         <span className="natal-mais" aria-hidden="true">+</span>
@@ -163,7 +187,7 @@ export default function Natal({
         </div>
       )}
 
-      {aberto && <FolhaItem cardapio={cardapio} onFechar={() => { setAberto(null); if (voltar) { setVoltar(false); setFechando(true); } }} item={aberto.id.startsWith("natal-kit-") ? { ...aberto, descricao: `🥩 Carne do kit com preço especial: cada kg sai £${DESCONTO_KG} mais barato do que comprar avulso. Quanto mais carne você põe no kit, mais economiza. Toque no + da carne para cada kg.\n\n${aberto.descricao}` } : aberto} onAdicionar={adicionar} />}
+      {aberto && <FolhaItem cardapio={cardapio} onFechar={() => { setAberto(null); if (voltar) { setVoltar(false); setFechando(true); } }} item={aberto.id.startsWith("natal-kit-") ? { ...aberto, descricao: `🔓 Preço de kit liberado! O kit já vem completo, com carne. Se quiser turbinar, toda carne que você adicionar aqui sai mais barata do que comprando avulsa. Toque no + para cada kg.\n\n${aberto.descricao}` } : aberto} onAdicionar={adicionar} />}
       {fechando && (
         <Finalizar
           cardapio={cardapio} carrinho={carrinho} setCarrinho={setCarrinho} total={total} faltaPreco={faltaPreco}
@@ -315,7 +339,7 @@ function Finalizar({
         {cotacao && !cotacao.ok && !fora && <p className="erro">{cotacao.motivo}</p>}
         <label className="campo">Observação <span className="dica">(opcional)</span><textarea maxLength={300} value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Ex.: tocar a campainha do fundo" /></label>
 
-        {kgNoKit(carrinho) > 0 && <p className="natal-ok">🎉 Você está economizando <strong>£{(kgNoKit(carrinho) * DESCONTO_KG).toFixed(2)}</strong> com {kgNoKit(carrinho)}kg de carne no preço de kit.</p>}
+        {kgNoKit(carrinho) > 0 && <p className="natal-ok">🎉 Preço de kit: você está economizando <strong>£{(kgNoKit(carrinho) * DESCONTO_KG).toFixed(2)}</strong> com {kgNoKit(carrinho)}kg de carne no preço de kit.</p>}
         <div className="totais">
           <div><span>Entrega</span><span>Grátis</span></div>
           <div className="total"><span>Total</span><span>{faltaPreco ? "a definir" : formatar(total)}</span></div>
