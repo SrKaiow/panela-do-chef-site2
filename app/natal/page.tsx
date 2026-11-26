@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Natal from "@/components/Natal";
+import PessoasOnline from "@/components/PessoasOnline";
 import { getAjustes, getCardapio, provedorCartao, cartaoConfigurado } from "@/lib/dados";
 import { publicos, whatsappInternacional } from "@/lib/ajustes";
 import { redirect } from "next/navigation";
@@ -18,6 +19,8 @@ export default async function PaginaNatal() {
   const loja = publicos(ajustes, provedorCartao());
   const soNatal = { ...cardapio, categorias: cardapio.categorias.filter((c) => ehItemNatal(c.id)), itens: cardapio.itens.filter((i) => ehItemNatal(i.categoria)) };
   return (
+    <>
+    <PessoasOnline />
     <Natal
       cardapio={soNatal}
       datas={CEIA.datas}
@@ -28,5 +31,6 @@ export default async function PaginaNatal() {
       whatsapp={whatsappInternacional(loja.telefone)}
       cartao={ajustes.pagamentos.cartao && cartaoConfigurado()}
     />
+    </>
   );
 }

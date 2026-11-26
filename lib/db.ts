@@ -81,6 +81,11 @@ async function preparar(c: Client) {
     expira INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (chave, janela)
   )`);
+  // Quem está com o site aberto agora (id anônimo do navegador + último sinal, em ms).
+  await c.execute(`CREATE TABLE IF NOT EXISTS online (
+    visitante TEXT PRIMARY KEY,
+    visto_em INTEGER NOT NULL
+  )`);
   // Visitas ao site: um registro por visitante (id anônimo do navegador) por dia.
   await c.execute(`CREATE TABLE IF NOT EXISTS visitas (
     dia TEXT NOT NULL,
@@ -144,7 +149,7 @@ async function preparar(c: Client) {
  * Com a versão em dia, um servidor novo da Cloudflare só faz 1 consulta para começar (antes eram ~30,
  * e o "Error 1102 - Worker exceeded resource limits" aparecia quando muitos começavam ao mesmo tempo).
  */
-const VERSAO_ESQUEMA = "2026-11-24-frete-pedido";
+const VERSAO_ESQUEMA = "2026-11-26-online";
 
 async function prepararRapido(c: Client) {
   try {
@@ -612,6 +617,25 @@ export async function pedidoJaAvaliado(numero: number) {
 
 const diaLondres = (d = new Date()) => d.toLocaleDateString("en-CA", { timeZone: "Europe/London" });
 const diasAtras = (n: number) => diaLondres(new Date(Date.now() - n * 86400_000));
+
+/** Janela do "online agora": quem mandou sinal nos últimos 70s (o site manda a cada 25s). */
+const JANELA_ONLINE_MS = 70_000;
+
+/** O visitante fechou o site: sai da contagem na hora. */
+export async function sairOnline(visitante: string) {
+  await exec("DELETE FROM online WHERE visitante = ?", [visitante]);
+}
+
+/** Marca o visitante como online (se vier id) e devolve quantas pessoas estão com o site aberto agora. */
+export async function pessoasOnline(visitante?: string) {
+  const agora = Date.now();
+  if (visitante) {
+    await exec("INSERT INTO online (visitante, visto_em) VALUES (?, ?) ON CONFLICT(visitante) DO UPDATE SET visto_em = excluded.visto_em", [visitante, agora]);
+    if (Math.random() < 0.05) await exec("DELETE FROM online WHERE visto_em < ?", [agora - 10 * 60_000]).catch(() => {});
+  }
+  const r = await exec("SELECT COUNT(*) AS n FROM online WHERE visto_em > ?", [agora - JANELA_ONLINE_MS]);
+  return Number(r.rows[0]?.n ?? 0);
+}
 
 export async function registrarVisita(visitante: string) {
   const agora = new Date().toISOString();

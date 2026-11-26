@@ -1101,3 +1101,14 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 }
 .natal-melhor { z-index: 2; }
 .natal-economia { justify-self: start; }
+
+/* "👀 N pessoas vendo agora" (número real de quem está com o site aberto) */
+.pessoas-online { position: fixed; z-index: 25; left: max(14px, env(safe-area-inset-left, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px 7px 10px; border-radius: 999px; background: rgba(12, 12, 12, 0.88); color: #fff; font-size: 0.8rem; font-weight: 600; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.12); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); pointer-events: none; animation: po-entra 0.4s ease-out; }
+.pessoas-online b { font-weight: 900; color: #ffd814; }
+.po-ponto { width: 8px; height: 8px; border-radius: 50%; background: #2bd67b; box-shadow: 0 0 0 0 rgba(43, 214, 123, 0.6); animation: po-pulso 1.8s ease-out infinite; }
+@keyframes po-pulso { 0% { box-shadow: 0 0 0 0 rgba(43, 214, 123, 0.6); } 100% { box-shadow: 0 0 0 8px rgba(43, 214, 123, 0); } }
+@keyframes po-entra { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+body:has(.barra) .pessoas-online { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
+body:has(.natal-barra) .pessoas-online { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+body:has(.folha) .pessoas-online { display: none; }
+@media (prefers-reduced-motion: reduce) { .po-ponto, .pessoas-online { animation: none; } }
