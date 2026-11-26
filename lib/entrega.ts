@@ -73,6 +73,19 @@ export async function coordenadasDoPostcode(postcode: string): Promise<{ lat: nu
 }
 
 /** Bairro (ward) do postcode, ex.: KT17 1JW -> "Ewell Village". Só o bairro: sem número nem postcode. */
+/**
+ * Cidade do correio (post town) pelo início do postcode: é o nome que o próprio cliente usa.
+ * Vale para a região de entrega (raio em volta de Epsom).
+ */
+const CIDADE_DO_POSTCODE: Record<string, string> = {
+  KT1: "Kingston", KT2: "Kingston", KT3: "New Malden", KT4: "Worcester Park", KT5: "Surbiton", KT6: "Surbiton",
+  KT7: "Thames Ditton", KT8: "East Molesey", KT9: "Chessington", KT10: "Esher", KT11: "Cobham", KT12: "Walton-on-Thames",
+  KT13: "Weybridge", KT17: "Epsom", KT18: "Epsom", KT19: "Epsom", KT20: "Tadworth", KT21: "Ashtead", KT22: "Leatherhead",
+  KT23: "Bookham", KT24: "Leatherhead", SM1: "Sutton", SM2: "Sutton", SM3: "Cheam", SM4: "Morden", SM5: "Carshalton",
+  SM6: "Wallington", SM7: "Banstead", CR0: "Croydon", CR2: "South Croydon", CR4: "Mitcham", CR5: "Coulsdon", CR7: "Thornton Heath",
+  CR8: "Purley", SW19: "Wimbledon", SW20: "Raynes Park", RH2: "Reigate", RH1: "Redhill",
+};
+
 export async function bairroDoPostcode(postcode: string): Promise<string | null> {
   const pc = postcode.replace(/\s+/g, "").toUpperCase();
   if (!/^[A-Z]{1,2}\d[A-Z\d]?\d[A-Z]{2}$/.test(pc)) return null;
@@ -86,8 +99,11 @@ export async function bairroDoPostcode(postcode: string): Promise<string | null>
     // Alguns bairros têm nome genérico ("Town", "Court"): aí usa a cidade (ex.: "Epsom and Ewell" -> "Epsom").
     const cidade = String(d.admin_district || "").split(/ and | upon /)[0].trim();
     const ward = String(d.admin_ward || "").trim();
-    const generico = !ward || /^(town|court|central|village|north|south|east|west|centre|park)$/i.test(ward);
-    const nome = generico ? cidade : ward;
+    // Bairro oficial genérico ("Town") ou composto ("King George's & Sunray", "Chessington North & Hook"):
+    // usa a cidade do postcode (KT9 -> Chessington), que é o que o cliente reconhece.
+    const generico = !ward || /^(town|court|central|village|north|south|east|west|centre|park)$/i.test(ward) || /&| and /i.test(ward);
+    const distrito = pc.slice(0, -3);
+    const nome = generico ? CIDADE_DO_POSTCODE[distrito] || cidade : ward;
     return nome ? nome.slice(0, 40) : null;
   } catch {
     return null;
