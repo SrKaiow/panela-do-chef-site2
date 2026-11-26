@@ -549,6 +549,28 @@ function natalKitsFotosV1(c: Cardapio): Cardapio {
   return { ...c, itens: c.itens.map((i) => (/^natal-kit-[1-4]$/.test(i.id) ? { ...i, imagem: `/fotos/natal/${i.id.replace("natal-", "")}.jpg` } : i)) };
 }
 
+/** Ceia: salpicão em 1kg (£25) ou 2kg (£40). */
+function natalSalpicaoTamV1(c: Cardapio): Cardapio {
+  const itens = c.itens.map((i) => {
+    if (i.id !== "natal-porcao-salpicao") return i;
+    const tem = (i.escolhas ?? []).some((e) => e.grupo === "natal-salpicao-tam");
+    return {
+      ...i, nome: "Salpicão de frango completo", preco: 25,
+      descricao: "Escolha o tamanho: 1kg (£25) ou 2kg (£40).",
+      escolhas: tem ? i.escolhas : [{ grupo: "natal-salpicao-tam", min: 1, max: 1 }, ...(i.escolhas ?? [])],
+    };
+  });
+  const adicionais = {
+    ...c.adicionais,
+    "natal-salpicao-tam": {
+      nome: "Tamanho", nomeInterno: "Natal - Tamanho do salpicão",
+      opcoes: [{ nome: "1kg", padrao: true }, { nome: "2kg", preco: 15 }],
+      regras: { obrigatorio: true, varios: false, max: 1, repetir: false },
+    },
+  };
+  return { ...c, itens, adicionais };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
@@ -577,6 +599,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["natal-promo-kits-v1", natalPromoKitsV1],
   ["natal-doces-fotos-v1", natalDocesFotosV1],
   ["natal-kits-fotos-v1", natalKitsFotosV1],
+  ["natal-salpicao-tam-v1", natalSalpicaoTamV1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */
