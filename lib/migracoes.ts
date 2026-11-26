@@ -416,7 +416,7 @@ function ceiaNatalV1(c: Cardapio): Cardapio {
       ["vinagrete", "Vinagrete tradicional · 1kg", 15],
       ["vinagrete-abacaxi", "Vinagrete de abacaxi · 1kg", 15],
       ["maionese", "Maionese caseira completa · 1kg", 20],
-      ["salpicao", "Salpicão de frango completo · 2kg", 35],
+      ["salpicao", "Salpicão de frango completo · 2kg", 40],
     ] as [string, string, number][]).map(([id, nome, preco]) => ({ ...it("natal-porcao-" + id, nome, "Porção extra para a sua ceia."), preco })),
   ];
   return {
@@ -475,6 +475,11 @@ function natalKit1FrangoV1(c: Cardapio): Cardapio {
   return { ...c, itens: c.itens.map((i) => (i.id === "natal-kit-1" && !i.descricao.includes("frango assado") ? { ...i, descricao: "1 frango assado com batata e cebola · " + i.descricao } : i)) };
 }
 
+/** Ceia: salpicão de 2kg passa a £40. */
+function natalSalpicao40V1(c: Cardapio): Cardapio {
+  return { ...c, itens: c.itens.map((i) => (i.id === "natal-porcao-salpicao" ? { ...i, preco: 40 } : i)) };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
@@ -498,6 +503,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["ceia-natal-v1", ceiaNatalV1],
   ["natal-doces-v2", natalDocesV2],
   ["natal-kit1-frango-v1", natalKit1FrangoV1],
+  ["natal-salpicao-40-v1", natalSalpicao40V1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */
