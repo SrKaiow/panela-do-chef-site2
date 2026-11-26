@@ -223,7 +223,9 @@ export default function Natal({
                       if (s.porKg && semPreco(cardapio, i)) { window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(`Oi! Quero saber o preço do ${i.nome} para a Ceia de Natal.`)}`, "_blank"); return; }
                       setAberto(i);
                     }} disabled={!aberta || !i.disponivel}>
-                      {s.doces && <span className="natal-doce-emoji" aria-hidden="true">{EMOJI_DOCE[i.id] ?? "🍰"}</span>}
+                      {s.doces && (i.imagem
+                        ? <img className="natal-doce-foto" src={i.imagem} alt={i.nome} loading="lazy" />
+                        : <span className="natal-doce-emoji" aria-hidden="true">{EMOJI_DOCE[i.id] ?? "🍰"}</span>)}
                       {i.destaque && <span className="natal-mais-pedido">⭐ Mais pedido</span>}
                       {kits && indicado === i.id ? <span className="natal-melhor indicado">Ideal pra você</span>
                         : kits && melhorKit?.id === i.id && <span className="natal-melhor">Melhor custo-benefício</span>}
@@ -416,7 +418,7 @@ function Finalizar({
             <div className="natal-sem-doce-lista">
               {doces.map((d) => (
                 <button key={d.id} type="button" onClick={() => escolherDoce(d)}>
-                  <span aria-hidden="true">{EMOJI_DOCE[d.id] ?? "🍰"}</span>
+                  {d.imagem ? <img src={d.imagem} alt="" loading="lazy" /> : <span aria-hidden="true">{EMOJI_DOCE[d.id] ?? "🍰"}</span>}
                   <b>{d.nome.split(" · ")[0]}</b>
                   <em>{d.id === "natal-doce-morango" ? "a partir de " : ""}{formatar(Math.round(d.preco * 100))}</em>
                   {d.destaque && <small>Mais pedido</small>}

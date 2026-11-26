@@ -1080,3 +1080,10 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 @media (max-width: 899px) {
   .natal-kits.podio .natal-cartao.centro { order: -1; margin-top: 12px; }
 }
+
+/* Doces com foto */
+.natal-doce-foto { display: block; width: calc(100% + 32px); margin: -16px -16px 4px; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 17px 17px 0 0; }
+.natal-cartao.mais-pedido .natal-doce-foto { aspect-ratio: 16 / 9; object-position: center 45%; }
+@media (max-width: 560px) { .natal-cartao.mais-pedido .natal-doce-foto { aspect-ratio: 4 / 3; } }
+.natal-cartao.doce .natal-mais-pedido { z-index: 1; }
+.natal-sem-doce-lista button img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; margin-bottom: 4px; }

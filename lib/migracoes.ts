@@ -509,6 +509,41 @@ function natalPromoKitsV1(c: Cardapio): Cardapio {
   return { ...c, itens, adicionais };
 }
 
+/** Ceia: fotos reais dos doces, travessa de morango ou uva e descrições melhores. */
+function natalDocesFotosV1(c: Cardapio): Cardapio {
+  const F = "/fotos/natal/doces/";
+  const MUDA: Record<string, Partial<Cardapio["itens"][number]>> = {
+    "natal-doce-chocotone": { imagem: F + "chocotone.jpg" },
+    "natal-doce-pudim": { imagem: F + "pudim.jpg", descricao: "Pudim de leite tradicional com calda de caramelo. Tamanho único." },
+    "natal-doce-mousse": { imagem: F + "mousse.jpg", descricao: "Travessa de 1kg. Escolha o sabor: maracujá, morango, limão ou chocolate." },
+    "natal-doce-brigadeiro-40": { imagem: F + "brigadeiro-40.jpg", descricao: "Brigadeiro tradicional de 40g na cúpula individual. Preço por unidade." },
+    "natal-doce-brigadeiros": { imagem: F + "brigadeiros.jpg", descricao: "Brigadeiros de Ninho e tradicionais, decorados com carimbos natalinos. Caixa com 4 (£8), 6 (£10) ou 8 (£12)." },
+    "natal-doce-paodemel": { imagem: F + "paodemel.jpg", descricao: "Caixa com 3 pães de mel cobertos com chocolate." },
+    "natal-doce-chocopote": { imagem: F + "chocopote.jpg" },
+    "natal-doce-cesta": { imagem: F + "cesta.jpg" },
+  };
+  const temFruta = (i: Cardapio["itens"][number]) => (i.escolhas ?? []).some((e) => e.grupo === "natal-doce-travessa-fruta");
+  const itens = c.itens.map((i) => {
+    if (i.id === "natal-doce-morango") {
+      return {
+        ...i, nome: "Travessa de morango ou uva", imagem: F + "travessa.jpg",
+        descricao: "Camadas de creme, fruta e chocolate. Escolha morango ou uva. P (4 a 6 pessoas) £30 · G (10 a 12 pessoas) £60.",
+        escolhas: temFruta(i) ? i.escolhas : [{ grupo: "natal-doce-travessa-fruta", min: 1, max: 1 }, ...(i.escolhas ?? [])],
+      };
+    }
+    return MUDA[i.id] ? { ...i, ...MUDA[i.id] } : i;
+  });
+  const adicionais = {
+    ...c.adicionais,
+    "natal-doce-travessa-fruta": {
+      nome: "Fruta", nomeInterno: "Natal - Fruta da travessa",
+      opcoes: [{ nome: "Morango", padrao: true }, { nome: "Uva" }],
+      regras: { obrigatorio: true, varios: false, max: 1, repetir: false },
+    },
+  };
+  return { ...c, itens, adicionais };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
@@ -535,6 +570,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["natal-salpicao-40-v1", natalSalpicao40V1],
   ["natal-kits-v2", natalKitsV2],
   ["natal-promo-kits-v1", natalPromoKitsV1],
+  ["natal-doces-fotos-v1", natalDocesFotosV1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */
