@@ -19,7 +19,7 @@ const CHAVE_CLIENTE = "panela-cliente";
 const SECOES: { prefixo: string; titulo: string; sub: string; porKg?: boolean }[] = [
   { prefixo: "natal-kit-", titulo: "Kits completos", sub: "A base da ceia pronta. Escolha o tamanho pela quantidade de pessoas e some as carnes que quiser." },
   { prefixo: "natal-recheado-", titulo: "Recheados de Natal", sub: "Preço por kg: no + e − você escolhe quantos kg. Nos recheados, escolha o recheio: calabresa, bacon, queijo, cenoura, linguicinha ou o tempero do Chef.", porKg: true },
-  { prefixo: "natal-porcao-", titulo: "Porções extras", sub: "Quer mais? Escolha a porção e o tamanho." },
+  { prefixo: "natal-porcao-", titulo: "Porções extras", sub: "Quer mais acompanhamento? Some à sua ceia." },
 ];
 
 const semPreco = (c: Cardapio, i: Item) => i.preco <= 0 && precoUnitario(c, i, {}) <= 0;

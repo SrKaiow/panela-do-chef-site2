@@ -366,9 +366,7 @@ function ceiaNatalV1(c: Cardapio): Cardapio {
   };
   g("natal-arroz", "Arroz", ["Arroz à grega", "Arroz branco"]);
   g("natal-arroz-premium", "Arroz", ["Arroz natalino", "Arroz branco"]);
-  g("natal-arroz-tipo", "Tipo de arroz", ["Arroz branco", "Arroz à grega", "Arroz natalino"]);
   g("natal-vinagrete", "Vinagrete", ["Vinagrete tradicional", "Vinagrete de abacaxi"]);
-  g("natal-farofa", "Farofa", ["Farofa de banana", "Farofa de bacon"]);
   g("natal-recheio", "Recheio", ["Calabresa", "Bacon", "Queijo", "Cenoura", "Linguicinha", "Tempero do Chef"], true, 2);
   // Carne do kit: cada toque = 1kg daquela carne, com preço de kit (avulso − £2/kg).
   a["natal-carne-kit"] = {
@@ -377,7 +375,6 @@ function ceiaNatalV1(c: Cardapio): Cardapio {
     opcoes: RECHEADOS.filter(([, , preco]) => preco > 0).map(([, nome, preco]) => ({ nome, preco: Math.round((preco - DESCONTO_KG_NO_KIT) * 100) / 100 })),
     regras: { obrigatorio: true, varios: true, max: 8, repetir: true },
   };
-  a["natal-tamanho"] = { nome: "Tamanho", nomeInterno: "Natal - Tamanho da porção", opcoes: [{ nome: "500g", padrao: true }, { nome: "1kg", preco: 0 }], regras: { obrigatorio: true, varios: false, max: 1, repetir: false } };
   const e = (grupo: string, min = 1, max = 1) => ({ grupo, min, max });
   const it = (id: string, nome: string, descricao: string, escolhas: { grupo: string; min: number; max: number }[] = [], imagem?: string) =>
     ({ id, nome, categoria: "natal", descricao, preco: 0, disponivel: true, escolhas, ...(imagem ? { imagem } : {}) });
@@ -391,11 +388,16 @@ function ceiaNatalV1(c: Cardapio): Cardapio {
       ...it("natal-recheado-" + id, nome, preco ? "Preço por kg: escolha quantos kg no + e −." : "Sob consulta: fale com a gente no WhatsApp.", recheio ? [e("natal-recheio", 1, 2)] : []),
       preco,
     }))),
-    it("natal-porcao-arroz", "Arroz", "Porção extra de arroz.", [e("natal-arroz-tipo"), e("natal-tamanho")]),
-    it("natal-porcao-maionese", "Maionese completa", "Porção extra de maionese completa.", [e("natal-tamanho")]),
-    it("natal-porcao-farofa", "Farofa", "Porção extra de farofa de banana ou de bacon.", [e("natal-farofa"), e("natal-tamanho")]),
-    it("natal-porcao-pure", "Purê de banana-da-terra cremoso", "Porção extra de purê de banana-da-terra.", [e("natal-tamanho")]),
-    it("natal-porcao-vinagrete", "Vinagrete", "Porção extra de vinagrete tradicional ou de abacaxi.", [e("natal-vinagrete"), e("natal-tamanho")]),
+    // Porções extras: preço fechado.
+    ...([
+      ["arroz-branco", "Arroz branco · 1kg", 10],
+      ["arroz-grega", "Arroz à grega · 1kg", 12],
+      ["farofa", "Farofa natalina · 1kg", 15],
+      ["vinagrete", "Vinagrete tradicional · 1kg", 15],
+      ["vinagrete-abacaxi", "Vinagrete de abacaxi · 1kg", 15],
+      ["maionese", "Maionese caseira completa · 1kg", 20],
+      ["salpicao", "Salpicão de frango completo · 2kg", 35],
+    ] as [string, string, number][]).map(([id, nome, preco]) => ({ ...it("natal-porcao-" + id, nome, "Porção extra para a sua ceia."), preco })),
   ];
   return {
     ...c,
