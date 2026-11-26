@@ -354,10 +354,10 @@ function ceiaNatalV1(c: Cardapio): Cardapio {
   const it = (id: string, nome: string, descricao: string, escolhas: { grupo: string; min: number; max: number }[] = [], imagem?: string) =>
     ({ id, nome, categoria: "natal", descricao, preco: 0, disponivel: true, escolhas, ...(imagem ? { imagem } : {}) });
   const novos = [
-    it("natal-kit-1", "Kit 1 · até 3/4 pessoas", "1kg de arroz (à grega ou branco) · 500g de farofa · 500g de vinagrete · 500g de maionese completa", [e("natal-arroz")]),
-    it("natal-kit-2", "Kit 2 · até 7/9 pessoas", "2kg de arroz (branco ou à grega) · 1kg de maionese completa · 1kg de farofa temperada · 1kg de vinagrete (abacaxi ou tradicional) · 1 Chester inteiro recheado com batatas e calabresa · Salpicão completo", [e("natal-arroz"), e("natal-vinagrete")]),
-    it("natal-kit-3", "Kit 3 · 10/15 pessoas", "3kg de arroz (branco ou à grega) · 2kg de maionese completa · 2kg de purê de banana-da-terra cremoso · 2kg de vinagrete (tradicional ou de abacaxi) · Salpicão completo", [e("natal-arroz"), e("natal-vinagrete")]),
-    it("natal-kit-4", "Kit 4 · Premium", "Pernil com osso · 2kg de cupim recheado · 1kg de frango recheado · 2kg de farofa natalina com bacon · Salpicão completo · 3kg de arroz (natalino ou branco)", [e("natal-arroz-premium")]),
+    { ...it("natal-kit-1", "Kit 1 · até 3/4 pessoas", "1kg de arroz (à grega ou branco) · 500g de farofa · 500g de vinagrete · 500g de maionese completa", [e("natal-arroz")]), preco: 150 },
+    { ...it("natal-kit-2", "Kit 2 · até 7/9 pessoas", "2kg de arroz (branco ou à grega) · 1kg de maionese completa · 1kg de farofa temperada · 1kg de vinagrete (abacaxi ou tradicional) · 1 Chester inteiro recheado com batatas e calabresa · Salpicão completo", [e("natal-arroz"), e("natal-vinagrete")]), preco: 250 },
+    { ...it("natal-kit-3", "Kit 3 · 10/15 pessoas", "3kg de arroz (branco ou à grega) · 2kg de maionese completa · 2kg de purê de banana-da-terra cremoso · 2kg de vinagrete (tradicional ou de abacaxi) · Salpicão completo", [e("natal-arroz"), e("natal-vinagrete")]), preco: 280 },
+    { ...it("natal-kit-4", "Kit 4 · Premium", "Pernil com osso · 2kg de cupim recheado · 1kg de frango recheado · 2kg de farofa natalina com bacon · Salpicão completo · 3kg de arroz (natalino ou branco) · Pudim tradicional de 1kg incluso", [e("natal-arroz-premium")]), preco: 399, precoAntigo: 410 },
     // Recheados de Natal: preço por kg (a quantidade é em kg).
     ...([
       ["frango-desossado", "Frango desossado recheado", 23.99, true],

@@ -107,7 +107,7 @@ export default function Natal({
                         {kits && pessoas && <span className={"natal-pessoas" + (premium ? " premium" : "")}>{pessoas}</span>}
                       </span>
                       {kits ? (
-                        <ul className="natal-lista">{i.descricao.split(" · ").map((x) => <li key={x}>{x}</li>)}</ul>
+                        <ul className="natal-lista">{i.descricao.split(" · ").map((x) => <li key={x} className={/incluso/i.test(x) ? "brinde" : undefined}>{x}</li>)}</ul>
                       ) : (
                         <span className="natal-desc">{i.descricao}</span>
                       )}
@@ -115,6 +115,7 @@ export default function Natal({
                         <span className={"natal-preco" + (semPreco(cardapio, i) ? " a-definir" : "")}>
                           {semPreco(cardapio, i) ? (s.porKg ? "Sob consulta" : "Preço a definir") : formatar(precoUnitario(cardapio, i, {}))}
                           {s.porKg && !semPreco(cardapio, i) && <small>/kg</small>}
+                          {i.precoAntigo ? <s className="natal-antigo">{formatar(Math.round(i.precoAntigo * 100))}</s> : null}
                         </span>
                         <span className="natal-mais" aria-hidden="true">+</span>
                       </span>
