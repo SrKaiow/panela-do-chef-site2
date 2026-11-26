@@ -10,7 +10,6 @@ import { avisarLojaNovoPedido } from "@/lib/avisoLoja";
 import { conferirColeta, coordenadasDoPostcode, cotarEntrega, distanciaMetros, entregaEspecial } from "@/lib/entrega";
 import { mensagemSegura, permitir, respostaLimite } from "@/lib/seguranca";
 import { CEIA, ehItemNatal, encomendaAberta } from "@/lib/natal";
-import { hojeLondres } from "@/lib/cardapio";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +33,7 @@ export async function POST(req: Request) {
       throw new Error("A Ceia de Natal é uma encomenda separada. Monte a ceia na página da Ceia de Natal.");
     }
     if (natal) {
-      if (!encomendaAberta(hojeLondres())) throw new Error("As encomendas da Ceia de Natal já fecharam. Fale com a gente no WhatsApp.");
+      if (!encomendaAberta()) throw new Error("As encomendas da Ceia de Natal já fecharam. Fale com a gente no WhatsApp.");
       b.retirada = false;
       b.pagamento = "cartao";
       if (!CEIA.datas.some((d) => d.valor === b.agendadoPara)) throw new Error("Escolha o dia da entrega da ceia.");

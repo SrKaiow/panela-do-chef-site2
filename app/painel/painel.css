@@ -542,3 +542,15 @@ a.btn.principal-p { color: #fff; justify-content: center; }
 .metas-pct { font-weight: 900; text-align: right; }
 .metas-hist li.ok .metas-pct { color: #0b6b37; } .metas-hist li.nao .metas-pct { color: #b4231b; }
 .metas-selo { font-size: 1.2rem; }
+
+/* Aba Doces (parceria) */
+.doces-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 12px; }
+.doces-pedido header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.doces-pedido footer { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.doces-pedido.enviado { opacity: .8; }
+.doces-selo { padding: 3px 10px; border-radius: 999px; font-size: .75rem; font-weight: 800; white-space: nowrap; }
+.doces-selo.pago { background: #e5f6ea; color: #17663a; }
+.doces-selo.pendente { background: #fff2d6; color: #8a5a00; }
+.doces-wa { background: #25d366 !important; border-color: #1fb457 !important; color: #fff !important; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; }
+.doces-ok { color: #17663a; font-weight: 700; font-size: .9rem; }
+.doces-alerta { color: #c2410c; }

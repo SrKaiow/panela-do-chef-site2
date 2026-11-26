@@ -8,7 +8,7 @@ export default function BannerNatal() {
         <span className="bn-textos">
           <span className="bn-sobre">Ceia de Natal · Panela do Chef</span>
           <strong className="bn-titulo">Monte o seu kit natalino</strong>
-          <span className="bn-sub">Ceias completas: Chester, peru, pernil, carnes recheadas e porções. Encomendas até 20/12 · entrega grátis até 9 milhas.</span>
+          <span className="bn-sub">Ceias completas: Chester, peru, pernil, carnes recheadas e porções. Encomendas até 20/12 às 22h · entrega grátis até 9 milhas.</span>
         </span>
         <span className="bn-botao">Montar minha ceia <span aria-hidden="true">→</span></span>
       </span>

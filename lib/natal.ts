@@ -9,10 +9,14 @@ export const CEIA = {
   categoria: "natal",
   /** Último dia para encomendar (Londres). */
   ultimoDia: "2026-12-20",
+  /** Fecha às 22:00 de Londres do último dia (em dezembro Londres = UTC). Depois disso some o banner e a página /natal volta para o site. */
+  encerraEm: "2026-12-20T22:00:00.000Z",
   raioMilhas: 9,
   /** Dias/horários de entrega que o cliente pode escolher (valor = instante ISO, usado no pedido). */
   datas: [{ valor: "2026-12-24T14:00:00.000Z", rotulo: "Quinta, 24/12 · véspera de Natal (à tarde)" }],
 };
 
-export const encomendaAberta = (hoje: string) => hoje <= CEIA.ultimoDia;
+export const encomendaAberta = (agora = Date.now()) => agora < Date.parse(CEIA.encerraEm);
+/** Itens de sobremesa da ceia (feitos pela parceira de doces). */
+export const ehDoceNatal = (itemId: string) => itemId.startsWith("natal-doce-");
 export const ehItemNatal = (categoria: string) => categoria === CEIA.categoria;

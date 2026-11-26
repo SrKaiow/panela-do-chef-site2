@@ -84,7 +84,7 @@ export default function Natal({
           <h1>Monte o seu kit natalino</h1>
           <p>Ceias completas, prontinhas para servir: kits, Chester, peru, pernil, carnes recheadas e porções. Você monta, paga no cartão e a gente entrega no dia.</p>
           <ul className="natal-selos">
-            <li>🗓 Encomendas até <strong>{dataFim}</strong></li>
+            <li>🗓 Encomendas até <strong>{dataFim} às 22h</strong></li>
             <li>🚚 Entrega <strong>grátis até {raioMilhas} milhas</strong></li>
             <li>💳 Pagamento <strong>no cartão</strong></li>
           </ul>

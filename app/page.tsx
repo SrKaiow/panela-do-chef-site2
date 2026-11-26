@@ -1,6 +1,6 @@
 import Loja from "@/components/Loja";
 import BannerNatal from "@/components/BannerNatal";
-import { ehItemNatal } from "@/lib/natal";
+import { ehItemNatal, encomendaAberta } from "@/lib/natal";
 import ContarVisita from "@/components/ContarVisita";
 import { NaCozinha, SobreChef } from "@/components/Historia";
 import { getAjustes, getCardapio, provedorCartao } from "@/lib/dados";
@@ -39,7 +39,7 @@ export default async function Home() {
   return (
     <>
       <ContarVisita />
-      <BannerNatal />
+      {encomendaAberta() && <BannerNatal />}
       <Loja cardapio={cardapioDoDia} loja={loja} estadoInicial={estado} horariosIniciais={horarios} pausado={ajustes.pausado} />
       <NaCozinha />
       <SobreChef />
