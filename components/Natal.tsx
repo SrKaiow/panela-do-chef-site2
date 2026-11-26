@@ -107,9 +107,9 @@ export default function Natal({
   }
   // Pessoas -> kit (pelo maior número de pessoas de cada kit; o Premium é o último botão).
   const OPCOES_PESSOAS = [
-    { rotulo: "Até 4", emoji: "👨‍👩‍👧", n: 4 },
-    { rotulo: "5 a 9", emoji: "👨‍👩‍👧‍👦", n: 9 },
-    { rotulo: "10 a 15", emoji: "🎉", n: 15 },
+    { rotulo: "Até 4", n: 4 },
+    { rotulo: "5 a 9", n: 9 },
+    { rotulo: "10 a 15", n: 15 },
   ];
   const kitPara = (n: number) => kitsLista.filter((k) => maxPessoas(k.nome) >= n).sort((a, b) => maxPessoas(a.nome) - maxPessoas(b.nome))[0];
   const kitPremium = kitsLista.find((k) => /premium/i.test(k.nome));
@@ -132,7 +132,7 @@ export default function Natal({
           </ul>
           {aberta && restante && (
             <div className="natal-contagem" role="timer" aria-label="Tempo até fechar as encomendas">
-              <span className="natal-contagem-titulo">⏰ As encomendas fecham em</span>
+              <span className="natal-contagem-titulo">As encomendas fecham em</span>
               <span className="natal-contagem-caixas">
                 <span><b className="num">{restante.d}</b>dias</span>
                 <span><b className="num">{String(restante.h).padStart(2, "0")}</b>horas</span>
@@ -147,10 +147,10 @@ export default function Natal({
 
       {aberta && (
         <nav className="natal-atalhos" aria-label="Ir para">
-          <a href="#natal-kits">🎁 Kits</a>
-          <a href="#natal-doces">🍰 Doces</a>
-          <a href="#natal-carnes">🥩 Carnes</a>
-          <a href="#natal-porcoes">🥗 Porções</a>
+          <a href="#natal-kits">Kits</a>
+          <a href="#natal-doces">Doces</a>
+          <a href="#natal-carnes">Carnes</a>
+          <a href="#natal-porcoes">Porções</a>
         </nav>
       )}
 
@@ -161,7 +161,7 @@ export default function Natal({
       <main className="miolo natal-cardapio">
         {aberta && kitsLista.length > 0 && (
           <section id="natal-quiz" className="natal-quiz">
-            <span className="natal-quiz-pergunta">🎅 Pra quantas pessoas é a sua ceia?</span>
+            <span className="natal-quiz-pergunta">Pra quantas pessoas é a sua ceia?</span>
             <span className="natal-quiz-sub">Toque e a gente mostra o kit ideal pra você.</span>
             <div className="natal-quiz-opcoes">
               {OPCOES_PESSOAS.map((o) => {
@@ -169,19 +169,19 @@ export default function Natal({
                 if (!k) return null;
                 return (
                   <button key={o.rotulo} type="button" aria-pressed={indicado === k.id} onClick={() => indicar(k.id)}>
-                    <span aria-hidden="true">{o.emoji}</span><b>{o.rotulo}</b><small>pessoas</small>
+                    <b>{o.rotulo}</b><small>pessoas</small>
                   </button>
                 );
               })}
               {kitPremium && (
                 <button type="button" className="premium" aria-pressed={indicado === kitPremium.id} onClick={() => indicar(kitPremium.id)}>
-                  <span aria-hidden="true">👑</span><b>Quero o melhor</b><small>Premium</small>
+                  <b>Quero o melhor</b><small>Premium</small>
                 </button>
               )}
             </div>
             {kitIndicado && (
               <p className="natal-quiz-resposta">
-                <span>👉 O ideal pra você é o <strong>{kitIndicado.nome.split(" · ")[0]}</strong>: {formatar(precoUnitario(cardapio, kitIndicado, {}))}
+                <span>O ideal pra você é o <strong>{kitIndicado.nome.split(" · ")[0]}</strong>: {formatar(precoUnitario(cardapio, kitIndicado, {}))}
                 {economia(kitIndicado) > 0 && <> · você economiza <strong>{formatar(economia(kitIndicado))}</strong></>}</span>
                 <button type="button" onClick={() => setAberto(kitIndicado)}>Quero esse!</button>
               </p>
@@ -214,9 +214,9 @@ export default function Natal({
                     }} disabled={!aberta || !i.disponivel}>
                       {s.doces && <span className="natal-doce-emoji" aria-hidden="true">{EMOJI_DOCE[i.id] ?? "🍰"}</span>}
                       {i.destaque && <span className="natal-mais-pedido">⭐ Mais pedido</span>}
-                      {kits && indicado === i.id ? <span className="natal-melhor indicado">👉 Ideal pra você</span>
-                        : kits && melhorKit?.id === i.id && <span className="natal-melhor">💎 Melhor custo-benefício</span>}
-                      {kits && economia(i) > 0 && <span className="natal-economia">🔥 Economize {formatar(economia(i))}</span>}
+                      {kits && indicado === i.id ? <span className="natal-melhor indicado">Ideal pra você</span>
+                        : kits && melhorKit?.id === i.id && <span className="natal-melhor">Melhor custo-benefício</span>}
+                      {kits && economia(i) > 0 && <span className="natal-economia">Economize {formatar(economia(i))}</span>}
                       <span className="natal-cartao-topo">
                         <strong>{kits ? nome : i.nome}</strong>
                         {kits && pessoas && <span className={"natal-pessoas" + (premium ? " premium" : "")}>{pessoas}</span>}
@@ -228,10 +228,9 @@ export default function Natal({
                       ) : (
                         <span className="natal-desc">{i.descricao}</span>
                       )}
-                      {kits && porPessoa(i) > 0 && (
-                        <span className={"natal-pessoa" + (melhorKit?.id === i.id ? " top" : "")}>
-                          sai a <strong>{formatar(porPessoa(i))}</strong> por pessoa
-                          {melhorKit?.id === i.id && anteriorDoMelhor && <em>Só {formatar(precoUnitario(cardapio, i, {}) - precoUnitario(cardapio, anteriorDoMelhor, {}))} a mais que o {anteriorDoMelhor.nome.split(" · ")[0]} e serve muito mais gente</em>}
+                      {kits && melhorKit?.id === i.id && anteriorDoMelhor && (
+                        <span className="natal-pessoa top">
+                          <em>Só {formatar(precoUnitario(cardapio, i, {}) - precoUnitario(cardapio, anteriorDoMelhor, {}))} a mais que o {anteriorDoMelhor.nome.split(" · ")[0]} e serve muito mais gente</em>
                         </span>
                       )}
                       <span className="natal-cartao-base">
@@ -258,7 +257,7 @@ export default function Natal({
           {qtdItens > 0 ? (
             <button type="button" className="principal natal-chamar" onClick={() => setFechando(true)}>
               <span className="natal-chamar-textos">
-                <span>🎄 Finalizar minha ceia · {carrinho.length} {carrinho.length === 1 ? "item" : "itens"}</span>
+                <span>Finalizar minha ceia · {carrinho.length} {carrinho.length === 1 ? "item" : "itens"}</span>
                 {restante && <small>fecha em {restante.d}d {restante.h}h {restante.m}min</small>}
               </span>
               <span>{faltaPreco ? "Ver" : formatar(total)}</span>
@@ -269,8 +268,8 @@ export default function Natal({
               else document.getElementById("natal-quiz")?.scrollIntoView({ behavior: "smooth", block: "center" });
             }}>
               <span className="natal-chamar-textos">
-                <span>{kitIndicado ? `🎁 Quero o ${kitIndicado.nome.split(" · ")[0]}!` : "🎅 Garanta a sua ceia de Natal"}</span>
-                {restante && <small>⏰ encomendas fecham em {restante.d}d {restante.h}h {restante.m}min</small>}
+                <span>{kitIndicado ? `Quero o ${kitIndicado.nome.split(" · ")[0]}!` : "Garanta a sua ceia de Natal"}</span>
+                {restante && <small>encomendas fecham em {restante.d}d {restante.h}h {restante.m}min</small>}
               </span>
               <span>{kitIndicado ? formatar(precoUnitario(cardapio, kitIndicado, {})) : "Começar →"}</span>
             </button>
