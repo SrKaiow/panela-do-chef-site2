@@ -389,7 +389,7 @@ function ceiaNatalV1(c: Cardapio): Cardapio {
   const it = (id: string, nome: string, descricao: string, escolhas: { grupo: string; min: number; max: number }[] = [], imagem?: string) =>
     ({ id, nome, categoria: "natal", descricao, preco: 0, disponivel: true, escolhas, ...(imagem ? { imagem } : {}) });
   const novos = [
-    { ...it("natal-kit-1", "Kit 1 · até 3/4 pessoas", "1kg de arroz (à grega ou branco) · 500g de farofa · 500g de vinagrete · 500g de maionese completa", [e("natal-arroz"), e("natal-carne-kit", 1, 8), e("natal-recheio", 0, 2)]), preco: 150 },
+    { ...it("natal-kit-1", "Kit 1 · até 3/4 pessoas", "1 frango assado com batata e cebola · 1kg de arroz (à grega ou branco) · 500g de farofa · 500g de vinagrete · 500g de maionese completa", [e("natal-arroz"), e("natal-carne-kit", 1, 8), e("natal-recheio", 0, 2)]), preco: 150 },
     { ...it("natal-kit-2", "Kit 2 · até 7/9 pessoas", "2kg de arroz (branco ou à grega) · 1kg de maionese completa · 1kg de farofa temperada · 1kg de vinagrete (abacaxi ou tradicional) · 1 Chester inteiro recheado com batatas e calabresa · Salpicão completo", [e("natal-arroz"), e("natal-vinagrete"), e("natal-carne-kit", 1, 8), e("natal-recheio", 0, 2)]), preco: 250 },
     { ...it("natal-kit-3", "Kit 3 · 10/15 pessoas", "3kg de arroz (branco ou à grega) · 2kg de maionese completa · 2kg de purê de banana-da-terra cremoso · 2kg de vinagrete (tradicional ou de abacaxi) · Salpicão completo", [e("natal-arroz"), e("natal-vinagrete"), e("natal-carne-kit", 1, 8), e("natal-recheio", 0, 2)]), preco: 280 },
     { ...it("natal-kit-4", "Kit 4 · Premium", "Pernil com osso · 2kg de cupim recheado · 1kg de frango recheado · 2kg de farofa natalina com bacon · Salpicão completo · 3kg de arroz (natalino ou branco) · Pudim tradicional de 1kg incluso", [e("natal-arroz-premium"), e("natal-carne-kit", 0, 8), e("natal-recheio", 0, 2)]), preco: 399, precoAntigo: 410 },
@@ -470,6 +470,11 @@ function natalDocesV2(c: Cardapio): Cardapio {
   return { ...c, itens, adicionais };
 }
 
+/** Ceia: Kit 1 passa a vir com frango assado com batata e cebola. */
+function natalKit1FrangoV1(c: Cardapio): Cardapio {
+  return { ...c, itens: c.itens.map((i) => (i.id === "natal-kit-1" && !i.descricao.includes("frango assado") ? { ...i, descricao: "1 frango assado com batata e cebola · " + i.descricao } : i)) };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
@@ -492,6 +497,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["guarana-antigo-fora-v1", guaranaAntigoForaV1],
   ["ceia-natal-v1", ceiaNatalV1],
   ["natal-doces-v2", natalDocesV2],
+  ["natal-kit1-frango-v1", natalKit1FrangoV1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */
