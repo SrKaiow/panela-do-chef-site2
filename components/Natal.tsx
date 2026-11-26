@@ -223,6 +223,12 @@ export default function Natal({
                       if (s.porKg && semPreco(cardapio, i)) { window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(`Oi! Quero saber o preço do ${i.nome} para a Ceia de Natal.`)}`, "_blank"); return; }
                       setAberto(i);
                     }} disabled={!aberta || !i.disponivel}>
+                      {kits && i.imagem && (
+                        <span className="natal-kit-foto">
+                          <img src={i.imagem} alt="" loading="lazy" />
+                          <small>Foto ilustrativa</small>
+                        </span>
+                      )}
                       {s.doces && (i.imagem
                         ? <img className="natal-doce-foto" src={i.imagem} alt={i.nome} loading="lazy" />
                         : <span className="natal-doce-emoji" aria-hidden="true">{EMOJI_DOCE[i.id] ?? "🍰"}</span>)}

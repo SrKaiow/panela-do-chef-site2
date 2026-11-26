@@ -1087,3 +1087,17 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 @media (max-width: 560px) { .natal-cartao.mais-pedido .natal-doce-foto { aspect-ratio: 4 / 3; } }
 .natal-cartao.doce .natal-mais-pedido { z-index: 1; }
 .natal-sem-doce-lista button img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; margin-bottom: 4px; }
+
+/* Foto nos kits */
+.natal-kit-foto { position: relative; display: block; margin: -16px -16px 2px; }
+.natal-kit-foto img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 17px 17px 0 0; }
+.natal-kit-foto small { position: absolute; right: 8px; bottom: 6px; padding: 1px 6px; border-radius: 6px; background: rgba(0, 0, 0, 0.55); color: #f6eedf; font-size: 0.62rem; }
+.natal-kits.podio .natal-cartao.centro .natal-kit-foto { margin-top: -26px; }
+@media (min-width: 900px) {
+  .natal-kits.podio .natal-cartao.baixo { display: grid; grid-template-columns: 320px 1fr; column-gap: 22px; row-gap: 10px; align-content: start; }
+  .natal-kits.podio .natal-cartao.baixo > * { grid-column: 2; }
+  .natal-kits.podio .natal-cartao.baixo > .natal-kit-foto { grid-column: 1; grid-row: 1 / span 6; margin: -16px 0 -14px -16px; }
+  .natal-kits.podio .natal-cartao.baixo .natal-kit-foto img { height: 100%; aspect-ratio: auto; border-radius: 17px 0 0 17px; }
+}
+.natal-melhor { z-index: 2; }
+.natal-economia { justify-self: start; }

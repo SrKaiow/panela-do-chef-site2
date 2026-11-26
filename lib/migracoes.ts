@@ -544,6 +544,11 @@ function natalDocesFotosV1(c: Cardapio): Cardapio {
   return { ...c, itens, adicionais };
 }
 
+/** Ceia: foto da mesa de Natal nos kits (um recorte para cada kit). */
+function natalKitsFotosV1(c: Cardapio): Cardapio {
+  return { ...c, itens: c.itens.map((i) => (/^natal-kit-[1-4]$/.test(i.id) ? { ...i, imagem: `/fotos/natal/${i.id.replace("natal-", "")}.jpg` } : i)) };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
@@ -571,6 +576,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["natal-kits-v2", natalKitsV2],
   ["natal-promo-kits-v1", natalPromoKitsV1],
   ["natal-doces-fotos-v1", natalDocesFotosV1],
+  ["natal-kits-fotos-v1", natalKitsFotosV1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */
