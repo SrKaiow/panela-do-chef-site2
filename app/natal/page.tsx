@@ -24,6 +24,7 @@ export default async function PaginaNatal() {
       aberta
       raioMilhas={CEIA.raioMilhas}
       ultimoDia={CEIA.ultimoDia}
+      encerraEm={CEIA.encerraEm}
       whatsapp={whatsappInternacional(loja.telefone)}
       cartao={ajustes.pagamentos.cartao && cartaoConfigurado()}
     />

@@ -1028,3 +1028,43 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .natal-melhor { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); white-space: nowrap; padding: 4px 12px; border-radius: 999px; background: #ffd814; color: #3a0a0f; font-weight: 900; font-size: 0.76rem; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3); animation: natal-pulsa 1.8s ease-in-out infinite; }
 .opcao-nome .extra s.avulso { opacity: 0.55; margin-right: 6px; font-weight: 400; }
 .natal-cartao.kit { position: relative; }
+
+/* Ceia: menu interativo */
+.natal-contagem { display: grid; gap: 6px; }
+.natal-contagem-titulo { font-weight: 800; font-size: 0.9rem; color: #ffd814; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); }
+.natal-contagem-caixas { display: flex; gap: 8px; }
+.natal-contagem-caixas > span { display: grid; justify-items: center; min-width: 62px; padding: 8px 6px 6px; border-radius: 12px; background: rgba(10, 29, 20, 0.75); border: 1px solid rgba(240, 212, 154, 0.55); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: #d9cbb2; backdrop-filter: blur(4px); }
+.natal-contagem-caixas b { font-size: 1.7rem; line-height: 1; color: #fff; font-weight: 900; }
+.natal-atalhos { position: sticky; top: 0; z-index: 20; display: flex; gap: 8px; overflow-x: auto; padding: 10px 16px; background: rgba(10, 29, 20, 0.92); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(217, 178, 106, 0.35); scrollbar-width: none; justify-content: center; }
+.natal-atalhos a { flex: none; padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(240, 212, 154, 0.55); color: #f6eedf; text-decoration: none; font-weight: 700; font-size: 0.9rem; background: rgba(255, 255, 255, 0.05); }
+.natal-atalhos a:hover { background: #f0d49a; color: #10261a; }
+@media (max-width: 560px) { .natal-atalhos { justify-content: flex-start; } }
+.natal-quiz { display: grid; gap: 8px; padding: 20px; border-radius: 22px; text-align: center; justify-items: center; background: radial-gradient(120% 140% at 50% 0%, rgba(255, 216, 20, 0.16), transparent 60%), rgba(255, 255, 255, 0.04); border: 2px dashed rgba(240, 212, 154, 0.6); scroll-margin-top: 80px; }
+.natal-quiz-pergunta { font-family: var(--fonte-titulo); font-size: clamp(1.6rem, 5vw, 2.3rem); text-transform: uppercase; line-height: 1; color: #fff; }
+.natal-quiz-sub { color: #d9cbb2; font-size: 0.92rem; }
+.natal-quiz-opcoes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; width: 100%; max-width: 680px; margin-top: 6px; }
+@media (max-width: 560px) { .natal-quiz-opcoes { grid-template-columns: repeat(2, 1fr); } }
+.natal-quiz-opcoes button { display: grid; justify-items: center; gap: 2px; padding: 14px 8px; border-radius: 16px; border: 2px solid rgba(240, 212, 154, 0.5); background: rgba(10, 29, 20, 0.6); color: #f6eedf; font: inherit; cursor: pointer; transition: transform 0.15s, border-color 0.15s, background 0.15s; }
+.natal-quiz-opcoes button span { font-size: 1.9rem; }
+.natal-quiz-opcoes button b { font-size: 1.05rem; }
+.natal-quiz-opcoes button small { color: #d9cbb2; font-size: 0.75rem; }
+.natal-quiz-opcoes button:hover { transform: translateY(-3px); border-color: #ffd814; }
+.natal-quiz-opcoes button[aria-pressed="true"] { background: #ffd814; border-color: #ffd814; color: #2a1206; transform: translateY(-3px) scale(1.03); }
+.natal-quiz-opcoes button[aria-pressed="true"] small { color: #5a3a10; }
+.natal-quiz-opcoes button.premium { border-color: rgba(214, 40, 40, 0.8); }
+.natal-quiz-resposta { margin: 6px 0 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; font-size: 1rem; animation: natal-entra 0.35s ease-out; }
+.natal-quiz-resposta strong { color: #ffd814; }
+.natal-quiz-resposta button { padding: 8px 16px; border-radius: 999px; border: 0; background: #2bd67b; color: #062014; font-weight: 900; font: inherit; font-weight: 900; cursor: pointer; animation: natal-pulsa 1.4s ease-in-out infinite; }
+@keyframes natal-entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.natal-cartao.kit { scroll-margin-top: 90px; }
+.natal-cartao.kit.indicado { border: 2px solid #2bd67b; box-shadow: 0 0 0 5px rgba(43, 214, 123, 0.18), 0 18px 44px rgba(0, 0, 0, 0.4); transform: translateY(-6px) scale(1.02); }
+.natal-melhor.indicado { background: #2bd67b; color: #062014; }
+.natal-economia { align-self: flex-start; padding: 3px 10px; border-radius: 999px; background: #d62828; color: #fff; font-weight: 900; font-size: 0.78rem; box-shadow: 0 4px 12px rgba(214, 40, 40, 0.35); }
+.natal-por { display: block; font-size: 0.7rem !important; text-transform: uppercase; letter-spacing: 0.06em; color: #ffd814; font-weight: 800; margin-bottom: 1px; }
+.natal-chamar { position: relative; overflow: hidden; animation: natal-chama 2.6s ease-in-out infinite; box-shadow: 0 10px 30px rgba(255, 216, 20, 0.35); }
+.natal-chamar::after { content: ""; position: absolute; top: 0; bottom: 0; width: 40%; left: -60%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent); animation: natal-brilho 2.6s ease-in-out infinite; pointer-events: none; }
+.natal-chamar-textos { display: grid; text-align: left; line-height: 1.15; }
+.natal-chamar-textos small { font-size: 0.72rem; font-weight: 700; opacity: 0.8; }
+@keyframes natal-chama { 0%, 70%, 100% { transform: none; } 75% { transform: scale(1.04) rotate(-1deg); } 80% { transform: scale(1.04) rotate(1deg); } 85% { transform: scale(1.04) rotate(-1deg); } 90% { transform: none; } }
+@keyframes natal-brilho { 0%, 55% { left: -60%; } 100% { left: 130%; } }
+@media (prefers-reduced-motion: reduce) { .natal-chamar, .natal-chamar::after, .natal-melhor, .natal-quiz-resposta button { animation: none; } }

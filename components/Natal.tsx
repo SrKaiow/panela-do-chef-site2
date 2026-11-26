@@ -18,7 +18,7 @@ const CHAVE = "panela-carrinho-natal-v1";
 const CHAVE_CLIENTE = "panela-cliente";
 
 const SECOES: { prefixo: string; titulo: string; sub: string; porKg?: boolean; doces?: boolean }[] = [
-  { prefixo: "natal-kit-", titulo: "Kits completos", sub: "A ceia completa, já com as carnes. Escolha pelo número de pessoas e, se quiser, turbine com mais carne pagando preço de kit." },
+  { prefixo: "natal-kit-", titulo: "Kits completos", sub: "A ceia completa, já com as carnes. Escolha pelo número de pessoas e, se quiser, adicione mais carne." },
   { prefixo: "natal-doce-", titulo: "Doces de Natal", sub: "A ceia não termina sem sobremesa: chocotone, pudim, morango na travessa, mousses e brigadeiros.", doces: true },
   { prefixo: "natal-recheado-", titulo: "Recheados de Natal", sub: "Preço por kg: no + e − você escolhe quantos kg. Nos recheados, escolha o recheio: calabresa, bacon, queijo, cenoura, linguicinha ou o tempero do Chef.", porKg: true },
   { prefixo: "natal-porcao-", titulo: "Porções extras", sub: "Quer mais acompanhamento? Some à sua ceia." },
@@ -34,13 +34,31 @@ const EMOJI_DOCE: Record<string, string> = {
   "natal-doce-chocotone": "🎂", "natal-doce-morango": "🍓", "natal-doce-pudim": "🍮", "natal-doce-mousse": "🍧",
   "natal-doce-cesta": "🧺", "natal-doce-chocopote": "🍫", "natal-doce-brigadeiros": "🟤", "natal-doce-brigadeiro-40": "🍬", "natal-doce-paodemel": "🍯",
 };
+/** Contagem regressiva até o fim das encomendas (atualiza a cada segundo; null quando acabou). */
+function useContagem(fim: string) {
+  const [agora, setAgora] = useState<number | null>(null);
+  useEffect(() => {
+    setAgora(Date.now());
+    const t = setInterval(() => setAgora(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  if (agora == null) return null;
+  const ms = Date.parse(fim) - agora;
+  if (ms <= 0) return null;
+  const seg = Math.floor(ms / 1000);
+  return { d: Math.floor(seg / 86400), h: Math.floor((seg % 86400) / 3600), m: Math.floor((seg % 3600) / 60), s: seg % 60 };
+}
+
 const temDoce = (linhas: LinhaCarrinho[]) => linhas.some((l) => l.itemId.startsWith("natal-doce-"));
 
 export default function Natal({
-  cardapio, datas, aberta, raioMilhas, ultimoDia, whatsapp, cartao,
+  cardapio, datas, aberta, raioMilhas, ultimoDia, encerraEm, whatsapp, cartao,
 }: {
-  cardapio: Cardapio; datas: Data[]; aberta: boolean; raioMilhas: number; ultimoDia: string; whatsapp: string; cartao: boolean;
+  cardapio: Cardapio; datas: Data[]; aberta: boolean; raioMilhas: number; ultimoDia: string; encerraEm: string; whatsapp: string; cartao: boolean;
 }) {
+  // Quiz "pra quantas pessoas?": marca o kit ideal e o botão flutuante passa a chamar para ele.
+  const [indicado, setIndicado] = useState<string | null>(null);
+  const restante = useContagem(encerraEm);
   const [carrinho, setCarrinho] = useState<Linha[]>([]);
   const [aberto, setAberto] = useState<Item | null>(null);
   const [fechando, setFechando] = useState(false);
@@ -81,8 +99,20 @@ export default function Natal({
   const anteriorDoMelhor = melhorKit
     ? kitsLista.filter((i) => porPessoa(i) > 0 && precoUnitario(cardapio, i, {}) < precoUnitario(cardapio, melhorKit, {})).sort((a, b) => precoUnitario(cardapio, b, {}) - precoUnitario(cardapio, a, {}))[0]
     : undefined;
-  const isca = cardapio.itens.find((i) => i.id === "natal-recheado-picanha") ?? cardapio.itens.find((i) => i.id.startsWith("natal-recheado-") && i.preco > 0);
-  const iscaCarne = isca && isca.preco > 0 ? { nome: isca.nome, avulso: Math.round(isca.preco * 100) } : null;
+  const economia = (i: Item) => (i.precoAntigo ? Math.round(i.precoAntigo * 100) - precoUnitario(cardapio, i, {}) : 0);
+  const kitIndicado = indicado ? kitsLista.find((k) => k.id === indicado) : undefined;
+  function indicar(id: string) {
+    setIndicado(id);
+    setTimeout(() => document.getElementById("kit-" + id)?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+  }
+  // Pessoas -> kit (pelo maior número de pessoas de cada kit; o Premium é o último botão).
+  const OPCOES_PESSOAS = [
+    { rotulo: "Até 4", emoji: "👨‍👩‍👧", n: 4 },
+    { rotulo: "5 a 9", emoji: "👨‍👩‍👧‍👦", n: 9 },
+    { rotulo: "10 a 15", emoji: "🎉", n: 15 },
+  ];
+  const kitPara = (n: number) => kitsLista.filter((k) => maxPessoas(k.nome) >= n).sort((a, b) => maxPessoas(a.nome) - maxPessoas(b.nome))[0];
+  const kitPremium = kitsLista.find((k) => /premium/i.test(k.nome));
 
   const dataFim = ultimoDia.split("-").reverse().slice(0, 2).join("/");
 
@@ -100,21 +130,70 @@ export default function Natal({
             <li>🚚 Entrega <strong>grátis até {raioMilhas} milhas</strong></li>
             <li>💳 Pagamento <strong>no cartão</strong></li>
           </ul>
-          <a href="#natal-kits" className="principal natal-cta"><span>Começar pelos kits</span><span aria-hidden="true">↓</span></a>
+          {aberta && restante && (
+            <div className="natal-contagem" role="timer" aria-label="Tempo até fechar as encomendas">
+              <span className="natal-contagem-titulo">⏰ As encomendas fecham em</span>
+              <span className="natal-contagem-caixas">
+                <span><b className="num">{restante.d}</b>dias</span>
+                <span><b className="num">{String(restante.h).padStart(2, "0")}</b>horas</span>
+                <span><b className="num">{String(restante.m).padStart(2, "0")}</b>min</span>
+                <span><b className="num">{String(restante.s).padStart(2, "0")}</b>seg</span>
+              </span>
+            </div>
+          )}
+          <a href="#natal-quiz" className="principal natal-cta"><span>Montar minha ceia agora</span><span aria-hidden="true">↓</span></a>
         </div>
       </header>
+
+      {aberta && (
+        <nav className="natal-atalhos" aria-label="Ir para">
+          <a href="#natal-kits">🎁 Kits</a>
+          <a href="#natal-doces">🍰 Doces</a>
+          <a href="#natal-carnes">🥩 Carnes</a>
+          <a href="#natal-porcoes">🥗 Porções</a>
+        </nav>
+      )}
 
       {!aberta && (
         <p className="miolo natal-aviso">As encomendas da Ceia de Natal fecharam em {dataFim}. Fale com a gente no WhatsApp para ver se ainda dá.</p>
       )}
 
       <main className="miolo natal-cardapio">
+        {aberta && kitsLista.length > 0 && (
+          <section id="natal-quiz" className="natal-quiz">
+            <span className="natal-quiz-pergunta">🎅 Pra quantas pessoas é a sua ceia?</span>
+            <span className="natal-quiz-sub">Toque e a gente mostra o kit ideal pra você.</span>
+            <div className="natal-quiz-opcoes">
+              {OPCOES_PESSOAS.map((o) => {
+                const k = kitPara(o.n);
+                if (!k) return null;
+                return (
+                  <button key={o.rotulo} type="button" aria-pressed={indicado === k.id} onClick={() => indicar(k.id)}>
+                    <span aria-hidden="true">{o.emoji}</span><b>{o.rotulo}</b><small>pessoas</small>
+                  </button>
+                );
+              })}
+              {kitPremium && (
+                <button type="button" className="premium" aria-pressed={indicado === kitPremium.id} onClick={() => indicar(kitPremium.id)}>
+                  <span aria-hidden="true">👑</span><b>Quero o melhor</b><small>Premium</small>
+                </button>
+              )}
+            </div>
+            {kitIndicado && (
+              <p className="natal-quiz-resposta">
+                <span>👉 O ideal pra você é o <strong>{kitIndicado.nome.split(" · ")[0]}</strong>: {formatar(precoUnitario(cardapio, kitIndicado, {}))}
+                {economia(kitIndicado) > 0 && <> · você economiza <strong>{formatar(economia(kitIndicado))}</strong></>}</span>
+                <button type="button" onClick={() => setAberto(kitIndicado)}>Quero esse!</button>
+              </p>
+            )}
+          </section>
+        )}
         {SECOES.map((s, n) => {
           const itens = cardapio.itens.filter((i) => i.id.startsWith(s.prefixo));
           if (!itens.length) return null;
           const kits = s.prefixo === "natal-kit-";
           return (
-            <section key={s.prefixo} id={n === 0 ? "natal-kits" : s.doces ? "natal-doces" : undefined} className={"natal-secao" + (s.doces ? " natal-doces" : "")}>
+            <section key={s.prefixo} id={n === 0 ? "natal-kits" : s.doces ? "natal-doces" : s.porKg ? "natal-carnes" : s.prefixo === "natal-porcao-" ? "natal-porcoes" : undefined} className={"natal-secao" + (s.doces ? " natal-doces" : "")}>
               {s.doces && <span className="natal-doces-selo">🍰 Não esqueça a sobremesa</span>}
               <h2>{s.titulo}</h2>
               <p className="dica">{s.sub}</p>
@@ -128,14 +207,16 @@ export default function Natal({
                   const [nome, pessoas] = i.nome.split(" · ");
                   const premium = /premium/i.test(i.nome);
                   return (
-                    <button key={i.id} type="button" className={"natal-cartao" + (kits ? " kit" : "") + (kits && melhorKit?.id === i.id ? " melhor" : "") + (premium ? " premium" : "") + (s.doces ? " doce" : "") + (i.destaque ? " mais-pedido" : "")} onClick={() => {
+                    <button key={i.id} id={kits ? "kit-" + i.id : undefined} type="button" className={"natal-cartao" + (kits ? " kit" : "") + (kits && melhorKit?.id === i.id ? " melhor" : "") + (kits && indicado === i.id ? " indicado" : "") + (premium ? " premium" : "") + (s.doces ? " doce" : "") + (i.destaque ? " mais-pedido" : "")} onClick={() => {
                       if (!aberta) return;
                       if (s.porKg && semPreco(cardapio, i)) { window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(`Oi! Quero saber o preço do ${i.nome} para a Ceia de Natal.`)}`, "_blank"); return; }
                       setAberto(i);
                     }} disabled={!aberta || !i.disponivel}>
                       {s.doces && <span className="natal-doce-emoji" aria-hidden="true">{EMOJI_DOCE[i.id] ?? "🍰"}</span>}
                       {i.destaque && <span className="natal-mais-pedido">⭐ Mais pedido</span>}
-                      {kits && melhorKit?.id === i.id && <span className="natal-melhor">💎 Melhor custo-benefício</span>}
+                      {kits && indicado === i.id ? <span className="natal-melhor indicado">👉 Ideal pra você</span>
+                        : kits && melhorKit?.id === i.id && <span className="natal-melhor">💎 Melhor custo-benefício</span>}
+                      {kits && economia(i) > 0 && <span className="natal-economia">🔥 Economize {formatar(economia(i))}</span>}
                       <span className="natal-cartao-topo">
                         <strong>{kits ? nome : i.nome}</strong>
                         {kits && pessoas && <span className={"natal-pessoas" + (premium ? " premium" : "")}>{pessoas}</span>}
@@ -143,13 +224,6 @@ export default function Natal({
                       {kits ? (
                         <>
                         <ul className="natal-lista">{i.descricao.split(" · ").map((x) => <li key={x} className={/incluso/i.test(x) ? "brinde" : undefined}>{x}</li>)}</ul>
-                        {iscaCarne && (
-                          <span className="natal-turbo">
-                            <b>🔓 Preço de kit liberado</b>
-                            <span>Quer ainda mais carne? Quem leva kit paga menos em cada kg extra:</span>
-                            <span className="natal-turbo-ex">{iscaCarne.nome.replace(" recheada", "")} <s>{formatar(iscaCarne.avulso)}</s> <strong>{formatar(iscaCarne.avulso - DESCONTO_KG * 100)}</strong>/kg</span>
-                          </span>
-                        )}
                         </>
                       ) : (
                         <span className="natal-desc">{i.descricao}</span>
@@ -162,6 +236,7 @@ export default function Natal({
                       )}
                       <span className="natal-cartao-base">
                         <span className={"natal-preco" + (semPreco(cardapio, i) ? " a-definir" : "")}>
+                          {kits && i.precoAntigo ? <small className="natal-por">por apenas</small> : null}
                           {semPreco(cardapio, i) ? (s.porKg ? "Sob consulta" : "Preço a definir") : formatar(precoUnitario(cardapio, i, {}))}
                           {s.porKg && !semPreco(cardapio, i) && <small>/kg</small>}
                           {i.precoAntigo ? <s className="natal-antigo">{formatar(Math.round(i.precoAntigo * 100))}</s> : null}
@@ -178,16 +253,32 @@ export default function Natal({
         <p className="dica natal-rodape">Tudo é preparado na mesma cozinha, então pode haver traços de alergênicos. Dúvidas? <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noreferrer">Fale com a gente no WhatsApp</a>.</p>
       </main>
 
-      {qtdItens > 0 && (
+      {aberta && !aberto && !fechando && (
         <div className="natal-barra">
-          <button type="button" className="principal" onClick={() => setFechando(true)}>
-            <span>🎄 Minha ceia · {carrinho.length} {carrinho.length === 1 ? "item" : "itens"}</span>
-            <span>{faltaPreco ? "Ver" : formatar(total)}</span>
-          </button>
+          {qtdItens > 0 ? (
+            <button type="button" className="principal natal-chamar" onClick={() => setFechando(true)}>
+              <span className="natal-chamar-textos">
+                <span>🎄 Finalizar minha ceia · {carrinho.length} {carrinho.length === 1 ? "item" : "itens"}</span>
+                {restante && <small>fecha em {restante.d}d {restante.h}h {restante.m}min</small>}
+              </span>
+              <span>{faltaPreco ? "Ver" : formatar(total)}</span>
+            </button>
+          ) : (
+            <button type="button" className="principal natal-chamar" onClick={() => {
+              if (kitIndicado) setAberto(kitIndicado);
+              else document.getElementById("natal-quiz")?.scrollIntoView({ behavior: "smooth", block: "center" });
+            }}>
+              <span className="natal-chamar-textos">
+                <span>{kitIndicado ? `🎁 Quero o ${kitIndicado.nome.split(" · ")[0]}!` : "🎅 Garanta a sua ceia de Natal"}</span>
+                {restante && <small>⏰ encomendas fecham em {restante.d}d {restante.h}h {restante.m}min</small>}
+              </span>
+              <span>{kitIndicado ? formatar(precoUnitario(cardapio, kitIndicado, {})) : "Começar →"}</span>
+            </button>
+          )}
         </div>
       )}
 
-      {aberto && <FolhaItem cardapio={cardapio} onFechar={() => { setAberto(null); if (voltar) { setVoltar(false); setFechando(true); } }} item={aberto.id.startsWith("natal-kit-") ? { ...aberto, descricao: `🔓 Preço de kit liberado! O kit já vem completo, com carne. Se quiser turbinar, toda carne que você adicionar aqui sai mais barata do que comprando avulsa. Toque no + para cada kg.\n\n${aberto.descricao}` } : aberto} onAdicionar={adicionar} />}
+      {aberto && <FolhaItem cardapio={cardapio} onFechar={() => { setAberto(null); if (voltar) { setVoltar(false); setFechando(true); } }} item={aberto.id.startsWith("natal-kit-") ? { ...aberto, descricao: `${aberto.precoAntigo ? `🔥 De ${formatar(Math.round(aberto.precoAntigo * 100))} por apenas ${formatar(precoUnitario(cardapio, aberto, {}))}!\n` : ""}O kit já vem completo, com carne. Quer mais? Toque no + da carne para cada kg extra.\n\n${aberto.descricao}` } : aberto} onAdicionar={adicionar} />}
       {fechando && (
         <Finalizar
           cardapio={cardapio} carrinho={carrinho} setCarrinho={setCarrinho} total={total} faltaPreco={faltaPreco}
@@ -215,6 +306,11 @@ function Finalizar({
   const [data, setData] = useState(datas[0]?.valor ?? "");
   const [obs, setObs] = useState("");
   const [cotacao, setCotacao] = useState<Cotacao>(null);
+  // Quanto o cliente economiza: promoção dos kits (de/por) + carne extra no preço de kit.
+  const economiaTotal = carrinho.reduce((soma, l) => {
+    const it = cardapio.itens.find((i) => i.id === l.itemId);
+    return soma + (it?.precoAntigo ? (Math.round(it.precoAntigo * 100) - Math.round(it.preco * 100)) * l.qtd : 0);
+  }, 0) + kgNoKit(carrinho) * DESCONTO_KG * 100;
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
 
@@ -339,7 +435,7 @@ function Finalizar({
         {cotacao && !cotacao.ok && !fora && <p className="erro">{cotacao.motivo}</p>}
         <label className="campo">Observação <span className="dica">(opcional)</span><textarea maxLength={300} value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Ex.: tocar a campainha do fundo" /></label>
 
-        {kgNoKit(carrinho) > 0 && <p className="natal-ok">🎉 Preço de kit: você está economizando <strong>£{(kgNoKit(carrinho) * DESCONTO_KG).toFixed(2)}</strong> com {kgNoKit(carrinho)}kg de carne no preço de kit.</p>}
+        {economiaTotal > 0 && <p className="natal-ok">🎉 Você está economizando <strong>{formatar(economiaTotal)}</strong> nesta ceia!</p>}
         <div className="totais">
           <div><span>Entrega</span><span>Grátis</span></div>
           <div className="total"><span>Total</span><span>{faltaPreco ? "a definir" : formatar(total)}</span></div>
