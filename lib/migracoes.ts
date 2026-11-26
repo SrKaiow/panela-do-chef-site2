@@ -377,7 +377,7 @@ function ceiaNatalV1(c: Cardapio): Cardapio {
   grupo("natal-doce-brig-caixa", "Caixa", [op("Caixa com 4 unidades", 0, true), op("Caixa com 6 unidades", 2), op("Caixa com 8 unidades", 4)]);
   grupo("natal-doce-chocopote", "Sabor", [op("Ninho com Nutella"), op("Doce de leite"), op("Brigadeiro")]);
   grupo("natal-doce-chocotone", "Sabor", [op("Ninho com Nutella"), op("Doce de leite"), op("Brigadeiro"), op("Brigadeiro com Ninho")]);
-  grupo("natal-doce-mousse", "Sabor", [op("Maracujá"), op("Morango"), op("Uva"), op("Chocolate")]);
+  grupo("natal-doce-mousse", "Sabor", [op("Maracujá"), op("Morango"), op("Limão"), op("Chocolate")]);
   // Carne do kit: cada toque = 1kg daquela carne, com preço de kit (avulso − £2/kg).
   a["natal-carne-kit"] = {
     nome: "Carne do kit (cada + = 1kg)",
@@ -402,8 +402,8 @@ function ceiaNatalV1(c: Cardapio): Cardapio {
     { ...it("natal-doce-chocotone", "Chocotone recheado · 1kg", "O mais pedido! Chocotone de 1kg recheado: Ninho com Nutella, doce de leite, brigadeiro ou brigadeiro com Ninho.", [e("natal-doce-chocotone")]), preco: 50, destaque: true },
     { ...it("natal-doce-morango", "Morango na travessa", "Tamanho P (4 a 6 pessoas) £30 · tamanho G (10 a 12 pessoas) £60.", [e("natal-doce-morango-tam")]), preco: 30 },
     { ...it("natal-doce-pudim", "Pudim tradicional", "Tamanho único."), preco: 35 },
-    { ...it("natal-doce-mousse", "Mousse na travessa · 1kg", "Maracujá, morango, uva ou chocolate.", [e("natal-doce-mousse")]), preco: 30 },
-    { ...it("natal-doce-cesta", "Mini cesta de Natal", "1 caixa com 3 pães de mel · 1 Chocotone no pote com acessórios · 1 caixa com 6 brigadeiros", [e("natal-doce-chocopote")]), preco: 42 },
+    { ...it("natal-doce-mousse", "Mousse na travessa · 1kg", "Maracujá, morango, limão ou chocolate.", [e("natal-doce-mousse")]), preco: 30 },
+    { ...it("natal-doce-cesta", "Mini cesta de Natal", "1 caixa com 3 pães de mel · 1 Chocotone no pote com acessórios · 1 caixa com 6 brigadeiros", [e("natal-doce-chocopote")]), preco: 40 },
     { ...it("natal-doce-chocopote", "Chocotone no pote · 230g", "Ninho com Nutella, doce de leite ou brigadeiro.", [e("natal-doce-chocopote")]), preco: 12 },
     { ...it("natal-doce-brigadeiros", "Brigadeiros 20g · caixa", "Caixa com 4 (£8), 6 (£10) ou 8 unidades (£12).", [e("natal-doce-brig-caixa")]), preco: 8 },
     { ...it("natal-doce-brigadeiro-40", "Brigadeiro artesanal 40g", "Preço por unidade."), preco: 3 },
@@ -459,6 +459,17 @@ function camaraoMassaV1(c: Cardapio): Cardapio {
   return { ...c, adicionais: { ...c.adicionais, "massa-proteina": { ...g, opcoes: g.opcoes.map((o) => (/camar/i.test(o.nome) ? { ...o, preco: 3 } : o)) } } };
 }
 
+/** Ceia: mini cesta £40 e mousse de limão no lugar da de uva. */
+function natalDocesV2(c: Cardapio): Cardapio {
+  const itens = c.itens.map((i) =>
+    i.id === "natal-doce-cesta" ? { ...i, preco: 40 }
+    : i.id === "natal-doce-mousse" ? { ...i, descricao: "Maracujá, morango, limão ou chocolate." }
+    : i);
+  const g = c.adicionais?.["natal-doce-mousse"];
+  const adicionais = g ? { ...c.adicionais, "natal-doce-mousse": { ...g, opcoes: g.opcoes.map((o) => (o.nome === "Uva" ? { ...o, nome: "Limão" } : o)) } } : c.adicionais;
+  return { ...c, itens, adicionais };
+}
+
 const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["adicionais-acai-v1", adicionaisAcaiV1],
   ["precos-reais-v1", precosReaisV1],
@@ -480,6 +491,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["guarana-v1", guaranaV1],
   ["guarana-antigo-fora-v1", guaranaAntigoForaV1],
   ["ceia-natal-v1", ceiaNatalV1],
+  ["natal-doces-v2", natalDocesV2],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */

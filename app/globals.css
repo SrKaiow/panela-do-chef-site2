@@ -986,20 +986,24 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .folha .desc { white-space: pre-line; }
 
 /* Doces de Natal: seção em destaque */
-.natal-doces { position: relative; padding: 22px 18px 20px; border-radius: 24px; background: radial-gradient(120% 120% at 0% 0%, rgba(255, 216, 20, 0.16), transparent 55%), linear-gradient(160deg, #7a0f1a, #4b0910); border: 2px solid #d9b26a; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35); }
-.natal-doces::before { content: ""; position: absolute; inset: 0; border-radius: 22px; background: url("/fotos/natal/flocos.jpg") center / cover; opacity: 0.18; mix-blend-mode: screen; pointer-events: none; }
+.natal-doces { position: relative; overflow: hidden; padding: 22px 18px 20px; border-radius: 24px; background: linear-gradient(180deg, rgba(8, 20, 14, 0.72) 0%, rgba(8, 20, 14, 0.82) 45%, rgba(8, 20, 14, 0.9) 100%), url("/fotos/natal/ceia-mesa.jpg") center 35% / cover no-repeat; border: 2px solid #d9b26a; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35); }
+.natal-doces::before { content: ""; position: absolute; inset: 0; border-radius: 22px; background: url("/fotos/natal/flocos.jpg") center / cover; opacity: 0.12; mix-blend-mode: screen; pointer-events: none; }
+.natal-credito { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 14px; padding: 6px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.92); color: #2a1a12; font-size: 0.9rem; text-decoration: none; }
+.natal-credito span { color: #8a1420; }
+.natal-credito b { font-style: italic; font-family: Georgia, "Times New Roman", serif; }
+.natal-credito:hover { background: #fff; }
 .natal-doces > * { position: relative; }
 .natal-doces h2 { color: #fff; font-size: 2.4rem; }
 .natal-doces > .dica { color: #f6dccb; }
 .natal-doces-selo { display: inline-block; margin-bottom: 6px; padding: 5px 12px; border-radius: 999px; background: #ffd814; color: #3a0a0f; font-weight: 900; font-size: 0.85rem; animation: natal-pulsa 1.6s ease-in-out infinite; }
 @keyframes natal-pulsa { 50% { transform: scale(1.05); } }
-.natal-cartao.doce { background: rgba(255, 255, 255, 0.08); border-color: rgba(240, 212, 154, 0.55); position: relative; }
+.natal-cartao.doce { background: rgba(255, 255, 255, 0.07); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); border-color: rgba(240, 212, 154, 0.55); position: relative; }
 .natal-doce-emoji { font-size: 2.4rem; line-height: 1; }
 .natal-cartao.mais-pedido { border: 2px solid #ffd814; box-shadow: 0 0 28px rgba(255, 216, 20, 0.35); grid-column: span 2; }
 @media (max-width: 560px) { .natal-cartao.mais-pedido { grid-column: auto; } }
 .natal-mais-pedido { position: absolute; top: -12px; right: 14px; padding: 4px 10px; border-radius: 999px; background: #ffd814; color: #3a0a0f; font-weight: 900; font-size: 0.78rem; }
 /* Fechamento sem sobremesa */
-.natal-sem-doce { display: grid; gap: 6px; padding: 14px; border-radius: 16px; background: linear-gradient(160deg, #7a0f1a, #4b0910); border: 2px solid #ffd814; color: #fff; }
+.natal-sem-doce { display: grid; gap: 6px; padding: 14px; border-radius: 16px; background: linear-gradient(180deg, rgba(8, 20, 14, 0.78), rgba(8, 20, 14, 0.9)), url("/fotos/natal/ceia-mesa.jpg") center / cover no-repeat; border: 2px solid #ffd814; color: #fff; }
 .natal-sem-doce > strong { font-size: 1.1rem; }
 .natal-sem-doce > span { font-size: 0.9rem; color: #f6dccb; }
 .natal-sem-doce-lista { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 4px; }

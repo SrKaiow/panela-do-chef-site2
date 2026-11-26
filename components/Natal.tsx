@@ -106,6 +106,11 @@ export default function Natal({
               {s.doces && <span className="natal-doces-selo">🍰 Não esqueça a sobremesa</span>}
               <h2>{s.titulo}</h2>
               <p className="dica">{s.sub}</p>
+              {s.doces && (
+                <a className="natal-credito" href="https://www.instagram.com/dlauradocesartesanais/" target="_blank" rel="noopener noreferrer">
+                  <span aria-hidden="true">♥</span> Doces artesanais por <b>@dlauradocesartesanais</b>
+                </a>
+              )}
               <div className={kits ? "natal-kits" : "natal-grade"}>
                 {itens.map((i) => {
                   const [nome, pessoas] = i.nome.split(" · ");
@@ -277,7 +282,7 @@ function Finalizar({
         {!temDoce(carrinho) && doces.length > 0 && (
           <section className="natal-sem-doce" aria-label="Sobremesa">
             <strong>🍰 Sua ceia está sem sobremesa!</strong>
-            <span>Feche a noite com um doce do Chef:</span>
+            <span>Feche a noite com um doce artesanal da @dlauradocesartesanais:</span>
             <div className="natal-sem-doce-lista">
               {doces.map((d) => (
                 <button key={d.id} type="button" onClick={() => escolherDoce(d)}>
