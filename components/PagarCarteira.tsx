@@ -35,6 +35,15 @@ export default function PagarCarteira({ token, total, link }: { token: string; t
   const [apple, setApple] = useState<Carteira | null>(null);
   const [google, setGoogle] = useState<Carteira | null>(null);
   const [erro, setErro] = useState("");
+  // Depois de uma falha na carteira, o "Pagar com cartão" vira o botão principal.
+  const [falhou, setFalhou] = useState(false);
+
+  function registrarFalha(carteira: string, etapa: string, detalhe: unknown) {
+    try {
+      const texto = typeof detalhe === "string" ? detalhe : JSON.stringify(detalhe, Object.getOwnPropertyNames(detalhe ?? {}));
+      fetch(`/api/pedido/${token}/erro-carteira`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ carteira, etapa, detalhe: texto }), keepalive: true }).catch(() => {});
+    } catch {}
+  }
   const iniciou = useRef(false);
 
   useEffect(() => {
@@ -68,18 +77,28 @@ export default function PagarCarteira({ token, total, link }: { token: string; t
     })();
   }, [total]);
 
-  async function pagar(c: Carteira | null) {
+  async function pagar(c: Carteira | null, nome: string) {
     if (!c || estado === "pagando") return;
     setErro("");
     let res;
     try {
       // tokenize() precisa ser a primeira coisa do toque (exigência da Apple Pay).
       res = await c.tokenize();
-    } catch {
-      setErro("Não foi possível abrir a carteira. Tente de novo.");
+    } catch (e) {
+      registrarFalha(nome, "abrir", e);
+      setFalhou(true);
+      setErro(`Não deu para pagar com ${nome} neste celular. Toque em "Pagar com cartão" abaixo e digite o cartão.`);
       return;
     }
-    if (res.status !== "OK" || !res.token) return; // cliente fechou a janela da carteira
+    if (res.status !== "OK" || !res.token) {
+      // Fechou a janela sem pagar (Cancel) não é erro; qualquer outra coisa é falha da carteira.
+      if (res.status !== "Cancel") {
+        registrarFalha(nome, "status " + res.status, res.errors ?? res);
+        setFalhou(true);
+        setErro(`Não deu para pagar com ${nome} neste celular. Toque em "Pagar com cartão" abaixo e digite o cartão.`);
+      }
+      return;
+    }
     setEstado("pagando");
     try {
       const r = await fetch(`/api/pedido/${token}/pagar`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sourceId: res.token }) });
@@ -88,7 +107,8 @@ export default function PagarCarteira({ token, total, link }: { token: string; t
       setEstado("pago");
       window.location.replace(`/pedido/${token}`);
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "O pagamento não foi aprovado.");
+      setFalhou(true);
+      setErro((e instanceof Error ? e.message : "O pagamento não foi aprovado.") + ' Se preferir, toque em "Pagar com cartão" abaixo.');
       setEstado("pronto");
     }
   }
@@ -98,17 +118,23 @@ export default function PagarCarteira({ token, total, link }: { token: string; t
     <section className="pagar-carteira" aria-label="Pagamento">
       {estado === "carregando" && <div className="pagar-carregando">Carregando o pagamento...</div>}
       {apple && (
-        <button type="button" className="apple-pay-botao" aria-label="Pagar com Apple Pay" onClick={() => pagar(apple)} disabled={estado === "pagando"} />
+        <button type="button" className="apple-pay-botao" aria-label="Pagar com Apple Pay" onClick={() => pagar(apple, "Apple Pay")} disabled={estado === "pagando"} />
       )}
       {/* O Google Pay desenha o próprio botão aqui dentro. */}
-      <div id="gpay-botao" className={"gpay-botao" + (google ? "" : " oculto")} onClick={() => pagar(google)} role="button" aria-label="Pagar com Google Pay" />
+      <div id="gpay-botao" className={"gpay-botao" + (google ? "" : " oculto")} onClick={() => pagar(google, "Google Pay")} role="button" aria-label="Pagar com Google Pay" />
       {estado === "pagando" && <div className="pagar-carregando">Confirmando o pagamento...</div>}
       {erro && <p className="pagar-erro" role="alert">{erro}</p>}
       {nenhuma && link && (
         <a href={link} className="principal" style={{ textDecoration: "none" }}><span>Pagar com cartão</span><span>→</span></a>
       )}
       {!nenhuma && estado !== "carregando" && link && (
-        <a href={link} className="pagar-outro">Prefere digitar o cartão? Pagar com cartão</a>
+        <>
+          <span className="pagar-ou">ou</span>
+          <a href={link} className={falhou ? "principal" : "pagar-cartao"} style={{ textDecoration: "none" }}>
+            <span>💳 Pagar com cartão</span><span>→</span>
+          </a>
+          <span className="pagar-dica">Digite o cartão na página segura da Square.</span>
+        </>
       )}
       {nenhuma && !link && <p className="pagar-erro">Pagamento indisponível agora. Fale com a gente no WhatsApp.</p>}
     </section>
