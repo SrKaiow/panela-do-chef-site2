@@ -227,7 +227,7 @@ function AvisoFechado({ estado }: { estado: Estado }) {
   );
 }
 
-function Fundo({ onFechar, titulo, children }: { onFechar: () => void; titulo: string; children: React.ReactNode }) {
+export function Fundo({ onFechar, titulo, children }: { onFechar: () => void; titulo: string; children: React.ReactNode }) {
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === "Escape" && onFechar();
     document.addEventListener("keydown", esc);
@@ -252,7 +252,7 @@ function Fundo({ onFechar, titulo, children }: { onFechar: () => void; titulo: s
   );
 }
 
-function FolhaItem({ cardapio, item, onFechar, onAdicionar }: { cardapio: Cardapio; item: Item; onFechar: () => void; onAdicionar: (l: LinhaCarrinho) => void }) {
+export function FolhaItem({ cardapio, item, onFechar, onAdicionar }: { cardapio: Cardapio; item: Item; onFechar: () => void; onAdicionar: (l: LinhaCarrinho) => void }) {
   // Opções marcadas como "pré-selecionar" no painel já vêm escolhidas.
   const [selecoes, setSelecoes] = useState<Record<string, string[]>>(() => {
     const ini: Record<string, string[]> = {};

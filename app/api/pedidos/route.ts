@@ -9,6 +9,8 @@ import { siteUrl } from "@/lib/site";
 import { avisarLojaNovoPedido } from "@/lib/avisoLoja";
 import { conferirColeta, coordenadasDoPostcode, cotarEntrega, distanciaMetros, entregaEspecial } from "@/lib/entrega";
 import { mensagemSegura, permitir, respostaLimite } from "@/lib/seguranca";
+import { CEIA, ehItemNatal, encomendaAberta } from "@/lib/natal";
+import { hojeLondres } from "@/lib/cardapio";
 
 export const dynamic = "force-dynamic";
 
@@ -25,10 +27,25 @@ export async function POST(req: Request) {
     // Campo-isca invisível: só robô preenche.
     if (b.site) throw new Error("Não foi possível enviar o pedido.");
 
+    // Ceia de Natal: encomenda à parte (só entrega, só cartão, data da ceia, grátis até 9 milhas).
+    const natal = b.natal === true;
+    const itensNatal = Array.isArray(b.itens) && b.itens.some((l: { itemId?: string }) => ehItemNatal(cardapio.itens.find((i) => i.id === l?.itemId)?.categoria ?? ""));
+    if (natal !== itensNatal || (natal && b.itens.some((l: { itemId?: string }) => !ehItemNatal(cardapio.itens.find((i) => i.id === l?.itemId)?.categoria ?? "")))) {
+      throw new Error("A Ceia de Natal é uma encomenda separada. Monte a ceia na página da Ceia de Natal.");
+    }
+    if (natal) {
+      if (!encomendaAberta(hojeLondres())) throw new Error("As encomendas da Ceia de Natal já fecharam. Fale com a gente no WhatsApp.");
+      b.retirada = false;
+      b.pagamento = "cartao";
+      if (!CEIA.datas.some((d) => d.valor === b.agendadoPara)) throw new Error("Escolha o dia da entrega da ceia.");
+    }
+
     // Reserva de horário é só para coleta na porta; entrega é sempre "agora", com a cozinha aberta.
     const estado = estadoLoja(ajustes.horarios, ajustes.pausado);
-    let agendadoPara: string | null = null;
-    if (b.retirada !== true) {
+    let agendadoPara: string | null = natal ? b.agendadoPara : null;
+    if (natal) {
+      // encomenda: não depende da cozinha estar aberta agora
+    } else if (b.retirada !== true) {
       if (!estado.aberto) throw new Error("A entrega é só com a cozinha aberta. Para deixar reservado para mais tarde, escolha \"Coletar\".");
     } else if (typeof b.agendadoPara === "string" && b.agendadoPara) {
       const valido = horariosParaAgendar(ajustes.horarios).some((h) => h.valor === b.agendadoPara);
@@ -56,6 +73,7 @@ export async function POST(req: Request) {
     if (pagamento === "dinheiro" && !ajustes.pagamentos.dinheiro) throw new Error("Pagamento em dinheiro indisponível no momento.");
 
     const { linhas, subtotal } = validarCarrinho(cardapio, b.itens);
+    if (natal && linhas.some((l) => l.unitario <= 0)) throw new Error("Os preços da ceia ainda não foram definidos. Fale com a gente no WhatsApp.");
     let coords = { lat: ajustes.entrega.cozinha.lat, lng: ajustes.entrega.cozinha.lng };
     let distanciaM = 0;
     let taxa = 0;
@@ -73,6 +91,13 @@ export async function POST(req: Request) {
         // Sem localização (o celular não deixou): o pedido entra, e a cozinha vê o aviso no pedido.
         semLocal = true;
       }
+    } else if (natal) {
+      const achou = await coordenadasDoPostcode(postcode);
+      if (!achou) throw new Error("Não encontramos esse postcode. Confira e tente de novo (ex.: KT17 1JW).");
+      coords = achou;
+      distanciaM = Math.round(distanciaMetros(ajustes.entrega.cozinha, coords));
+      if (distanciaM / 1609.344 > CEIA.raioMilhas) throw new Error(`Infelizmente o seu postcode ultrapassa o nosso raio de entrega da Ceia de Natal (${CEIA.raioMilhas} milhas). Fale com a loja pelo WhatsApp.`);
+      taxa = 0;
     } else {
       const minimo = emPence(ajustes.entrega.pedidoMinimo);
       if (minimo && subtotal < minimo) throw new Error("O pedido não atingiu o valor mínimo para entrega.");
@@ -101,7 +126,9 @@ export async function POST(req: Request) {
 
     const { numero, token } = await criarPedido({
       nome, telefone, endereco, postcode,
-      observacao: semLocal ? ["⚠ COLETA SEM LOCALIZAÇÃO CONFIRMADA", observacaoCliente].filter(Boolean).join(" · ") : observacaoCliente,
+      observacao: natal
+        ? [`🎄 CEIA DE NATAL · entrega ${CEIA.datas.find((d) => d.valor === agendadoPara)?.rotulo ?? ""}`, observacaoCliente].filter(Boolean).join(" · ")
+        : semLocal ? ["⚠ COLETA SEM LOCALIZAÇÃO CONFIRMADA", observacaoCliente].filter(Boolean).join(" · ") : observacaoCliente,
       lat: coords.lat, lng: coords.lng, agendadoPara, distanciaM, retirada,
       itens: linhas, subtotal, taxa, total, pagamento, trocoPara,
       pago: false,

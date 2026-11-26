@@ -15,6 +15,8 @@ export async function GET(req: Request) {
   if (!coords) return NextResponse.json({ ok: false, motivo: "Não encontramos esse postcode. Confira e tente de novo (ex.: KT17 1JW)." });
   const a = await getAjustes();
   const d = distanciaMetros(a.entrega.cozinha, coords);
+  // Ceia de Natal: só a distância (o raio e a entrega grátis são da encomenda de Natal).
+  if (u.searchParams.get("natal") === "1") return NextResponse.json({ ok: true, milhas: Math.round((d / 1609.344) * 10) / 10 });
   const especial = entregaEspecial(postcode, u.searchParams.get("endereco") || "");
   if (especial != null) return NextResponse.json({ ok: true, milhas: Math.round((d / 1609.344) * 10) / 10, taxa: especial, gratisAcima: null, gratis: false });
   return NextResponse.json(cotarEntrega(d, subtotal, a.entrega.faixas, a.entrega.raioMilhas));

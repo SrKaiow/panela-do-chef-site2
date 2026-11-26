@@ -1,4 +1,6 @@
 import Loja from "@/components/Loja";
+import BannerNatal from "@/components/BannerNatal";
+import { ehItemNatal } from "@/lib/natal";
 import ContarVisita from "@/components/ContarVisita";
 import { NaCozinha, SobreChef } from "@/components/Historia";
 import { getAjustes, getCardapio, provedorCartao } from "@/lib/dados";
@@ -31,11 +33,14 @@ export default async function Home() {
   const agora = new Date();
   const estado = estadoLoja(ajustes.horarios, ajustes.pausado, agora);
   const horarios = horariosParaAgendar(ajustes.horarios, agora);
+  // A Ceia de Natal tem página própria (/natal): fica fora do cardápio do dia.
+  const cardapioDoDia = { ...cardapio, categorias: cardapio.categorias.filter((c) => !ehItemNatal(c.id)), itens: cardapio.itens.filter((i) => !ehItemNatal(i.categoria)) };
 
   return (
     <>
       <ContarVisita />
-      <Loja cardapio={cardapio} loja={loja} estadoInicial={estado} horariosIniciais={horarios} pausado={ajustes.pausado} />
+      <BannerNatal />
+      <Loja cardapio={cardapioDoDia} loja={loja} estadoInicial={estado} horariosIniciais={horarios} pausado={ajustes.pausado} />
       <NaCozinha />
       <SobreChef />
 

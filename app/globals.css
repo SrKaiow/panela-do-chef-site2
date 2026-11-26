@@ -905,3 +905,76 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .perfil-tirar { justify-self: start; background: none; border: 0; padding: 2px 0; color: var(--ouro); font-weight: 700; text-decoration: underline; cursor: pointer; }
 
 .avaliar-quem { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 12px; background: rgba(255, 216, 20, 0.1); border: 1px solid rgba(255, 216, 20, 0.35); font-size: 0.95rem; }
+
+/* ---------- Ceia de Natal ---------- */
+/* Banner da página inicial: de ponta a ponta, no topo. */
+.bn { position: relative; display: block; overflow: hidden; color: #fff; text-decoration: none; border-bottom: 2px solid #d9b26a; background: #6e0f17; }
+.bn-foto { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(90, 8, 16, 0.96) 0%, rgba(90, 8, 16, 0.82) 42%, rgba(90, 8, 16, 0.25) 75%, rgba(90, 8, 16, 0.1) 100%), url("/fotos/natal/ceia-mesa.jpg") right center / cover no-repeat; }
+.bn::before { content: ""; position: absolute; inset: 0; background: url("/fotos/natal/flocos.jpg") center / cover; opacity: 0.35; mix-blend-mode: screen; pointer-events: none; }
+.bn-miolo { position: relative; max-width: 1180px; margin: 0 auto; padding: 22px 20px; display: flex; align-items: center; gap: 18px; }
+.bn-noel { font-size: 54px; line-height: 1; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.5)); animation: bn-balanca 2.4s ease-in-out infinite; }
+@keyframes bn-balanca { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg) translateY(-3px); } }
+.bn-textos { display: grid; gap: 4px; flex: 1; }
+.bn-sobre { font-size: 0.78rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #f0d49a; }
+.bn-titulo { font-family: var(--fonte-titulo); font-weight: 400; font-size: clamp(1.9rem, 4.6vw, 3.2rem); line-height: 1; text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 0 4px 18px rgba(0, 0, 0, 0.45); }
+.bn-sub { font-size: 0.95rem; max-width: 560px; color: #f6eedf; }
+.bn-botao { flex: none; display: inline-flex; gap: 10px; align-items: center; padding: 14px 20px; border-radius: 999px; font-weight: 800; color: #3a0a0f; background: linear-gradient(180deg, #f3d792, #d9b26a); box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35); }
+.bn:hover .bn-botao { filter: brightness(1.06); }
+@media (max-width: 720px) {
+  .bn-miolo { flex-wrap: wrap; padding: 18px 16px 20px; gap: 10px 14px; }
+  .bn-noel { font-size: 42px; }
+  .bn-textos { flex-basis: calc(100% - 60px); }
+  .bn-sub { font-size: 0.88rem; }
+  .bn-botao { width: 100%; justify-content: center; }
+  .bn-foto { background: linear-gradient(180deg, rgba(90, 8, 16, 0.75) 0%, rgba(90, 8, 16, 0.92) 100%), url("/fotos/natal/ceia-mesa.jpg") center / cover no-repeat; }
+}
+
+/* Página /natal */
+.natal { background: radial-gradient(ellipse at 50% 0%, #17402c 0%, #0f2a1d 40%, #0a1d14 100%); min-height: 100vh; color: #f6eedf; padding-bottom: 110px; }
+.natal-hero { position: relative; overflow: hidden; border-bottom: 2px solid #d9b26a; }
+.natal-hero-foto { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 29, 20, 0.35) 0%, rgba(10, 29, 20, 0.6) 55%, #0f2a1d 100%), url("/fotos/natal/ceia-mesa.jpg") center 40% / cover no-repeat; }
+.natal-hero-miolo { position: relative; padding-block: 28px 34px; display: grid; gap: 12px; justify-items: start; }
+.natal-voltar { color: #f0d49a; font-weight: 700; text-decoration: none; font-size: 0.9rem; }
+.natal-sobre { font-size: 0.8rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #f0d49a; margin-top: 60px; }
+.natal-hero h1 { margin: 0; font-family: var(--fonte-titulo); font-weight: 400; font-size: clamp(2.6rem, 8vw, 4.6rem); line-height: 0.95; text-transform: uppercase; text-shadow: 0 6px 24px rgba(0, 0, 0, 0.55); }
+.natal-hero p { margin: 0; max-width: 560px; font-size: 1.02rem; color: #f6eedf; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5); }
+.natal-selos { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.natal-selos li { padding: 7px 12px; border-radius: 999px; background: rgba(10, 29, 20, 0.75); border: 1px solid rgba(217, 178, 106, 0.6); font-size: 0.88rem; }
+.natal-selos strong { color: #f0d49a; }
+.natal-cta { flex: none; margin-top: 6px; min-width: 260px; }
+.natal-aviso { margin-top: 16px; padding: 12px 14px; border-radius: 12px; background: rgba(163, 22, 28, 0.35); border: 1px solid #a3161c; font-weight: 700; }
+.natal-cardapio { display: grid; gap: 34px; padding-top: 30px; }
+.natal-secao h2 { margin: 0; font-family: var(--fonte-titulo); font-weight: 400; font-size: 2rem; text-transform: uppercase; letter-spacing: 0.5px; color: #f0d49a; }
+.natal-secao > .dica { margin: 4px 0 14px; color: #cdbf9f; }
+.natal-kits { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.natal-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.natal-cartao { text-align: left; color: inherit; font: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 10px; padding: 16px 16px 14px; border-radius: 18px; background: rgba(246, 238, 223, 0.06); border: 1px solid rgba(217, 178, 106, 0.45); transition: transform 0.15s, border-color 0.15s; }
+.natal-cartao:hover { transform: translateY(-2px); border-color: #d9b26a; }
+.natal-cartao:disabled { cursor: not-allowed; opacity: 0.6; transform: none; }
+.natal-cartao.premium { background: linear-gradient(160deg, rgba(217, 178, 106, 0.22), rgba(217, 178, 106, 0.05) 60%); border: 2px solid #d9b26a; box-shadow: 0 0 30px rgba(217, 178, 106, 0.18); }
+.natal-cartao-topo { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.natal-cartao-topo strong { font-size: 1.05rem; }
+.natal-cartao.kit .natal-cartao-topo strong { font-family: var(--fonte-titulo); font-weight: 400; font-size: 1.9rem; line-height: 1; color: #f0d49a; }
+.natal-pessoas { padding: 4px 10px; border-radius: 999px; background: #d9b26a; color: #0f2a1d; font-weight: 800; font-size: 0.8rem; white-space: nowrap; }
+.natal-pessoas.premium { background: #a3161c; color: #fff; border: 1px solid #d9b26a; letter-spacing: 1px; }
+.natal-lista { margin: 0; padding: 0; list-style: none; display: grid; align-content: start; gap: 5px; font-size: 0.92rem; flex: 1; }
+.natal-lista li { display: flex; gap: 8px; }
+.natal-lista li::before { content: "✦"; color: #d9b26a; }
+.natal-desc { font-size: 0.88rem; color: #cdbf9f; flex: 1; }
+.natal-cartao-base { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid rgba(217, 178, 106, 0.25); }
+.natal-preco { font-weight: 900; font-size: 1.15rem; color: #fff; }
+.natal-preco.a-definir { font-size: 0.85rem; font-weight: 700; color: #cdbf9f; font-style: italic; }
+.natal-mais { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: #d9b26a; color: #0f2a1d; font-weight: 900; font-size: 1.3rem; }
+.natal-rodape { text-align: center; }
+.natal-rodape a { color: #f0d49a; }
+.natal-barra { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: linear-gradient(180deg, rgba(10, 29, 20, 0), rgba(10, 29, 20, 0.95) 35%); display: flex; justify-content: center; }
+.natal-barra .principal { max-width: 560px; }
+.natal-finalizar { display: grid; gap: 12px; padding: 18px; }
+.natal-fin-topo { display: flex; justify-content: space-between; align-items: center; }
+.natal-fin-topo h2 { margin: 0; font-size: 1.3rem; }
+.natal-fin-topo .fechar { border: 0; background: none; color: inherit; font-size: 1.8rem; line-height: 1; cursor: pointer; }
+.natal-finalizar select { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--linha); background: var(--bg); color: inherit; font-size: 1rem; }
+.natal-linha-dir { display: flex; align-items: center; gap: 8px; font-weight: 800; }
+.natal-tirar { border: 0; background: var(--superficie-2); color: var(--texto-2); width: 28px; height: 28px; border-radius: 50%; cursor: pointer; }
+.natal-ok { margin: 0; padding: 10px 12px; border-radius: 10px; background: rgba(43, 214, 123, 0.12); color: #7ef0b0; font-weight: 700; font-size: 0.92rem; }
+.natal-finalizar .erro a { color: inherit; text-decoration: underline; }

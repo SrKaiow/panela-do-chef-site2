@@ -332,6 +332,57 @@ function guaranaAntigoForaV1(c: Cardapio): Cardapio {
   return { ...c, itens: c.itens.filter((i) => i.id !== "guarana") };
 }
 
+/**
+ * Ceia de Natal: kits, carnes recheadas, assados e porções, na categoria "natal"
+ * (fica fora do cardápio do dia; aparece só na página /natal). Preços começam em 0 = "a definir":
+ * enquanto algum item escolhido estiver sem preço, a encomenda não fecha.
+ */
+function ceiaNatalV1(c: Cardapio): Cardapio {
+  if (c.itens.some((i) => i.categoria === "natal")) return c;
+  const a = { ...c.adicionais };
+  const g = (id: string, nome: string, opcoes: string[], obrigatorio = true, max = 1) => {
+    a[id] = { nome, nomeInterno: "Natal - " + nome, opcoes: opcoes.map((n, i) => ({ nome: n, padrao: obrigatorio && max === 1 && i === 0 })), regras: { obrigatorio, varios: max > 1, max, repetir: false } };
+  };
+  g("natal-arroz", "Arroz", ["Arroz à grega", "Arroz branco"]);
+  g("natal-arroz-premium", "Arroz", ["Arroz natalino", "Arroz branco"]);
+  g("natal-arroz-tipo", "Tipo de arroz", ["Arroz branco", "Arroz à grega", "Arroz natalino"]);
+  g("natal-vinagrete", "Vinagrete", ["Vinagrete tradicional", "Vinagrete de abacaxi"]);
+  g("natal-farofa", "Farofa", ["Farofa de banana", "Farofa de bacon"]);
+  g("natal-recheio", "Recheio", ["Calabresa", "Bacon", "Queijo", "Cenoura", "Linguicinha", "Tempero do Chef"], true, 2);
+  a["natal-tamanho"] = { nome: "Tamanho", nomeInterno: "Natal - Tamanho da porção", opcoes: [{ nome: "500g", padrao: true }, { nome: "1kg", preco: 0 }], regras: { obrigatorio: true, varios: false, max: 1, repetir: false } };
+  const e = (grupo: string, min = 1, max = 1) => ({ grupo, min, max });
+  const it = (id: string, nome: string, descricao: string, escolhas: { grupo: string; min: number; max: number }[] = [], imagem?: string) =>
+    ({ id, nome, categoria: "natal", descricao, preco: 0, disponivel: true, escolhas, ...(imagem ? { imagem } : {}) });
+  const novos = [
+    it("natal-kit-1", "Kit 1 · até 3/4 pessoas", "1kg de arroz (à grega ou branco) · 500g de farofa · 500g de vinagrete · 500g de maionese completa", [e("natal-arroz")]),
+    it("natal-kit-2", "Kit 2 · até 7/9 pessoas", "2kg de arroz (branco ou à grega) · 1kg de maionese completa · 1kg de farofa temperada · 1kg de vinagrete (abacaxi ou tradicional) · 1 Chester inteiro recheado com batatas e calabresa · Salpicão completo", [e("natal-arroz"), e("natal-vinagrete")]),
+    it("natal-kit-3", "Kit 3 · 10/15 pessoas", "3kg de arroz (branco ou à grega) · 2kg de maionese completa · 2kg de purê de banana-da-terra cremoso · 2kg de vinagrete (tradicional ou de abacaxi) · Salpicão completo", [e("natal-arroz"), e("natal-vinagrete")]),
+    it("natal-kit-4", "Kit 4 · Premium", "Pernil com osso · 2kg de cupim recheado · 1kg de frango recheado · 2kg de farofa natalina com bacon · Salpicão completo · 3kg de arroz (natalino ou branco)", [e("natal-arroz-premium")]),
+    it("natal-carne-costela-boi", "Costela de boi sem osso recheada", "Carne especial recheada, assada no ponto.", [e("natal-recheio", 1, 2)]),
+    it("natal-carne-picanha", "Picanha irlandesa recheada", "Carne especial recheada, assada no ponto.", [e("natal-recheio", 1, 2)]),
+    it("natal-carne-lagarto", "Lagarto recheado", "Carne especial recheada, assada no ponto.", [e("natal-recheio", 1, 2)]),
+    it("natal-carne-fraldao", "Fraldão recheado", "Carne especial recheada, assada no ponto.", [e("natal-recheio", 1, 2)]),
+    it("natal-carne-maminha", "Maminha recheada", "Carne especial recheada, assada no ponto.", [e("natal-recheio", 1, 2)]),
+    it("natal-carne-lombo", "Lombo de porco recheado", "Carne especial recheada, assada no ponto.", [e("natal-recheio", 1, 2)]),
+    it("natal-carne-cupim", "Cupim com bacon e calabresa", "Cupim recheado com bacon e calabresa."),
+    it("natal-assado-peru", "Peru inteiro fresco", "Peru inteiro temperado e assado. Aprox. 4kg."),
+    it("natal-assado-frango", "Frango tradicional recheado", "Frango inteiro recheado e assado.", [e("natal-recheio", 1, 2)]),
+    it("natal-assado-costela-porco", "Costela de porco temperada", "Costela de porco temperada e assada."),
+    it("natal-assado-pernil", "Pernil com osso temperado", "Pernil com osso temperado e assado. Aprox. 7kg."),
+    it("natal-porcao-arroz", "Arroz", "Porção extra de arroz.", [e("natal-arroz-tipo"), e("natal-tamanho")]),
+    it("natal-porcao-maionese", "Maionese completa", "Porção extra de maionese completa.", [e("natal-tamanho")]),
+    it("natal-porcao-farofa", "Farofa", "Porção extra de farofa de banana ou de bacon.", [e("natal-farofa"), e("natal-tamanho")]),
+    it("natal-porcao-pure", "Purê de banana-da-terra cremoso", "Porção extra de purê de banana-da-terra.", [e("natal-tamanho")]),
+    it("natal-porcao-vinagrete", "Vinagrete", "Porção extra de vinagrete tradicional ou de abacaxi.", [e("natal-vinagrete"), e("natal-tamanho")]),
+  ];
+  return {
+    ...c,
+    adicionais: a,
+    categorias: [...c.categorias, { id: "natal", nome: "Ceia de Natal" }],
+    itens: [...c.itens, ...novos],
+  };
+}
+
 /** Massa Show: "Cebola em conserva" nos ingredientes, logo depois da cebola roxa. */
 function cebolaConservaV1(c: Cardapio): Cardapio {
   const g = c.adicionais["massa-ingredientes"];
@@ -384,6 +435,7 @@ const MIGRACOES: [string, (c: Cardapio) => Cardapio][] = [
   ["camarao-massa-3-v1", camaraoMassaV1],
   ["guarana-v1", guaranaV1],
   ["guarana-antigo-fora-v1", guaranaAntigoForaV1],
+  ["ceia-natal-v1", ceiaNatalV1],
 ];
 
 /** Aplica as migrações que ainda não rodaram e salva. Se algo falhar, devolve o cardápio como estava. */
