@@ -23,6 +23,10 @@ const SECOES: { prefixo: string; titulo: string; sub: string; porKg?: boolean }[
 ];
 
 const semPreco = (c: Cardapio, i: Item) => i.preco <= 0 && precoUnitario(c, i, {}) <= 0;
+const GRUPO_CARNE_KIT = "natal-carne-kit";
+/** Quantos kg de carne foram para dentro dos kits (cada kg sai £2 mais barato que avulso). */
+const kgNoKit = (linhas: LinhaCarrinho[]) => linhas.reduce((s, l) => s + (l.selecoes[GRUPO_CARNE_KIT]?.length ?? 0) * l.qtd, 0);
+const DESCONTO_KG = 2;
 
 export default function Natal({
   cardapio, datas, aberta, raioMilhas, ultimoDia, whatsapp, cartao,
@@ -107,7 +111,10 @@ export default function Natal({
                         {kits && pessoas && <span className={"natal-pessoas" + (premium ? " premium" : "")}>{pessoas}</span>}
                       </span>
                       {kits ? (
+                        <>
                         <ul className="natal-lista">{i.descricao.split(" · ").map((x) => <li key={x} className={/incluso/i.test(x) ? "brinde" : undefined}>{x}</li>)}</ul>
+                        <span className="natal-chamada">🥩 {(i.escolhas ?? []).some((x) => x.grupo === GRUPO_CARNE_KIT && x.min > 0) ? "Escolha a carne do kit:" : "Quer mais carne?"} no kit, cada kg sai <strong>£{DESCONTO_KG} mais barato</strong> que avulso</span>
+                        </>
                       ) : (
                         <span className="natal-desc">{i.descricao}</span>
                       )}
@@ -115,6 +122,7 @@ export default function Natal({
                         <span className={"natal-preco" + (semPreco(cardapio, i) ? " a-definir" : "")}>
                           {semPreco(cardapio, i) ? (s.porKg ? "Sob consulta" : "Preço a definir") : formatar(precoUnitario(cardapio, i, {}))}
                           {s.porKg && !semPreco(cardapio, i) && <small>/kg</small>}
+                          {kits && (i.escolhas ?? []).some((x) => x.grupo === GRUPO_CARNE_KIT && x.min > 0) && <small> + carne</small>}
                           {i.precoAntigo ? <s className="natal-antigo">{formatar(Math.round(i.precoAntigo * 100))}</s> : null}
                         </span>
                         <span className="natal-mais" aria-hidden="true">+</span>
@@ -138,7 +146,7 @@ export default function Natal({
         </div>
       )}
 
-      {aberto && <FolhaItem cardapio={cardapio} item={aberto} onFechar={() => setAberto(null)} onAdicionar={adicionar} />}
+      {aberto && <FolhaItem cardapio={cardapio} item={aberto.id.startsWith("natal-kit-") ? { ...aberto, descricao: `🥩 Carne do kit com preço especial: cada kg sai £${DESCONTO_KG} mais barato do que comprar avulso. Quanto mais carne você põe no kit, mais economiza. Toque no + da carne para cada kg.\n\n${aberto.descricao}` } : aberto} onFechar={() => setAberto(null)} onAdicionar={adicionar} />}
       {fechando && (
         <Finalizar
           cardapio={cardapio} carrinho={carrinho} setCarrinho={setCarrinho} total={total} faltaPreco={faltaPreco}
@@ -270,6 +278,7 @@ function Finalizar({
         {cotacao && !cotacao.ok && !fora && <p className="erro">{cotacao.motivo}</p>}
         <label className="campo">Observação <span className="dica">(opcional)</span><textarea maxLength={300} value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Ex.: tocar a campainha do fundo" /></label>
 
+        {kgNoKit(carrinho) > 0 && <p className="natal-ok">🎉 Você está economizando <strong>£{(kgNoKit(carrinho) * DESCONTO_KG).toFixed(2)}</strong> com {kgNoKit(carrinho)}kg de carne no preço de kit.</p>}
         <div className="totais">
           <div><span>Entrega</span><span>Grátis</span></div>
           <div className="total"><span>Total</span><span>{faltaPreco ? "a definir" : formatar(total)}</span></div>

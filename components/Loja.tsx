@@ -337,12 +337,12 @@ export function FolhaItem({ cardapio, item, onFechar, onAdicionar }: { cardapio:
                       <span className="opcao-nome">
                         {op.destaque && !op.esgotado && <span className="opcao-selo">Mais pedido</span>}
                         {op.nome}
-                        {op.preco ? <em className="extra">+{formatar(emPence(op.preco))}</em> : null}
+                        {op.preco ? <em className="extra">+{formatar(emPence(op.preco))}{e.grupo === "natal-carne-kit" ? "/kg" : ""}</em> : null}
                         {op.esgotado ? <em> esgotado</em> : null}
                       </span>
                       <span className="opcao-qtd">
                         {n > 0 && <button type="button" onClick={() => somar(e.grupo, op.nome, e.max, -1)} aria-label={`Tirar um ${op.nome}`}>−</button>}
-                        {n > 0 && <span className="num">{n}</span>}
+                        {n > 0 && <span className="num">{n}{e.grupo === "natal-carne-kit" ? "kg" : ""}</span>}
                         <button type="button" disabled={op.esgotado || cheio} onClick={() => somar(e.grupo, op.nome, e.max, 1)} aria-label={`Adicionar ${op.nome}`}>+</button>
                       </span>
                     </div>

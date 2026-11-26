@@ -337,29 +337,8 @@ function guaranaAntigoForaV1(c: Cardapio): Cardapio {
  * (fica fora do cardápio do dia; aparece só na página /natal). Preços começam em 0 = "a definir":
  * enquanto algum item escolhido estiver sem preço, a encomenda não fecha.
  */
-function ceiaNatalV1(c: Cardapio): Cardapio {
-  if (c.itens.some((i) => i.categoria === "natal")) return c;
-  const a = { ...c.adicionais };
-  const g = (id: string, nome: string, opcoes: string[], obrigatorio = true, max = 1) => {
-    a[id] = { nome, nomeInterno: "Natal - " + nome, opcoes: opcoes.map((n, i) => ({ nome: n, padrao: obrigatorio && max === 1 && i === 0 })), regras: { obrigatorio, varios: max > 1, max, repetir: false } };
-  };
-  g("natal-arroz", "Arroz", ["Arroz à grega", "Arroz branco"]);
-  g("natal-arroz-premium", "Arroz", ["Arroz natalino", "Arroz branco"]);
-  g("natal-arroz-tipo", "Tipo de arroz", ["Arroz branco", "Arroz à grega", "Arroz natalino"]);
-  g("natal-vinagrete", "Vinagrete", ["Vinagrete tradicional", "Vinagrete de abacaxi"]);
-  g("natal-farofa", "Farofa", ["Farofa de banana", "Farofa de bacon"]);
-  g("natal-recheio", "Recheio", ["Calabresa", "Bacon", "Queijo", "Cenoura", "Linguicinha", "Tempero do Chef"], true, 2);
-  a["natal-tamanho"] = { nome: "Tamanho", nomeInterno: "Natal - Tamanho da porção", opcoes: [{ nome: "500g", padrao: true }, { nome: "1kg", preco: 0 }], regras: { obrigatorio: true, varios: false, max: 1, repetir: false } };
-  const e = (grupo: string, min = 1, max = 1) => ({ grupo, min, max });
-  const it = (id: string, nome: string, descricao: string, escolhas: { grupo: string; min: number; max: number }[] = [], imagem?: string) =>
-    ({ id, nome, categoria: "natal", descricao, preco: 0, disponivel: true, escolhas, ...(imagem ? { imagem } : {}) });
-  const novos = [
-    { ...it("natal-kit-1", "Kit 1 · até 3/4 pessoas", "1kg de arroz (à grega ou branco) · 500g de farofa · 500g de vinagrete · 500g de maionese completa", [e("natal-arroz")]), preco: 150 },
-    { ...it("natal-kit-2", "Kit 2 · até 7/9 pessoas", "2kg de arroz (branco ou à grega) · 1kg de maionese completa · 1kg de farofa temperada · 1kg de vinagrete (abacaxi ou tradicional) · 1 Chester inteiro recheado com batatas e calabresa · Salpicão completo", [e("natal-arroz"), e("natal-vinagrete")]), preco: 250 },
-    { ...it("natal-kit-3", "Kit 3 · 10/15 pessoas", "3kg de arroz (branco ou à grega) · 2kg de maionese completa · 2kg de purê de banana-da-terra cremoso · 2kg de vinagrete (tradicional ou de abacaxi) · Salpicão completo", [e("natal-arroz"), e("natal-vinagrete")]), preco: 280 },
-    { ...it("natal-kit-4", "Kit 4 · Premium", "Pernil com osso · 2kg de cupim recheado · 1kg de frango recheado · 2kg de farofa natalina com bacon · Salpicão completo · 3kg de arroz (natalino ou branco) · Pudim tradicional de 1kg incluso", [e("natal-arroz-premium")]), preco: 399, precoAntigo: 410 },
-    // Recheados de Natal: preço por kg (a quantidade é em kg).
-    ...([
+/** Recheados de Natal: [id, nome, preço por kg avulso, tem escolha de recheio]. Preço 0 = sob consulta. */
+const RECHEADOS: [string, string, number, boolean][] = [
       ["frango-desossado", "Frango desossado recheado", 23.99, true],
       ["frango", "Frango recheado", 21.99, true],
       ["peru", "Peru recheado", 25.99, true],
@@ -375,10 +354,43 @@ function ceiaNatalV1(c: Cardapio): Cardapio {
       ["picanha", "Picanha recheada", 39.99, true],
       ["lagarto", "Lagarto recheado", 31.99, true],
       ["cupim", "Cupim inteiro marinado", 39.99, false],
-    ] as [string, string, number, boolean][]).map(([id, nome, preco, recheio]) => ({
+    ];
+/** Dentro do kit, cada kg de carne sai mais barato que avulso (incentivo para pôr mais carne no kit). */
+const DESCONTO_KG_NO_KIT = 2;
+
+function ceiaNatalV1(c: Cardapio): Cardapio {
+  if (c.itens.some((i) => i.categoria === "natal")) return c;
+  const a = { ...c.adicionais };
+  const g = (id: string, nome: string, opcoes: string[], obrigatorio = true, max = 1) => {
+    a[id] = { nome, nomeInterno: "Natal - " + nome, opcoes: opcoes.map((n, i) => ({ nome: n, padrao: obrigatorio && max === 1 && i === 0 })), regras: { obrigatorio, varios: max > 1, max, repetir: false } };
+  };
+  g("natal-arroz", "Arroz", ["Arroz à grega", "Arroz branco"]);
+  g("natal-arroz-premium", "Arroz", ["Arroz natalino", "Arroz branco"]);
+  g("natal-arroz-tipo", "Tipo de arroz", ["Arroz branco", "Arroz à grega", "Arroz natalino"]);
+  g("natal-vinagrete", "Vinagrete", ["Vinagrete tradicional", "Vinagrete de abacaxi"]);
+  g("natal-farofa", "Farofa", ["Farofa de banana", "Farofa de bacon"]);
+  g("natal-recheio", "Recheio", ["Calabresa", "Bacon", "Queijo", "Cenoura", "Linguicinha", "Tempero do Chef"], true, 2);
+  // Carne do kit: cada toque = 1kg daquela carne, com preço de kit (avulso − £2/kg).
+  a["natal-carne-kit"] = {
+    nome: "Carne do kit (cada + = 1kg)",
+    nomeInterno: "Natal - Carne do kit (por kg, preço de kit)",
+    opcoes: RECHEADOS.filter(([, , preco]) => preco > 0).map(([, nome, preco]) => ({ nome, preco: Math.round((preco - DESCONTO_KG_NO_KIT) * 100) / 100 })),
+    regras: { obrigatorio: true, varios: true, max: 8, repetir: true },
+  };
+  a["natal-tamanho"] = { nome: "Tamanho", nomeInterno: "Natal - Tamanho da porção", opcoes: [{ nome: "500g", padrao: true }, { nome: "1kg", preco: 0 }], regras: { obrigatorio: true, varios: false, max: 1, repetir: false } };
+  const e = (grupo: string, min = 1, max = 1) => ({ grupo, min, max });
+  const it = (id: string, nome: string, descricao: string, escolhas: { grupo: string; min: number; max: number }[] = [], imagem?: string) =>
+    ({ id, nome, categoria: "natal", descricao, preco: 0, disponivel: true, escolhas, ...(imagem ? { imagem } : {}) });
+  const novos = [
+    { ...it("natal-kit-1", "Kit 1 · até 3/4 pessoas", "1kg de arroz (à grega ou branco) · 500g de farofa · 500g de vinagrete · 500g de maionese completa", [e("natal-arroz"), e("natal-carne-kit", 1, 8), e("natal-recheio", 0, 2)]), preco: 150 },
+    { ...it("natal-kit-2", "Kit 2 · até 7/9 pessoas", "2kg de arroz (branco ou à grega) · 1kg de maionese completa · 1kg de farofa temperada · 1kg de vinagrete (abacaxi ou tradicional) · 1 Chester inteiro recheado com batatas e calabresa · Salpicão completo", [e("natal-arroz"), e("natal-vinagrete"), e("natal-carne-kit", 1, 8), e("natal-recheio", 0, 2)]), preco: 250 },
+    { ...it("natal-kit-3", "Kit 3 · 10/15 pessoas", "3kg de arroz (branco ou à grega) · 2kg de maionese completa · 2kg de purê de banana-da-terra cremoso · 2kg de vinagrete (tradicional ou de abacaxi) · Salpicão completo", [e("natal-arroz"), e("natal-vinagrete"), e("natal-carne-kit", 1, 8), e("natal-recheio", 0, 2)]), preco: 280 },
+    { ...it("natal-kit-4", "Kit 4 · Premium", "Pernil com osso · 2kg de cupim recheado · 1kg de frango recheado · 2kg de farofa natalina com bacon · Salpicão completo · 3kg de arroz (natalino ou branco) · Pudim tradicional de 1kg incluso", [e("natal-arroz-premium"), e("natal-carne-kit", 0, 8), e("natal-recheio", 0, 2)]), preco: 399, precoAntigo: 410 },
+    // Recheados de Natal: preço por kg (a quantidade é em kg).
+    ...(RECHEADOS.map(([id, nome, preco, recheio]) => ({
       ...it("natal-recheado-" + id, nome, preco ? "Preço por kg: escolha quantos kg no + e −." : "Sob consulta: fale com a gente no WhatsApp.", recheio ? [e("natal-recheio", 1, 2)] : []),
       preco,
-    })),
+    }))),
     it("natal-porcao-arroz", "Arroz", "Porção extra de arroz.", [e("natal-arroz-tipo"), e("natal-tamanho")]),
     it("natal-porcao-maionese", "Maionese completa", "Porção extra de maionese completa.", [e("natal-tamanho")]),
     it("natal-porcao-farofa", "Farofa", "Porção extra de farofa de banana ou de bacon.", [e("natal-farofa"), e("natal-tamanho")]),

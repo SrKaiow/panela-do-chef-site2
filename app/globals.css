@@ -981,3 +981,6 @@ img.avatar { object-fit: cover; border: 2px solid var(--ouro); padding: 0; }
 .natal-preco small { font-size: 0.75rem; font-weight: 700; color: #cdbf9f; margin-left: 2px; }
 .natal-antigo { margin-left: 8px; font-size: 0.85rem; font-weight: 600; color: #cdbf9f; }
 .natal-lista li.brinde { color: #f0d49a; font-weight: 800; }
+.natal-chamada { font-size: 0.82rem; line-height: 1.35; padding: 8px 10px; border-radius: 10px; background: rgba(163, 22, 28, 0.35); border: 1px dashed rgba(217, 178, 106, 0.6); color: #f6eedf; }
+.natal-chamada strong { color: #f0d49a; }
+.folha .desc { white-space: pre-line; }
