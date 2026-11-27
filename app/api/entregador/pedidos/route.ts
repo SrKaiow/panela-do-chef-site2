@@ -5,6 +5,8 @@ import { rotaCarro, rotaEstimada } from "@/lib/rota";
 import { getAjustes } from "@/lib/dados";
 import { linkWhatsapp, mensagens, whatsappAutomatico } from "@/lib/whatsapp";
 import { siteUrl } from "@/lib/site";
+import { DADOS_BANCARIOS } from "@/lib/contas";
+import { MARCA_TRANSFERENCIA } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +60,15 @@ export async function GET(req: Request) {
         atraso: p.atraso,
         waSaiu: linkWhatsapp(p.telefone, mensagens.saiu(nome(p.nome), `${siteUrl(req)}/pedido/${p.token}`)),
         waChegando: linkWhatsapp(p.telefone, mensagens.chegando(nome(p.nome))),
+        // Cliente que ia pagar em dinheiro e vai transferir: manda o pedido com a conta e o valor.
+        transferencia: (p.observacao ?? "").includes(MARCA_TRANSFERENCIA),
+        waTransferencia: p.pagamento === "dinheiro" && !p.pago && !naConta.has(p.numero)
+          ? linkWhatsapp(p.telefone, mensagens.transferencia({
+              nome: nome(p.nome), numero: p.numero, taxa: p.taxa, total: p.total, conta: DADOS_BANCARIOS,
+              linhas: p.itens.map((l) => ({ qtd: l.qtd, nome: l.nome, detalhes: l.detalhes ?? [], total: l.total })),
+              link: `${siteUrl(req)}/pedido/${p.token}`,
+            }))
+          : null,
         // Waze: vai direto para as coordenadas do postcode; sem coordenadas, busca pelo endereço.
         waze: p.lat != null && p.lng != null
           ? `https://waze.com/ul?ll=${p.lat},${p.lng}&navigate=yes`

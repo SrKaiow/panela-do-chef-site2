@@ -17,6 +17,30 @@ export function linkWhatsapp(tel: string, texto: string) {
 }
 
 export const mensagens = {
+  /** "Invoice" do pedido para o cliente pagar por transferência. */
+  transferencia: (o: { nome: string; numero: number; linhas: { qtd: number; nome: string; detalhes: string[]; total: number }[]; taxa: number; total: number; conta: { beneficiario: string; conta: string; sortCode: string }; link: string }) => {
+    const gbp = (p: number) => "£" + (p / 100).toFixed(2);
+    return [
+      `Oi, ${o.nome}! Aqui é da *Panela do Chef*.`,
+      ``,
+      `*Pedido #${o.numero}*`,
+      ...o.linhas.map((l) => `${l.qtd}× ${l.nome}${l.detalhes.length ? ` (${l.detalhes.join(", ")})` : ""} · ${gbp(l.total)}`),
+      ...(o.taxa > 0 ? [`Entrega · ${gbp(o.taxa)}`] : []),
+      ``,
+      `*Total: ${gbp(o.total)}*`,
+      ``,
+      `*Dados para transferência (conta Business)*`,
+      `Beneficiário: ${o.conta.beneficiario}`,
+      `Conta: ${o.conta.conta}`,
+      `Sort Code: ${o.conta.sortCode}`,
+      `Valor: ${gbp(o.total)}`,
+      `Referência: Pedido ${o.numero}`,
+      ``,
+      `Seu pedido: ${o.link}`,
+      ``,
+      `Quando fizer a transferência, é só mandar o comprovante aqui. Obrigado!`,
+    ].join("\n");
+  },
   saiu: (nome: string, link: string) =>
     `Oi, ${nome}! Aqui é da *Panela do Chef*.\n\nSeu pedido acabou de *sair para entrega*.\n\nAcompanhe o entregador ao vivo no mapa:\n${link}`,
   chegando: (nome: string) =>

@@ -1,7 +1,7 @@
 import { siteUrl } from "@/lib/site";
 import { NextResponse } from "next/server";
 import { logado } from "@/lib/auth";
-import { marcarAviso, marcarPago, mudarStatus, buscarPorNumero, iniciarEntrega } from "@/lib/db";
+import { marcarAviso, marcarPago, marcarTransferencia, mudarStatus, buscarPorNumero, iniciarEntrega } from "@/lib/db";
 import { aoMudarStatus } from "@/lib/avisos";
 
 export const dynamic = "force-dynamic";
@@ -22,5 +22,6 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ numero: strin
   if (b.iniciar === true && p.status === "saiu") await iniciarEntrega(numero);
   if (b.avisoManual === "saiu" || b.avisoManual === "chegando") await marcarAviso(numero, b.avisoManual);
   if (b.dinheiroRecebido === true && p.pagamento === "dinheiro") await marcarPago(numero, true);
+  if (b.transferencia === true && p.pagamento === "dinheiro") await marcarTransferencia(numero);
   return NextResponse.json({ ok: true });
 }

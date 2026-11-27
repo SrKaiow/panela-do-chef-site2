@@ -27,6 +27,10 @@ type PedidoRota = {
   atraso: { minutos: number; motivo: string; em: string } | null;
   waSaiu: string;
   waChegando: string;
+  /** Cliente vai pagar por transferência (dados já enviados). */
+  transferencia?: boolean;
+  /** WhatsApp com o pedido, a conta e o valor para transferência (só pedido em dinheiro ainda não pago). */
+  waTransferencia?: string | null;
   mapa: string;
   waze: string;
 };
@@ -318,6 +322,11 @@ export default function Entregador() {
               <div className={"pag " + (p.naConta ? "cartao" : p.pagamento)}>
                 {p.naConta ? (
                   <strong>NA CONTA · NÃO COBRAR</strong>
+                ) : p.pagamento === "dinheiro" && p.transferencia ? (
+                  <>
+                    <strong>TRANSFERÊNCIA · {gbp(p.total)}</strong>
+                    <span>Dados da conta enviados no WhatsApp · confira no banco</span>
+                  </>
                 ) : p.pagamento === "dinheiro" ? (
                   <>
                     <strong>COBRAR {gbp(p.total)} EM DINHEIRO</strong>
@@ -327,6 +336,12 @@ export default function Entregador() {
                   <strong>JÁ PAGO NO CARTÃO</strong>
                 )}
               </div>
+
+              {p.waTransferencia && (
+                <a className={"btn transf-btn" + (p.transferencia ? " enviado" : "")} href={p.waTransferencia} target="_blank" rel="noreferrer" onClick={() => acao(p.numero, { transferencia: true })}>
+                  {p.transferencia ? "🏦 Mandar os dados da conta de novo" : "🏦 Vai pagar por transferência · mandar conta no WhatsApp"}
+                </a>
+              )}
 
               {pertinho && !p.avisadoChegando && !automatico && (
                 <a className="btn aviso-1min" href={p.waChegando} target="_blank" rel="noreferrer" onClick={() => acao(p.numero, { avisoManual: "chegando" })}>
@@ -349,8 +364,8 @@ export default function Entregador() {
                 {!automatico && !p.avisadoSaiu && (
                   <a className="btn" href={p.waSaiu} target="_blank" rel="noreferrer" onClick={() => acao(p.numero, { avisoManual: "saiu" })}>Mandar link do rastreio</a>
                 )}
-                <button className="btn principal-p" onClick={() => acao(p.numero, { status: "entregue", ...(p.pagamento === "dinheiro" ? { dinheiroRecebido: true } : {}) })}>
-                  {p.pagamento === "dinheiro" ? "Entregue e recebido" : "Entregue"}
+                <button className="btn principal-p" onClick={() => acao(p.numero, { status: "entregue", ...(p.pagamento === "dinheiro" && !p.transferencia ? { dinheiroRecebido: true } : {}) })}>
+                  {p.pagamento === "dinheiro" && !p.transferencia ? "Entregue e recebido" : "Entregue"}
                 </button>
               </footer>
             </article>

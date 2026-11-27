@@ -554,3 +554,7 @@ a.btn.principal-p { color: #fff; justify-content: center; }
 .doces-wa { background: #25d366 !important; border-color: #1fb457 !important; color: #fff !important; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; }
 .doces-ok { color: #17663a; font-weight: 700; font-size: .9rem; }
 .doces-alerta { color: #c2410c; }
+/* Entregas: cliente que vai pagar por transferência */
+.transf-btn { display: block; text-align: center; text-decoration: none; background: #1e3f9e; color: #fff; border-color: #1e3f9e; font-weight: 800; padding-block: 13px; }
+.transf-btn.enviado { background: transparent; color: #9db4ff; border-color: #3a5bc7; font-weight: 700; }
+.pag.dinheiro strong + span { display: block; }
