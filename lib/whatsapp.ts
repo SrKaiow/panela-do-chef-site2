@@ -36,9 +36,11 @@ export const mensagens = {
       `Valor: ${gbp(o.total)}`,
       `Referência: Pedido ${o.numero}`,
       ``,
+      `⚠️ *POR FAVOR, ENVIE O COMPROVANTE AQUI PARA DARMOS BAIXA NO SISTEMA* ⚠️`,
+      ``,
       `Seu pedido: ${o.link}`,
       ``,
-      `Quando fizer a transferência, é só mandar o comprovante aqui. Obrigado!`,
+      `Obrigado!`,
     ].join("\n");
   },
   saiu: (nome: string, link: string) =>
