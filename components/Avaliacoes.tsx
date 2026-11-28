@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Avaliar from "./Avaliar";
 
-export type Depoimento = { nome: string; local: string | null; nota: number; texto: string; foto?: string; fotoPedido?: string; verificado?: boolean; data?: string };
+export type Depoimento = { nome: string; local: string | null; nota: number; texto: string; foto?: string; fotoPedido?: string; verificado?: boolean; data?: string; assunto?: string };
 
 const Estrelas = ({ n }: { n: number }) => (
   <span className="estrelas" aria-label={`${n} de 5 estrelas`}>
@@ -65,6 +65,7 @@ export default function Avaliacoes({ lista, clientes }: { lista: Depoimento[]; c
               <cite>
                 {d.nome}{d.local ? ` · ${d.local}` : ""}
                 {d.verificado && <span className="verificado">Pedido verificado</span>}
+                {d.assunto && <span className="verificado">{d.assunto}</span>}
               </cite>
             </footer>
           </blockquote>
