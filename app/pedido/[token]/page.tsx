@@ -86,7 +86,7 @@ export default async function PaginaPedido(props: { params: Promise<{ token: str
           <Recarregar segundos={4} vezes={15} />
         ) : aguardando ? (
           squareConfigurado() && pedido.squarePedido ? (
-            <PagarCarteira token={pedido.token} total={pedido.total} link={pedido.linkPagamento} />
+            <PagarCarteira token={pedido.token} total={pedido.total} link={pedido.linkPagamento} naEntrega={loja.pagamentos.dinheiro && !pedido.itens.some((l) => l.itemId.startsWith("natal-")) ? (pedido.retirada ? "coleta" : "entrega") : null} />
           ) : pedido.linkPagamento ? (
             <a href={pedido.linkPagamento} className="principal" style={{ textDecoration: "none" }}><span>Pagar agora</span><span>{formatar(pedido.total)}</span></a>
           ) : (

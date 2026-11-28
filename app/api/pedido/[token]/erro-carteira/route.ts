@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { buscarPorToken, lerConfig, salvarConfig } from "@/lib/db";
 import { permitir } from "@/lib/seguranca";
+import { avisarCartaoRecusado } from "@/lib/avisoLoja";
+import { siteUrl } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -23,5 +25,6 @@ export async function POST(req: Request, ctx: { params: Promise<{ token: string 
   };
   const lista = ((await lerConfig<Falha[]>("carteira-falhas")) ?? []).slice(-29);
   await salvarConfig("carteira-falhas", [...lista, nova]).catch(() => {});
+  await avisarCartaoRecusado(p.numero, `${nova.carteira || "Apple/Google Pay"} não abriu no celular do cliente`, siteUrl(req));
   return new NextResponse(null, { status: 204 });
 }

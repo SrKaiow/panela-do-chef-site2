@@ -30,7 +30,35 @@ function carregarScript(src: string) {
   });
 }
 
-export default function PagarCarteira({ token, total, link }: { token: string; total: number; link: string | null }) {
+export default function PagarCarteira({ token, total, link, naEntrega = null }: { token: string; total: number; link: string | null; naEntrega?: "entrega" | "coleta" | null }) {
+  // "Pagar na entrega" aparece quando o cartão falha, quando a pessoa voltou do link da Square sem pagar, ou depois de 90s parada aqui.
+  const [mostrarEntrega, setMostrarEntrega] = useState(false);
+  const [trocando, setTrocando] = useState(false);
+  useEffect(() => {
+    if (!naEntrega) return;
+    let voltou = false;
+    try { voltou = sessionStorage.getItem("foi-pagar-" + token) === "1"; } catch {}
+    if (voltou) setMostrarEntrega(true);
+    const t = setTimeout(() => setMostrarEntrega(true), 90_000);
+    return () => clearTimeout(t);
+  }, [naEntrega, token]);
+  function marcarLink() {
+    try { sessionStorage.setItem("foi-pagar-" + token, "1"); } catch {}
+  }
+  async function pagarNaEntrega() {
+    if (trocando) return;
+    if (!window.confirm(`Pagar ${(total / 100).toLocaleString("en-GB", { style: "currency", currency: "GBP" })} em dinheiro na ${naEntrega}? O pedido vai agora para a cozinha.`)) return;
+    setTrocando(true);
+    try {
+      const r = await fetch(`/api/pedido/${token}/pagar-na-entrega`, { method: "POST" });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.erro || "Não deu para trocar o pagamento.");
+      window.location.reload();
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Não deu para trocar o pagamento.");
+      setTrocando(false);
+    }
+  }
   const [estado, setEstado] = useState<"carregando" | "pronto" | "pagando" | "pago">("carregando");
   const [apple, setApple] = useState<Carteira | null>(null);
   const [google, setGoogle] = useState<Carteira | null>(null);
@@ -125,18 +153,26 @@ export default function PagarCarteira({ token, total, link }: { token: string; t
       {estado === "pagando" && <div className="pagar-carregando">Confirmando o pagamento...</div>}
       {erro && <p className="pagar-erro" role="alert">{erro}</p>}
       {nenhuma && link && (
-        <a href={link} className="principal" style={{ textDecoration: "none" }}><span>Pagar com cartão</span><span>→</span></a>
+        <a href={link} onClick={marcarLink} className="principal" style={{ textDecoration: "none" }}><span>Pagar com cartão</span><span>→</span></a>
       )}
       {!nenhuma && estado !== "carregando" && link && (
         <>
           <span className="pagar-ou">ou</span>
-          <a href={link} className={falhou ? "principal" : "pagar-cartao"} style={{ textDecoration: "none" }}>
+          <a href={link} onClick={marcarLink} className={falhou ? "principal" : "pagar-cartao"} style={{ textDecoration: "none" }}>
             <span>💳 Pagar com cartão</span><span>→</span>
           </a>
           <span className="pagar-dica">Digite o cartão na página segura da Square.</span>
         </>
       )}
       {nenhuma && !link && <p className="pagar-erro">Pagamento indisponível agora. Fale com a gente no WhatsApp.</p>}
+      {naEntrega && (falhou || mostrarEntrega) && estado !== "pagando" && (
+        <div className="pagar-entrega">
+          <span>O cartão não está passando?</span>
+          <button type="button" className="pagar-cartao" onClick={pagarNaEntrega} disabled={trocando}>
+            <span>💵 {trocando ? "Enviando o pedido..." : `Pagar em dinheiro na ${naEntrega}`}</span><span>→</span>
+          </button>
+        </div>
+      )}
     </section>
   );
 }

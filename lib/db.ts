@@ -438,6 +438,17 @@ export async function marcarPago(numero: number, pago: boolean) {
   await exec("UPDATE pedidos SET pago = ? WHERE numero = ?", [pago ? 1 : 0, numero]);
 }
 
+/** Cartão não passou: o cliente paga na entrega/coleta e o pedido vai para a cozinha. true se trocou. */
+export async function trocarParaDinheiro(numero: number) {
+  const r = await exec(
+    `UPDATE pedidos SET pagamento = 'dinheiro', status = 'novo', status_em = ?,
+       observacao = CASE WHEN observacao IS NULL OR observacao = '' THEN ? ELSE observacao || ' · ' || ? END
+     WHERE numero = ? AND status = 'aguardando_pagamento' AND pagamento = 'cartao' AND pago = 0`,
+    [new Date().toISOString(), "💵 CARTÃO NÃO PASSOU · vai pagar na entrega", "💵 CARTÃO NÃO PASSOU · vai pagar na entrega", numero],
+  );
+  return (r.rowsAffected ?? 0) > 0;
+}
+
 /** Marca na observação do pedido que o cliente vai pagar por transferência (aparece no painel e na tela de entregas). */
 export const MARCA_TRANSFERENCIA = "🏦 VAI PAGAR POR TRANSFERÊNCIA (dados enviados)";
 export async function marcarTransferencia(numero: number) {

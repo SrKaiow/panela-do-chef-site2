@@ -124,6 +124,31 @@ async function enviarTelegram(texto: string, botoes?: Botoes) {
   }
 }
 
+/**
+ * Cartão recusado / carteira falhou: avisa no Telegram com o WhatsApp do cliente, para você chamar na hora.
+ * No máximo um aviso a cada 10 min por pedido.
+ */
+export async function avisarCartaoRecusado(numero: number, motivo: string, origem?: string) {
+  try {
+    if (!process.env.TELEGRAM_BOT_TOKEN) return;
+    const p = await buscarPorNumero(numero);
+    if (!p || p.pago || p.status !== "aguardando_pagamento") return;
+    const avisados = (await lerConfig<Record<string, string>>("cartao-recusado-avisos")) ?? {};
+    const antes = avisados[String(numero)];
+    if (antes && Date.now() - Date.parse(antes) < 10 * 60_000) return;
+    avisados[String(numero)] = new Date().toISOString();
+    for (const k of Object.keys(avisados)) if (Date.now() - Date.parse(avisados[k]) > 3 * 86400_000) delete avisados[k];
+    await salvarConfig("cartao-recusado-avisos", avisados);
+    const nome = p.nome.split(" ")[0];
+    const texto = `⚠️ CARTÃO NÃO PASSOU · pedido #${p.numero}\n${p.nome} · ${libra(p.total)}\nMotivo: ${motivo}\n\nO cliente ainda pode tentar de novo ou escolher pagar na entrega. Se quiser, chame no WhatsApp:`;
+    const msgCliente = `Oi, ${nome}! Aqui é da Panela do Chef. Vi que o pagamento do seu pedido #${p.numero} (${libra(p.total)}) não passou no cartão. Quer tentar por este link?\n${p.linkPagamento ?? `${origem || siteUrl()}/pedido/${p.token}`}\n\nSe preferir, pode pagar em dinheiro na entrega, é só me avisar aqui.`;
+    const botoes: Botoes = [[{ text: "💬 Chamar no WhatsApp", url: `https://wa.me/${telefoneInternacional(p.telefone)}?text=${encodeURIComponent(msgCliente)}` }], [{ text: "Abrir o painel", url: `${origem || siteUrl()}/painel#pedidos` }]];
+    await enviarTelegram(texto, botoes);
+  } catch (e) {
+    console.error("[aviso cartão recusado]", e);
+  }
+}
+
 /** Avisa a loja uma única vez por pedido. Chamar quando o pedido vai para a cozinha (dinheiro: na hora; cartão: depois de pago). */
 export async function avisarLojaNovoPedido(numero: number, origem?: string) {
   try {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { buscarPorToken, confirmarPagamentoCartao, salvarPagamentoSquare } from "@/lib/db";
 import { criarPedidoCarteira, ErroSquare, pagarComCarteira, registrarErroSquare, squareConfigurado } from "@/lib/square";
-import { avisarLojaNovoPedido } from "@/lib/avisoLoja";
+import { avisarCartaoRecusado, avisarLojaNovoPedido } from "@/lib/avisoLoja";
 import { permitir } from "@/lib/seguranca";
 import { siteUrl } from "@/lib/site";
 
@@ -45,6 +45,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ token: string 
     return NextResponse.json({ erro: "O pagamento não foi concluído. Se aparecer cobrança, ela volta sozinha. Tente de novo." }, { status: 402 });
   } catch (e) {
     await registrarErroSquare("pagamento carteira", e);
+    await avisarCartaoRecusado(p.numero, recusaDoCartao(e) ? "o banco recusou o cartão" : "erro no pagamento pela carteira", siteUrl(req));
     return NextResponse.json(
       {
         erro: recusaDoCartao(e)

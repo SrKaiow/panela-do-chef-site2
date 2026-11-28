@@ -459,6 +459,16 @@ export default function Painel({ secao, onNovos }: { secao: "pedidos" | "avaliac
                     💬 {msgEtapa(p)!.rotulo}
                   </a>
                 )}
+                {p.status === "aguardando_pagamento" && p.linkPagamento && (
+                  <a
+                    className="btn btn-zap"
+                    href={`https://wa.me/${whatsapp(p.telefone)}?text=${encodeURIComponent(`Oi, ${p.nome.split(" ")[0]}! Aqui é da Panela do Chef 😊\n\nSegue o link para pagar o seu pedido #${p.numero} (${gbp(p.total)}) com cartão, na página segura da Square:\n${p.linkPagamento}\n\nAssim que pagar, o pedido vai direto para a cozinha. Qualquer dúvida, é só chamar!`)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    💳 Mandar link de pagamento
+                  </a>
+                )}
                 {p.status !== "cancelado" && (
                   <button className="btn" onClick={() => imprimir(p.numero)} title="Imprimir neste aparelho">🖨 Imprimir</button>
                 )}
